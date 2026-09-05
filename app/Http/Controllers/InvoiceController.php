@@ -1,0 +1,168 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Agency;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Enums\InvoiceStatus;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class InvoiceController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(['auth', 'agency']);
+    }
+
+    public function index(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        $query = Invoice::where('agency_id', $agency->id);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $invoices = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        $stats = [
+            'total' => Invoice::where('agency_id', $agency->id)->sum('total'),
+            'pending' => Invoice::where('agency_id', $agency->id)->pending()->sum('total'),
+            'overdue' => Invoice::where('agency_id', $agency->id)->overdue()->sum('total'),
+        ];
+
+        return view('invoices.index', compact('agency', 'invoices', 'stats'));
+    }
+
+    public function create(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        return view('invoices.create', compact('agency'));
+    }
+
+    public function store(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        $validated = $request->validate([
+            'issue_date' => 'required|date',
+            'due_date' => 'required|date|after_or_equal:issue_date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        $subtotal = 0;
+        foreach ($validated['items'] as $item) {
+            $subtotal += $item['quantity'] * $item['unit_price'];
+        }
+
+        $tax = $subtotal * 0.0; // Tax rate can be configured
+        $total = $subtotal + $tax;
+
+        $invoice = Invoice::create([
+            'agency_id' => $agency->id,
+            'invoice_number' => Invoice::generateNumber(),
+            'status' => InvoiceStatus::PENDING->value,
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'total' => $total,
+            'issue_date' => $validated['issue_date'],
+            'due_date' => $validated['due_date'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        foreach ($validated['items'] as $item) {
+            InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'description' => $item['description'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'total' => $item['quantity'] * $item['unit_price'],
+            ]);
+        }
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Invoice created successfully.');
+    }
+
+    public function show(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        return view('invoices.show', compact('agency', 'invoice'));
+    }
+
+    public function edit(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        return view('invoices.edit', compact('agency', 'invoice'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'issue_date' => 'required|date',
+            'due_date' => 'required|date|after_or_equal:issue_date',
+            'notes' => 'nullable|string',
+        ]);
+
+        $invoice->update($validated);
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Invoice updated successfully.');
+    }
+
+    public function destroy(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $invoice->delete();
+
+        return redirect()->route('invoices.index')
+            ->with('success', 'Invoice deleted.');
+    }
+
+    public function markPaid(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'payment_method' => 'required|string|max:50',
+            'transaction_id' => 'nullable|string|max:255',
+        ]);
+
+        $invoice->markPaid($validated['payment_method'], $validated['transaction_id'] ?? null);
+
+        return back()->with('success', 'Invoice marked as paid.');
+    }
+}

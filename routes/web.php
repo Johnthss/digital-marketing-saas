@@ -1,0 +1,127 @@
+<?php
+
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\AgencyController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\OAuthController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AiContentController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ContentLibraryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\InboxController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\SocialAccountController;
+use App\Http\Controllers\SocialPostController;
+use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\FormController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
+});
+
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::get('/password/reset', [ResetPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [ResetPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+
+Route::get('/auth/{provider}', [OAuthController::class, 'redirect'])->name('oauth.redirect');
+Route::get('/auth/{provider}/callback', [OAuthController::class, 'callback'])->name('oauth.callback');
+
+Route::middleware(['auth', 'agency'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+
+    Route::prefix('social')->name('social.')->group(function () {
+        Route::resource('accounts', SocialAccountController::class)->except('show');
+        Route::post('accounts/{account}/toggle', [SocialAccountController::class, 'toggle'])->name('accounts.toggle');
+        Route::resource('posts', SocialPostController::class);
+        Route::post('posts/{post}/publish', [SocialPostController::class, 'publish'])->name('posts.publish');
+        Route::post('posts/{post}/retry', [SocialPostController::class, 'retry'])->name('posts.retry');
+        Route::post('posts/{post}/score', [SocialPostController::class, 'score'])->name('posts.score');
+    });
+
+    Route::resource('campaigns', CampaignController::class);
+    Route::post('campaigns/{campaign}/status', [CampaignController::class, 'changeStatus'])->name('campaigns.status');
+
+    Route::resource('clients', ClientController::class);
+
+    Route::prefix('ai')->name('ai.')->group(function () {
+        Route::get('/', [AiContentController::class, 'index'])->name('index');
+        Route::post('/generate', [AiContentController::class, 'generate'])->name('generate');
+        Route::post('/rewrite', [AiContentController::class, 'rewrite'])->name('rewrite');
+        Route::post('/hashtags', [AiContentController::class, 'hashtags'])->name('hashtags');
+        Route::post('/ideas', [AiContentController::class, 'ideas'])->name('ideas');
+    });
+
+    Route::resource('workflows', WorkflowController::class);
+    Route::post('workflows/{workflow}/toggle', [WorkflowController::class, 'toggleStatus'])->name('workflows.toggle');
+
+    Route::resource('inbox', InboxController::class)->except('create', 'store', 'edit', 'update');
+    Route::post('inbox/{message}/triage', [InboxController::class, 'triage'])->name('inbox.triage');
+    Route::post('inbox/{message}/reply', [InboxController::class, 'reply'])->name('inbox.reply');
+
+    Route::resource('content', ContentLibraryController::class);
+
+    Route::resource('landing-pages', LandingPageController::class)->except('destroy');
+    Route::delete('landing-pages/{page}', [LandingPageController::class, 'destroy'])->name('landing-pages.destroy');
+    Route::post('landing-pages/{page}/toggle', [LandingPageController::class, 'togglePublish'])->name('landing-pages.toggle');
+
+    Route::resource('invoices', InvoiceController::class);
+    Route::post('invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
+
+    Route::resource('activity', ActivityLogController::class)->except('create', 'store', 'edit', 'update');
+    Route::resource('forms', FormController::class);
+    Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
+    Route::resource('webhooks', WebhookController::class);
+
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+    Route::get('/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
+    Route::post('/two-factor/enable', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
+    Route::post('/two-factor/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
+    Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
+
+    Route::get('/onboarding', function() {
+        return view('onboarding');
+    })->name('onboarding');
+
+    Route::prefix('agency')->name('agency.')->group(function () {
+        Route::get('settings', [AgencyController::class, 'settings'])->name('settings');
+        Route::put('settings', [AgencyController::class, 'updateSettings'])->name('settings.update');
+        Route::get('team', [AgencyController::class, 'team'])->name('team');
+        Route::post('team/invite', [AgencyController::class, 'inviteMember'])->name('team.invite');
+        Route::put('team/{member}/role', [AgencyController::class, 'updateMemberRole'])->name('team.role');
+        Route::delete('team/{member}', [AgencyController::class, 'removeMember'])->name('team.remove');
+        Route::get('billing', [AgencyController::class, 'billing'])->name('billing');
+        Route::post('billing/upgrade', [AgencyController::class, 'upgrade'])->name('billing.upgrade');
+    });
+
+    // Version/Changelog
+    require __DIR__.'/version.php';
+});
+
+Route::get('/lp/{slug}', [LandingPageController::class, 'render'])->name('public.landing-page');
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
+});

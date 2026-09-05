@@ -1,0 +1,135 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Agency;
+use App\Models\ContentAsset;
+use App\Models\ContentTemplate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
+class ContentLibraryController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware(['auth', 'agency']);
+    }
+
+    public function index(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        $query = ContentAsset::where('agency_id', $agency->id);
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $assets = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        $types = ContentAsset::ASSET_TYPES;
+
+        return view('content.index', compact('agency', 'assets', 'types'));
+    }
+
+    public function create(Request $request)
+    {
+        $agency = $request->user()->agency;
+        $types = ContentAsset::ASSET_TYPES;
+
+        return view('content.create', compact('agency', 'types'));
+    }
+
+    public function store(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:text,image,video,audio,document,link',
+            'content' => 'required|string',
+            'media_url' => 'nullable|url',
+            'tags' => 'nullable|array',
+            'is_public' => 'boolean',
+        ]);
+
+        $asset = ContentAsset::create([
+            'agency_id' => $agency->id,
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'type' => $validated['type'],
+            'content' => $validated['content'],
+            'media_url' => $validated['media_url'] ?? null,
+            'tags' => $validated['tags'] ?? [],
+            'is_public' => $validated['is_public'] ?? false,
+            'status' => 'active',
+        ]);
+
+        return redirect()->route('content.show', $asset)
+            ->with('success', 'Content asset created successfully.');
+    }
+
+    public function show(Request $request, ContentAsset $asset)
+    {
+        $agency = $request->user()->agency;
+
+        if ($asset->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        return view('content.show', compact('agency', 'asset'));
+    }
+
+    public function edit(Request $request, ContentAsset $asset)
+    {
+        $agency = $request->user()->agency;
+
+        if ($asset->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $types = ContentAsset::ASSET_TYPES;
+
+        return view('content.edit', compact('agency', 'asset', 'types'));
+    }
+
+    public function update(Request $request, ContentAsset $asset)
+    {
+        $agency = $request->user()->agency;
+
+        if ($asset->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'content' => 'required|string',
+            'media_url' => 'nullable|url',
+            'tags' => 'nullable|array',
+            'is_public' => 'boolean',
+        ]);
+
+        $asset->update($validated);
+
+        return redirect()->route('content.show', $asset)
+            ->with('success', 'Content asset updated successfully.');
+    }
+
+    public function destroy(Request $request, ContentAsset $asset)
+    {
+        $agency = $request->user()->agency;
+
+        if ($asset->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        $asset->delete();
+
+        return redirect()->route('content.index')
+            ->with('success', 'Content asset deleted.');
+    }
+}

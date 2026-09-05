@@ -1,0 +1,29 @@
+<?php
+
+use App\Http\Controllers\Api\ApiController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->middleware('auth:sanctum')->as('api.')->group(function () {
+    Route::get('/status', fn() => ['status' => 'ok']);
+
+    // Dashboard
+    Route::get('/dashboard', [ApiController::class, 'dashboard']);
+
+    // Social
+    Route::apiResource('posts', ApiController::class);
+    Route::apiResource('accounts', ApiController::class);
+    Route::apiResource('campaigns', ApiController::class);
+    Route::apiResource('clients', ApiController::class);
+    Route::apiResource('workflows', ApiController::class);
+    Route::apiResource('invoices', ApiController::class);
+    Route::apiResource('content', ApiController::class);
+
+    // AI
+    Route::post('/ai/generate', [ApiController::class, 'aiGenerate']);
+
+    // Agency
+    Route::get('/agency/settings', [ApiController::class, 'agencySettings']);
+    Route::put('/agency/settings', [ApiController::class, 'updateAgencySettings']);
+    Route::get('/agency/team', [ApiController::class, 'team']);
+    Route::get('/agency/billing', [ApiController::class, 'billing']);
+});
