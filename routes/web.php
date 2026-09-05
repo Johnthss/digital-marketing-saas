@@ -125,3 +125,6 @@ Route::get('/lp/{slug}', [LandingPageController::class, 'render'])->name('public
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
 });
+
+// Telegram integration
+require __DIR__.'/telegram.php';

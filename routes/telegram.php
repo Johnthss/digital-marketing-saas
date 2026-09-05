@@ -1,0 +1,26 @@
+<?php
+
+use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\TelegramLinkController;
+
+// Public webhook endpoint (no auth)
+app('router')->post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])
+    ->name('telegram.webhook');
+
+// Webhook management (admin only)
+app('router')->prefix('telegram')->name('telegram.')->group(function () {
+    app('router')->get('/setup', [TelegramWebhookController::class, 'setupWebhook'])->name('setup');
+    app('router')->get('/info', [TelegramWebhookController::class, 'webhookInfo'])->name('info');
+});
+
+// Account linking (authenticated users)
+app('router')->middleware(['auth', 'agency'])->prefix('telegram/link')->name('telegram.link.')->group(function () {
+    app('router')->get('/', [TelegramLinkController::class, 'index'])->name('index');
+    app('router')->post('/', [TelegramLinkController::class, 'link'])->name('store');
+    app('router')->delete('/', [TelegramLinkController::class, 'unlink'])->name('unlink');
+    app('router')->post('/regenerate', [TelegramLinkController::class, 'regenerateCode'])->name('regenerate');
+});
+
+// API: Link via bot
+app('router')->post('/api/telegram/link', [TelegramLinkController::class, 'linkViaBot'])
+    ->name('api.telegram.link');
