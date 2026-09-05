@@ -116,14 +116,15 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::post('billing/upgrade', [AgencyController::class, 'upgrade'])->name('billing.upgrade');
     });
 
-    // Version/Changelog
-    require __DIR__.'/version.php';
 });
 
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
 });
+
+// Version/Changelog (PUBLIC - no auth required)
+require __DIR__.'/version.php';
 
 // Telegram integration
 require __DIR__.'/telegram.php';
