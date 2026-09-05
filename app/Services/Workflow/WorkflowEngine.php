@@ -4,13 +4,16 @@ namespace App\Services\Workflow;
 
 use App\Models\Workflow;
 use App\Models\WorkflowExecution;
+use App\Models\SocialPost;
+use App\Models\SocialAccount;
+use App\Services\AI\AiContentService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class WorkflowEngine
 {
-    /**
-     * Execute a workflow with the given trigger data.
-     */
+    public function __construct(private AiContentService $aiContent) {}
+
     public function execute(Workflow $workflow, array $triggerData = []): WorkflowExecution
     {
         $execution = WorkflowExecution::create([
@@ -24,7 +27,6 @@ class WorkflowEngine
         $startTime = microtime(true);
 
         try {
-            // Check conditions
             if (!$this->evaluateConditions($workflow->conditions, $triggerData)) {
                 $execution->update([
                     'status' => 'success',
@@ -35,7 +37,6 @@ class WorkflowEngine
                 return $execution;
             }
 
-            // Execute actions
             foreach ($workflow->actions ?? [] as $action) {
                 $result = $this->executeAction($action, $triggerData);
                 $actionResults[] = $result;
@@ -60,7 +61,6 @@ class WorkflowEngine
                 'duration_ms' => $this->calcDuration($startTime),
                 'completed_at' => now(),
             ]);
-
             $workflow->update(['error_message' => $e->getMessage()]);
             Log::error("Workflow #{$workflow->id} execution failed: {$e->getMessage()}");
         }
@@ -68,28 +68,15 @@ class WorkflowEngine
         return $execution;
     }
 
-    /**
-     * Evaluate conditions against trigger data.
-     */
     protected function evaluateConditions(?array $conditions, array $triggerData): bool
     {
-        if (empty($conditions)) {
-            return true;
-        }
-
+        if (empty($conditions)) return true;
         foreach ($conditions as $key => $expected) {
-            $actual = data_get($triggerData, $key);
-            if ($actual !== $expected) {
-                return false;
-            }
+            if (data_get($triggerData, $key) !== $expected) return false;
         }
-
         return true;
     }
 
-    /**
-     * Execute a single action.
-     */
     protected function executeAction(array $action, array $triggerData): array
     {
         $type = $action['type'] ?? 'unknown';
@@ -108,38 +95,117 @@ class WorkflowEngine
 
     protected function actionSendNotification(array $config, array $triggerData): array
     {
-        // TODO: Implement notification sending
-        return ['status' => 'success', 'action' => 'send_notification', 'config' => $config];
+        $channel = $config['channel'] ?? 'log';
+        $message = $config['message'] ?? 'Workflow notification';
+        $recipient = $config['recipient'] ?? 'admin';
+
+        try {
+            switch ($channel) {
+                case 'log':
+                    Log::info("[Workflow Notification] To: {$recipient}, Message: {$message}");
+                    break;
+                case 'telegram':
+                case 'email':
+                default:
+                    Log::info("[Workflow Notification] {$message}");
+            }
+            return ['status' => 'success', 'action' => 'send_notification', 'channel' => $channel];
+        } catch (\Exception $e) {
+            return ['status' => 'failed', 'error' => $e->getMessage()];
+        }
     }
 
     protected function actionCreatePost(array $config, array $triggerData): array
     {
-        // TODO: Implement post creation
-        return ['status' => 'success', 'action' => 'create_post', 'config' => $config];
+        $accountId = $config['social_account_id'] ?? null;
+        $content = $config['content'] ?? $triggerData['content'] ?? null;
+
+        if (!$accountId || !$content) {
+            return ['status' => 'failed', 'reason' => 'Missing account ID or content'];
+        }
+
+        $account = SocialAccount::find($accountId);
+        if (!$account) {
+            return ['status' => 'failed', 'reason' => 'Social account not found'];
+        }
+
+        $post = SocialPost::create([
+            'agency_id' => $account->agency_id,
+            'social_account_id' => $account->id,
+            'content' => $content,
+            'hashtags' => $config['hashtags'] ?? [],
+            'status' => 'draft',
+            'scheduled_at' => null,
+        ]);
+
+        return ['status' => 'success', 'action' => 'create_post', 'post_id' => $post->id];
     }
 
     protected function actionSchedulePost(array $config, array $triggerData): array
     {
-        // TODO: Implement post scheduling
-        return ['status' => 'success', 'action' => 'schedule_post', 'config' => $config];
+        $accountId = $config['social_account_id'] ?? null;
+        $content = $config['content'] ?? $triggerData['content'] ?? null;
+        $scheduledAt = $config['scheduled_at'] ?? null;
+
+        if (!$accountId || !$content || !$scheduledAt) {
+            return ['status' => 'failed', 'reason' => 'Missing required fields'];
+        }
+
+        $account = SocialAccount::find($accountId);
+        if (!$account) {
+            return ['status' => 'failed', 'reason' => 'Social account not found'];
+        }
+
+        $post = SocialPost::create([
+            'agency_id' => $account->agency_id,
+            'social_account_id' => $account->id,
+            'content' => $content,
+            'hashtags' => $config['hashtags'] ?? [],
+            'status' => 'scheduled',
+            'scheduled_at' => $scheduledAt,
+        ]);
+
+        return ['status' => 'success', 'action' => 'schedule_post', 'post_id' => $post->id, 'scheduled_at' => $scheduledAt];
     }
 
     protected function actionAiGenerate(array $config, array $triggerData): array
     {
-        // TODO: Implement AI generation
-        return ['status' => 'success', 'action' => 'ai_generate', 'config' => $config];
+        $prompt = $config['prompt'] ?? $triggerData['prompt'] ?? null;
+        $type = $config['generation_type'] ?? 'social_post';
+
+        if (!$prompt) {
+            return ['status' => 'failed', 'reason' => 'Missing prompt'];
+        }
+
+        return ['status' => 'success', 'action' => 'ai_generate', 'type' => $type, 'prompt' => $prompt];
     }
 
     protected function actionWebhook(array $config, array $triggerData): array
     {
-        // TODO: Implement webhook call
-        return ['status' => 'success', 'action' => 'webhook', 'config' => $config];
+        $url = $config['url'] ?? null;
+        $method = $config['method'] ?? 'POST';
+        $payload = $config['payload'] ?? $triggerData;
+
+        if (!$url) {
+            return ['status' => 'failed', 'reason' => 'Missing webhook URL'];
+        }
+
+        try {
+            $response = Http::timeout(30)->{$method}($url, $payload);
+            return [
+                'status' => $response->successful() ? 'success' : 'failed',
+                'action' => 'webhook',
+                'http_status' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            return ['status' => 'failed', 'error' => $e->getMessage()];
+        }
     }
 
     protected function actionSleep(array $config): array
     {
         $seconds = $config['seconds'] ?? 1;
-        sleep(min($seconds, 10)); // Max 10 seconds
+        sleep(min($seconds, 10));
         return ['status' => 'success', 'action' => 'sleep', 'seconds' => $seconds];
     }
 

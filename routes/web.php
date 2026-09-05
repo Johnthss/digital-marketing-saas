@@ -126,5 +126,18 @@ Route::get('/health', function () {
 // Version/Changelog (PUBLIC - no auth required)
 require __DIR__.'/version.php';
 
+// Email Campaign routes
+Route::prefix('email')->name('email.')->group(function () {
+    Route::get('/campaigns', [App\Http\Controllers\Email\EmailCampaignController::class, 'index'])->name('campaigns.index');
+    Route::get('/campaigns/create', [App\Http\Controllers\Email\EmailCampaignController::class, 'create'])->name('campaigns.create');
+    Route::post('/campaigns', [App\Http\Controllers\Email\EmailCampaignController::class, 'store'])->name('campaigns.store');
+    Route::get('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'show'])->name('campaigns.show');
+    Route::get('/campaigns/{campaign}/edit', [App\Http\Controllers\Email\EmailCampaignController::class, 'edit'])->name('campaigns.edit');
+    Route::put('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'update'])->name('campaigns.update');
+    Route::delete('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
+    Route::post('/campaigns/{campaign}/send', [App\Http\Controllers\Email\EmailCampaignController::class, 'send'])->name('campaigns.send');
+    Route::post('/campaigns/{campaign}/add-clients', [App\Http\Controllers\Email\EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
+});
+
 // Telegram integration
 require __DIR__.'/telegram.php';

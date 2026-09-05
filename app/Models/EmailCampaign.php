@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EmailCampaign extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
 
     protected $fillable = [
         'agency_id',
@@ -60,6 +61,24 @@ class EmailCampaign extends Model
     {
         return $this->hasMany(EmailCampaignRecipient::class);
     }
+
+    public function isEditable(): bool
+    {
+        return in_array($this->status, ['draft', 'scheduled']);
+    }
+
+    public function isSendable(): bool
+    {
+        return in_array($this->status, ['draft', 'scheduled']) && $this->recipients_count > 0;
+    }
+
+    public const STATUSES = [
+        'draft' => 'Draft',
+        'scheduled' => 'Scheduled',
+        'sending' => 'Sending',
+        'sent' => 'Sent',
+        'failed' => 'Failed',
+    ];
 
     public const TYPES = [
         'newsletter' => 'Newsletter',
