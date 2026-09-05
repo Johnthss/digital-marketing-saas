@@ -120,7 +120,6 @@ Route::middleware(['auth', 'agency'])->group(function () {
     require __DIR__.'/version.php';
 });
 
-Route::get('/lp/{slug}', [LandingPageController::class, 'render'])->name('public.landing-page');
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
