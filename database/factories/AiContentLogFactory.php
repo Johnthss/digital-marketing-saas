@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Agency;
 use App\Models\AiContentLog;
+use App\Models\Agency;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AiContentLogFactory extends Factory
@@ -14,15 +14,58 @@ class AiContentLogFactory extends Factory
     {
         return [
             'agency_id' => Agency::factory(),
-            'content_type' => fake()->randomElement(['post', 'caption', 'hashtag', 'headline', 'email', 'ad_copy']),
-            'action_type' => fake()->randomElement(['generate', 'rewrite', 'summarize', 'translate', 'ideate']),
-            'prompt' => fake()->sentence(),
-            'output' => fake()->paragraphs(2, true),
-            'provider' => fake()->randomElement(['openai', 'anthropic', 'google']),
-            'model' => fake()->randomElement(['gpt-4o', 'gpt-3.5-turbo', 'claude-3-opus', 'gemini-pro']),
-            'tokens_used' => fake()->numberBetween(50, 2000),
-            'cost' => fake()->randomFloat(4, 0.001, 0.05),
-            'metadata' => null,
+            'provider' => fake()->randomElement(['openai', 'google', 'anthropic', 'azure']),
+            'model' => fake()->randomElement(['gpt-4o', 'gpt-4', 'claude-3-opus', 'claude-3-sonnet', 'gemini-pro']),
+            'action' => fake()->randomElement(['generate', 'rewrite', 'summarize', 'translate', 'hashtags', 'ideas']),
+            'content_type' => fake()->randomElement(['post', 'email', 'article', 'caption', 'hashtags', 'ideas']),
+            'prompt' => fake()->sentence(10),
+            'response' => fake()->paragraph(3),
+            'total_tokens' => fake()->numberBetween(100, 5000),
+            'prompt_tokens' => fake()->numberBetween(50, 2000),
+            'completion_tokens' => fake()->numberBetween(50, 3000),
+            'cost_usd' => fake()->randomFloat(4, 0, 5.00),
+            'status' => fake()->randomElement(['success', 'failed']),
+            'error_message' => null,
         ];
+    }
+
+    public function success(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'success',
+            'error_message' => null,
+        ]);
+    }
+
+    public function failed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'failed',
+            'error_message' => 'AI generation failed',
+        ]);
+    }
+
+    public function generate(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'action' => 'generate',
+            'content_type' => 'post',
+        ]);
+    }
+
+    public function hashtags(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'action' => 'hashtags',
+            'content_type' => 'hashtags',
+        ]);
+    }
+
+    public function ideas(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'action' => 'ideas',
+            'content_type' => 'ideas',
+        ]);
     }
 }

@@ -69,6 +69,7 @@ return new class extends Migration
             $table->integer('comments_count')->default(0);
             $table->integer('shares_count')->default(0);
             $table->integer('clicks_count')->default(0);
+            $table->decimal('engagement_rate', 5, 2)->default(0)->nullable();
             $table->json('metrics')->nullable(); // aggregated performance metrics
             $table->integer('quality_score')->nullable();
             $table->boolean('is_pinned')->default(false);

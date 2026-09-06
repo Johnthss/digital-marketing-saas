@@ -31,7 +31,7 @@ class Kernel extends ConsoleKernel
 
         // Clean up old logs weekly
         $schedule->command('model:prune', [
-            '--model' => [\\App\\Models\\ActivityLog::class],
+            '--model' => [\App\Models\ActivityLog::class],
             '--days' => 90,
         ])->weekly();
 

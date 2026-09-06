@@ -7,6 +7,7 @@ use App\Http\Requests\EmailCampaignRequest;
 use App\Models\EmailCampaign;
 use App\Services\Email\EmailCampaignService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class EmailCampaignController extends Controller
 {
@@ -39,21 +40,45 @@ class EmailCampaignController extends Controller
             ->with('success', 'Campaign created successfully.');
     }
 
-    public function show(EmailCampaign $campaign)
+    public function show($id)
     {
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
+
+        if (!$campaign) {
+            abort(404);
+        }
+
         $this->authorize('view', $campaign);
-        $campaign->load('recipients');
+        $campaign->load('recipients', 'agency');
         return view('email.campaigns.show', compact('campaign'));
     }
 
-    public function edit(EmailCampaign $campaign)
+    public function edit($id)
     {
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
+
+        if (!$campaign) {
+            abort(404);
+        }
+
         $this->authorize('update', $campaign);
         return view('email.campaigns.edit', compact('campaign'));
     }
 
-    public function update(EmailCampaignRequest $request, EmailCampaign $campaign)
+    public function update(EmailCampaignRequest $request, $id)
     {
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
+
+        if (!$campaign) {
+            abort(404);
+        }
+
         $this->authorize('update', $campaign);
         $campaign = $this->service->update($campaign, $request->validated());
 
@@ -61,8 +86,16 @@ class EmailCampaignController extends Controller
             ->with('success', 'Campaign updated successfully.');
     }
 
-    public function destroy(EmailCampaign $campaign)
+    public function destroy($id)
     {
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
+
+        if (!$campaign) {
+            abort(404);
+        }
+
         $this->authorize('delete', $campaign);
         $this->service->delete($campaign);
 
@@ -70,17 +103,38 @@ class EmailCampaignController extends Controller
             ->with('success', 'Campaign deleted successfully.');
     }
 
-    public function send(EmailCampaign $campaign)
+    public function send($id)
     {
-        $this->authorize('update', $campaign);
-        $this->service->send($campaign);
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
 
-        return redirect()->route('email.campaigns.show', $campaign)
-            ->with('success', 'Campaign is being sent!');
+        if (!$campaign) {
+            abort(404);
+        }
+
+        $this->authorize('update', $campaign);
+
+        try {
+            $this->service->send($campaign);
+            return redirect()->route('email.campaigns.show', $campaign)
+                ->with('success', 'Campaign is being sent!');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
-    public function addClients(Request $request, EmailCampaign $campaign)
+    public function addClients(Request $request, $id)
     {
+        $campaign = EmailCampaign::where('id', $id)
+            ->where('agency_id', auth()->user()->agency_id)
+            ->first();
+
+        if (!$campaign) {
+            abort(404);
+        }
+
         $this->authorize('update', $campaign);
         $agency = $request->user()->agency;
         $count = $this->service->addClientRecipients($campaign, $agency);

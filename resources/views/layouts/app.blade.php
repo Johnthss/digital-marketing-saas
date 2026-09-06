@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $agency->name ?? 'Agency' }} — @yield('title', 'Dashboard') | {{ config('app.name') }}</title>
+    <title>{{ $agency?->name ?? 'Agency' }} — @yield('title', 'Dashboard') | {{ config('app.name') }}</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -209,7 +209,7 @@
             <!-- User Dropdown Menu -->
             <li class="nav-item dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
+                    <i class="fas fa-user-circle"></i> {{ auth()->user()?->name ?? 'User' }}
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a href="{{ route('agency.settings') }}" class="dropdown-item">
@@ -240,11 +240,11 @@
             <!-- Sidebar user panel (optional) -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=007bff&color=fff" class="img-circle elevation-2" alt="{{ auth()->user()->name }}">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()?->name ?? 'User') }}&background=007bff&color=fff" class="img-circle elevation-2" alt="{{ auth()->user()?->name ?? 'User' }}">
                 </div>
                 <div class="info">
-                    <a href="#" class="d-block">{{ auth()->user()->name }}</a>
-                    <span class="text-muted text-sm">{{ ucfirst(auth()->user()->role) }}</span>
+                    <a href="#" class="d-block">{{ auth()->user()?->name ?? 'User' }}</a>
+                    <span class="text-muted text-sm">{{ ucfirst(auth()->user()?->getRoleNames()[0] ?? 'Member') }}</span>
                 </div>
             </div>
 

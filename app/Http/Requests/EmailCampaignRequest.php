@@ -13,10 +13,12 @@ class EmailCampaignRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $isCreate = $this->method() === 'POST';
+
+        $rules = [
             'name' => 'required|string|max:255',
-            'type' => 'required|in:newsletter,promotional,transactional',
-            'subject' => 'required|string|max:255',
+            'type' => $isCreate ? 'required|in:newsletter,promotional,transactional' : 'nullable|in:newsletter,promotional,transactional',
+            'subject' => $isCreate ? 'required|string|max:255' : 'nullable|string|max:255',
             'from_name' => 'nullable|string|max:100',
             'from_email' => 'nullable|email|max:255',
             'reply_to' => 'nullable|email|max:255',
@@ -28,5 +30,7 @@ class EmailCampaignRequest extends FormRequest
             'recipients.*.name' => 'nullable|string|max:100',
             'scheduled_at' => 'nullable|date|after:now',
         ];
+
+        return $rules;
     }
 }

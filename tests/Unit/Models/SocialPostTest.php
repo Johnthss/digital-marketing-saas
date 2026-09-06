@@ -83,6 +83,6 @@ class SocialPostTest extends TestCase
             'comments_count' => 10,
             'shares_count' => 5,
         ]);
-        $this->assertEquals(6.5, $post->engagement_rate);
+        $this->assertEquals(6.5, $post->calculateEngagementRate());
     }
 }

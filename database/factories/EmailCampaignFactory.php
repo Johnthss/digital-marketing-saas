@@ -13,11 +13,12 @@ class EmailCampaignFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->words(3, true);
         return [
             'agency_id' => Agency::factory(),
-            'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::random(6),
+            'name' => fake()->words(3, true),
+            'slug' => function (array $attributes) {
+                return Str::slug($attributes['name'] ?? 'campaign') . '-' . Str::random(6);
+            },
             'type' => fake()->randomElement(['newsletter', 'promotional', 'transactional']),
             'status' => 'draft',
             'subject' => fake()->sentence(),

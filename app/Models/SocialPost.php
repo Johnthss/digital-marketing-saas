@@ -36,6 +36,7 @@ class SocialPost extends Model
         'comments_count',
         'shares_count',
         'clicks_count',
+        'engagement_rate',
         'metrics',
         'quality_score',
         'is_pinned',
@@ -57,6 +58,7 @@ class SocialPost extends Model
         'comments_count' => 'integer',
         'shares_count' => 'integer',
         'clicks_count' => 'integer',
+        'engagement_rate' => 'float',
         'quality_score' => 'integer',
         'is_pinned' => 'boolean',
     ];
@@ -132,7 +134,7 @@ class SocialPost extends Model
         return $this->hashtags ?? [];
     }
 
-    public function getEngagementRateAttribute(): ?float
+    public function calculateEngagementRate(): ?float
     {
         $impressions = $this->metrics['impressions'] ?? 0;
         $engagement = $this->likes_count + $this->comments_count + $this->shares_count;

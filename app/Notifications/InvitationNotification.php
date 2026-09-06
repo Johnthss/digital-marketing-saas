@@ -27,3 +27,4 @@ class InvitationNotification extends Notification implements ShouldQueue
             ->action('Register', url('/register'))
             ->line('Use your email address to register and accept the invitation.');
     }
+}

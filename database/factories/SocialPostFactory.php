@@ -39,6 +39,7 @@ class SocialPostFactory extends Factory
             'comments_count' => $status === 'published' ? rand(0, 100) : 0,
             'shares_count' => $status === 'published' ? rand(0, 50) : 0,
             'clicks_count' => $status === 'published' ? rand(0, 200) : 0,
+            'engagement_rate' => $status === 'published' ? (rand(100, 5000) / 100) : 0.0,
             'metrics' => null,
             'quality_score' => rand(0, 100),
             'is_pinned' => false,

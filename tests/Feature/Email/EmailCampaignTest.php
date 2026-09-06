@@ -78,7 +78,8 @@ class EmailCampaignTest extends TestCase
         $response = $this->actingAs($this->user)
             ->get(route('email.campaigns.show', $campaign));
 
-        $response->assertForbidden();
+        // Returns 404 for security (don't reveal other agency's data exists)
+        $response->assertNotFound();
     }
 
     public function test_user_can_update_campaign(): void
@@ -86,19 +87,19 @@ class EmailCampaignTest extends TestCase
         $campaign = EmailCampaign::factory()->create([
             'agency_id' => $this->agency->id,
             'status' => 'draft',
+            'name' => 'Original Campaign',
         ]);
 
         $response = $this->actingAs($this->user)
             ->put(route('email.campaigns.update', $campaign), [
                 'name' => 'Updated Campaign',
+                'type' => 'newsletter',
                 'subject' => 'Updated Subject',
             ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('email_campaigns', [
-            'id' => $campaign->id,
-            'name' => 'Updated Campaign',
-        ]);
+        $campaign->refresh();
+        $this->assertEquals('Updated Campaign', $campaign->name);
     }
 
     public function test_user_can_delete_campaign(): void
@@ -112,9 +113,8 @@ class EmailCampaignTest extends TestCase
             ->delete(route('email.campaigns.destroy', $campaign));
 
         $response->assertRedirect();
-        $this->assertDatabaseMissing('email_campaigns', [
-            'id' => $campaign->id,
-        ]);
+        // Campaign is soft-deleted, so check with trashed()
+        $this->assertSoftDeleted('email_campaigns', ['id' => $campaign->id]);
     }
 
     public function test_service_can_create_campaign(): void
