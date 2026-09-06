@@ -141,3 +141,6 @@ Route::prefix('email')->name('email.')->group(function () {
 
 // Telegram integration
 require __DIR__.'/telegram.php';
+
+// API Documentation (public)
+require __DIR__.'/docs.php';
