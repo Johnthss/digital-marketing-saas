@@ -8,27 +8,33 @@ use App\Models\EmailCampaign;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\AiContentLog;
 use App\Models\SocialAccount;
-use App\Models\SocialListeningMention;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsService
 {
     /**
+     * Cache TTL in seconds (5 minutes).
+     */
+    private const CACHE_TTL = 300;
+
+    /**
      * Return all core dashboard stats for an agency.
      */
     public function getDashboardStats(Agency $agency): array
     {
-        return [
-            'overview' => $this->getOverviewStats($agency),
-            'social' => $this->getSocialStats($agency),
-            'email' => $this->getEmailStats($agency),
-            'financial' => $this->getFinancialStats($agency),
-            'ai' => $this->getAiStats($agency),
-        ];
+        return Cache::remember("analytics:{$agency->id}:dashboard", self::CACHE_TTL, function () use ($agency) {
+            return [
+                'overview' => $this->getOverviewStats($agency),
+                'social' => $this->getSocialStats($agency),
+                'email' => $this->getEmailStats($agency),
+                'financial' => $this->getFinancialStats($agency),
+                'ai' => $this->getAiStats($agency),
+            ];
+        });
     }
 
     /**
@@ -36,93 +42,144 @@ class AnalyticsService
      */
     public function getOverviewStats(Agency $agency): array
     {
-        return [
-            'total_clients' => Client::where('agency_id', $agency->id)
-                ->where('status', 'active')->count(),
-            'total_posts' => SocialPost::where('agency_id', $agency->id)->count(),
-            'total_campaigns' => Campaign::where('agency_id', $agency->id)->count(),
-            'total_revenue' => Invoice::where('agency_id', $agency->id)
-                ->where('status', 'paid')->sum('total'),
-            'pending_invoices' => Invoice::where('agency_id', $agency->id)
-                ->where('status', 'pending')->count(),
-            'active_social_accounts' => SocialAccount::where('agency_id', $agency->id)
-                ->where('is_connected', true)->count(),
-        ];
+        return Cache::remember("analytics:{$agency->id}:overview", self::CACHE_TTL, function () use ($agency) {
+            return [
+                'total_clients' => Client::where('agency_id', $agency->id)
+                    ->where('status', 'active')->count(),
+                'total_posts' => SocialPost::where('agency_id', $agency->id)->count(),
+                'total_campaigns' => Campaign::where('agency_id', $agency->id)->count(),
+                'total_revenue' => Invoice::where('agency_id', $agency->id)
+                    ->where('status', 'paid')->sum('total'),
+                'pending_invoices' => Invoice::where('agency_id', $agency->id)
+                    ->where('status', 'pending')->count(),
+                'active_social_accounts' => SocialAccount::where('agency_id', $agency->id)
+                    ->where('is_connected', true)->count(),
+            ];
+        });
     }
 
     /**
-     * Social media stats.
+     * Social media stats - optimized with single query using database aggregations.
      */
     public function getSocialStats(Agency $agency): array
     {
-        $posts = SocialPost::where('agency_id', $agency->id)->get();
+        return Cache::remember("analytics:{$agency->id}:social", self::CACHE_TTL, function () use ($agency) {
+            $stats = SocialPost::where('agency_id', $agency->id)
+                ->selectRaw('
+                    COUNT(*) as total_posts,
+                    SUM(CASE WHEN status = "published" THEN 1 ELSE 0 END) as published,
+                    SUM(CASE WHEN status = "scheduled" THEN 1 ELSE 0 END) as scheduled,
+                    SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed,
+                    SUM(CASE WHEN status = "draft" THEN 1 ELSE 0 END) as draft,
+                    AVG(CASE WHEN status = "published" THEN engagement_rate ELSE NULL END) as average_engagement,
+                    SUM(engagement_rate) as total_engagement
+                ')
+                ->first();
 
-        return [
-            'total_posts' => $posts->count(),
-            'published' => $posts->where('status', 'published')->count(),
-            'scheduled' => $posts->where('status', 'scheduled')->count(),
-            'failed' => $posts->where('status', 'failed')->count(),
-            'draft' => $posts->where('status', 'draft')->count(),
-            'average_engagement' => $posts->where('status', 'published')->avg('engagement_rate') ?? 0,
-            'total_engagement' => $posts->sum('engagement_rate') ?? 0,
-            'by_platform' => $this->groupByPlatform($agency, 'social_posts'),
-        ];
+            return [
+                'total_posts' => (int) $stats->total_posts,
+                'published' => (int) $stats->published,
+                'scheduled' => (int) $stats->scheduled,
+                'failed' => (int) $stats->failed,
+                'draft' => (int) $stats->draft,
+                'average_engagement' => round((float) ($stats->average_engagement ?? 0), 2),
+                'total_engagement' => round((float) ($stats->total_engagement ?? 0), 2),
+                'by_platform' => $this->groupByPlatform($agency),
+            ];
+        });
     }
 
     /**
-     * Email marketing stats.
+     * Email marketing stats - optimized with single query.
      */
     public function getEmailStats(Agency $agency): array
     {
-        $campaigns = EmailCampaign::where('agency_id', $agency->id)->get();
+        return Cache::remember("analytics:{$agency->id}:email", self::CACHE_TTL, function () use ($agency) {
+            $stats = EmailCampaign::where('agency_id', $agency->id)
+                ->selectRaw('
+                    COUNT(*) as total_campaigns,
+                    SUM(CASE WHEN status = "sent" THEN 1 ELSE 0 END) as sent_campaigns,
+                    SUM(CASE WHEN status = "draft" THEN 1 ELSE 0 END) as draft_campaigns,
+                    SUM(CASE WHEN status = "scheduled" THEN 1 ELSE 0 END) as scheduled_campaigns,
+                    SUM(sent_count) as total_sent,
+                    SUM(opened_count) as total_opened,
+                    SUM(clicked_count) as total_clicked,
+                    AVG(CASE WHEN status = "sent" THEN open_rate ELSE NULL END) as average_open_rate,
+                    AVG(CASE WHEN status = "sent" THEN click_rate ELSE NULL END) as average_click_rate
+                ')
+                ->first();
 
-        return [
-            'total_campaigns' => $campaigns->count(),
-            'sent_campaigns' => $campaigns->where('status', 'sent')->count(),
-            'draft_campaigns' => $campaigns->where('status', 'draft')->count(),
-            'scheduled_campaigns' => $campaigns->where('status', 'scheduled')->count(),
-            'total_sent' => $campaigns->sum('sent_count') ?? 0,
-            'total_opened' => $campaigns->sum('opened_count') ?? 0,
-            'total_clicked' => $campaigns->sum('clicked_count') ?? 0,
-            'average_open_rate' => $campaigns->where('status', 'sent')->avg('open_rate') ?? 0,
-            'average_click_rate' => $campaigns->where('status', 'sent')->avg('click_rate') ?? 0,
-        ];
+            return [
+                'total_campaigns' => (int) $stats->total_campaigns,
+                'sent_campaigns' => (int) $stats->sent_campaigns,
+                'draft_campaigns' => (int) $stats->draft_campaigns,
+                'scheduled_campaigns' => (int) $stats->scheduled_campaigns,
+                'total_sent' => (int) ($stats->total_sent ?? 0),
+                'total_opened' => (int) ($stats->total_opened ?? 0),
+                'total_clicked' => (int) ($stats->total_clicked ?? 0),
+                'average_open_rate' => round((float) ($stats->average_open_rate ?? 0), 2),
+                'average_click_rate' => round((float) ($stats->average_click_rate ?? 0), 2),
+            ];
+        });
     }
 
     /**
-     * Financial stats.
+     * Financial stats - optimized with single query.
      */
     public function getFinancialStats(Agency $agency): array
     {
-        $invoices = Invoice::where('agency_id', $agency->id)->get();
+        return Cache::remember("analytics:{$agency->id}:financial", self::CACHE_TTL, function () use ($agency) {
+            $stats = Invoice::where('agency_id', $agency->id)
+                ->selectRaw('
+                    COUNT(*) as total_invoices,
+                    SUM(CASE WHEN status = "paid" THEN 1 ELSE 0 END) as paid_invoices,
+                    SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_invoices,
+                    SUM(CASE WHEN status = "overdue" THEN 1 ELSE 0 END) as overdue_invoices,
+                    SUM(CASE WHEN status = "paid" THEN total ELSE 0 END) as total_revenue,
+                    SUM(CASE WHEN status = "pending" THEN total ELSE 0 END) as pending_amounts,
+                    SUM(CASE WHEN status = "overdue" THEN total ELSE 0 END) as overdue_amounts
+                ')
+                ->first();
 
-        return [
-            'total_revenue' => $invoices->where('status', 'paid')->sum('total') ?? 0,
-            'pending_amounts' => $invoices->where('status', 'pending')->sum('total') ?? 0,
-            'overdue_amounts' => $invoices->where('status', 'overdue')->sum('total') ?? 0,
-            'total_invoices' => $invoices->count(),
-            'paid_invoices' => $invoices->where('status', 'paid')->count(),
-            'pending_invoices' => $invoices->where('status', 'pending')->count(),
-            'overdue_invoices' => $invoices->where('status', 'overdue')->count(),
-        ];
+            return [
+                'total_invoices' => (int) $stats->total_invoices,
+                'paid_invoices' => (int) $stats->paid_invoices,
+                'pending_invoices' => (int) $stats->pending_invoices,
+                'overdue_invoices' => (int) $stats->overdue_invoices,
+                'total_revenue' => (float) ($stats->total_revenue ?? 0),
+                'pending_amounts' => (float) ($stats->pending_amounts ?? 0),
+                'overdue_amounts' => (float) ($stats->overdue_amounts ?? 0),
+            ];
+        });
     }
 
     /**
-     * AI usage stats.
+     * AI usage stats - optimized with single query.
      */
     public function getAiStats(Agency $agency): array
     {
-        $logs = AiContentLog::where('agency_id', $agency->id)->get();
+        return Cache::remember("analytics:{$agency->id}:ai", self::CACHE_TTL, function () use ($agency) {
+            $stats = AiContentLog::where('agency_id', $agency->id)
+                ->selectRaw('
+                    COUNT(*) as total_generations,
+                    SUM(CASE WHEN status = "success" THEN 1 ELSE 0 END) as successful_generations,
+                    SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed_generations,
+                    SUM(total_tokens) as total_tokens_used,
+                    SUM(cost_usd) as total_cost_usd,
+                    SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as last_7_days
+                ', [now()->subDays(7)])
+                ->first();
 
-        return [
-            'total_generations' => $logs->count(),
-            'successful_generations' => $logs->where('status', 'success')->count(),
-            'failed_generations' => $logs->where('status', 'failed')->count(),
-            'total_tokens_used' => $logs->sum('total_tokens') ?? 0,
-            'total_cost_usd' => $logs->sum('cost_usd') ?? 0,
-            'by_action' => $this->groupByType($logs, 'action'),
-            'last_7_days' => $logs->where('created_at', '>=', now()->subDays(7))->count(),
-        ];
+            return [
+                'total_generations' => (int) $stats->total_generations,
+                'successful_generations' => (int) $stats->successful_generations,
+                'failed_generations' => (int) $stats->failed_generations,
+                'total_tokens_used' => (int) ($stats->total_tokens_used ?? 0),
+                'total_cost_usd' => (float) ($stats->total_cost_usd ?? 0),
+                'by_action' => $this->groupByAction($agency),
+                'last_7_days' => (int) ($stats->last_7_days ?? 0),
+            ];
+        });
     }
 
     /**
@@ -130,8 +187,12 @@ class AnalyticsService
      */
     public function clearCache(Agency $agency): void
     {
-        // Analytics data is computed on-the-fly; no persistent cache to clear
-        // Future: could implement Redis caching here
+        Cache::forget("analytics:{$agency->id}:dashboard");
+        Cache::forget("analytics:{$agency->id}:overview");
+        Cache::forget("analytics:{$agency->id}:social");
+        Cache::forget("analytics:{$agency->id}:email");
+        Cache::forget("analytics:{$agency->id}:financial");
+        Cache::forget("analytics:{$agency->id}:ai");
     }
 
     /**
@@ -161,23 +222,29 @@ class AnalyticsService
     /**
      * Get posts grouped by platform.
      */
-    private function groupByPlatform(Agency $agency, string $table): array
+    private function groupByPlatform(Agency $agency): array
     {
-        $posts = SocialPost::where('agency_id', $agency->id)
+        return SocialPost::where('agency_id', $agency->id)
             ->selectRaw('platform, count(*) as count')
             ->groupBy('platform')
-            ->get();
-
-        $result = [];
-        foreach ($posts as $post) {
-            $result[$post->platform] = $post->count;
-        }
-
-        return $result;
+            ->pluck('count', 'platform')
+            ->toArray();
     }
 
     /**
-     * Get logs grouped by type.
+     * Get AI logs grouped by action.
+     */
+    private function groupByAction(Agency $agency): array
+    {
+        return AiContentLog::where('agency_id', $agency->id)
+            ->selectRaw('action, count(*) as count')
+            ->groupBy('action')
+            ->pluck('count', 'action')
+            ->toArray();
+    }
+
+    /**
+     * Get logs grouped by type (kept for backward compatibility).
      */
     private function groupByType(Collection $logs, string $field): array
     {
@@ -195,17 +262,11 @@ class AnalyticsService
      */
     public function getPostsByStatus(Agency $agency): array
     {
-        $posts = SocialPost::where('agency_id', $agency->id)
+        return SocialPost::where('agency_id', $agency->id)
             ->selectRaw('status, count(*) as count')
             ->groupBy('status')
-            ->get();
-
-        $result = [];
-        foreach ($posts as $post) {
-            $result[$post->status] = $post->count;
-        }
-
-        return $result;
+            ->pluck('count', 'status')
+            ->toArray();
     }
 
     /**
@@ -213,17 +274,11 @@ class AnalyticsService
      */
     public function getEmailCampaignsByStatus(Agency $agency): array
     {
-        $campaigns = EmailCampaign::where('agency_id', $agency->id)
+        return EmailCampaign::where('agency_id', $agency->id)
             ->selectRaw('status, count(*) as count')
             ->groupBy('status')
-            ->get();
-
-        $result = [];
-        foreach ($campaigns as $campaign) {
-            $result[$campaign->status] = $campaign->count;
-        }
-
-        return $result;
+            ->pluck('count', 'status')
+            ->toArray();
     }
 
     /**
@@ -231,10 +286,10 @@ class AnalyticsService
      */
     public function getRevenueForRange(Agency $agency, string $startDate, string $endDate): float
     {
-        return Invoice::where('agency_id', $agency->id)
+        return (float) Invoice::where('agency_id', $agency->id)
             ->where('status', 'paid')
             ->whereBetween('paid_at', [$startDate, $endDate])
-            ->sum('total') ?? 0;
+            ->sum('total');
     }
 
     /**
@@ -242,10 +297,10 @@ class AnalyticsService
      */
     public function getAiCostForRange(Agency $agency, string $startDate, string $endDate): float
     {
-        return AiContentLog::where('agency_id', $agency->id)
+        return (float) AiContentLog::where('agency_id', $agency->id)
             ->where('status', 'success')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('cost_usd') ?? 0;
+            ->sum('cost_usd');
     }
 
     /**

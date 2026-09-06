@@ -4,15 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Agency;
 use App\Models\SocialPost;
-use App\Models\Campaign;
-use App\Models\Client;
-use App\Models\Invoice;
-use App\Models\AiContentLog;
 use App\Models\ActivityLog;
-use App\Models\SocialAccount;
+use App\Services\Analytics\AnalyticsService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -21,52 +17,40 @@ class DashboardController extends Controller
         $this->middleware(['auth', 'agency']);
     }
 
-    public function index(Request $request, QuotaService $quota)
+    public function index(Request $request, QuotaService $quota, AnalyticsService $analytics)
     {
         $agency = $request->user()->agency;
 
-        // Post stats
-        $totalPosts = SocialPost::where('agency_id', $agency->id)->count();
-        $publishedPosts = SocialPost::where('agency_id', $agency->id)->where('status', 'published')->count();
-        $scheduledPosts = SocialPost::where('agency_id', $agency->id)->where('status', 'scheduled')->count();
-        $failedPosts = SocialPost::where('agency_id', $agency->id)->where('status', 'failed')->count();
-
-        $stats = [
-            'totalPosts' => $totalPosts,
-            'publishedPosts' => $publishedPosts,
-            'scheduledPosts' => $scheduledPosts,
-            'failedPosts' => $failedPosts,
-            'totalCampaigns' => Campaign::where('agency_id', $agency->id)->count(),
-            'totalClients' => Client::where('agency_id', $agency->id)->count(),
-            'totalInvoices' => Invoice::where('agency_id', $agency->id)->count(),
-            'aiGenerations' => AiContentLog::where('agency_id', $agency->id)->count(),
-        ];
+        // Use cached analytics service
+        $stats = $analytics->getOverviewStats($agency);
 
         // Quotas
         $quotas = [
             'posts' => [
                 'label' => 'Social Posts',
-                'used' => $totalPosts,
+                'used' => $stats['total_posts'],
                 'limit' => $quota->getLimit($agency, 'posts'),
-                'percentage' => $quota->getPercentage($agency, 'posts', $totalPosts),
+                'percentage' => $quota->getPercentage($agency, 'posts', $stats['total_posts']),
             ],
             'ai' => [
                 'label' => 'AI Generations',
-                'used' => $stats['aiGenerations'],
+                'used' => Cache::remember("analytics:{$agency->id}:ai_generations", 300, function () use ($agency) {
+                    return \App\Models\AiContentLog::where('agency_id', $agency->id)->count();
+                }),
                 'limit' => $quota->getLimit($agency, 'ai_generations'),
-                'percentage' => $quota->getPercentage($agency, 'ai_generations', $stats['aiGenerations']),
+                'percentage' => $quota->getPercentage($agency, 'ai_generations', Cache::get("analytics:{$agency->id}:ai_generations", 0)),
             ],
             'campaigns' => [
                 'label' => 'Campaigns',
-                'used' => $stats['totalCampaigns'],
+                'used' => $stats['total_campaigns'],
                 'limit' => $quota->getLimit($agency, 'campaigns'),
-                'percentage' => $quota->getPercentage($agency, 'campaigns', $stats['totalCampaigns']),
+                'percentage' => $quota->getPercentage($agency, 'campaigns', $stats['total_campaigns']),
             ],
             'clients' => [
                 'label' => 'Clients',
-                'used' => $stats['totalClients'],
+                'used' => $stats['total_clients'],
                 'limit' => $quota->getLimit($agency, 'clients'),
-                'percentage' => $quota->getPercentage($agency, 'clients', $stats['totalClients']),
+                'percentage' => $quota->getPercentage($agency, 'clients', $stats['total_clients']),
             ],
             'users' => [
                 'label' => 'Team Members',
@@ -76,21 +60,23 @@ class DashboardController extends Controller
             ],
             'accounts' => [
                 'label' => 'Social Accounts',
-                'used' => SocialAccount::where('agency_id', $agency->id)->count(),
+                'used' => $stats['active_social_accounts'],
                 'limit' => $quota->getLimit($agency, 'social_accounts'),
-                'percentage' => $quota->getPercentage($agency, 'social_accounts', SocialAccount::where('agency_id', $agency->id)->count()),
+                'percentage' => $quota->getPercentage($agency, 'social_accounts', $stats['active_social_accounts']),
             ],
             'invoices' => [
                 'label' => 'Invoices',
-                'used' => $stats['totalInvoices'],
+                'used' => $stats['pending_invoices'],
                 'limit' => $quota->getLimit($agency, 'invoices'),
-                'percentage' => $quota->getPercentage($agency, 'invoices', $stats['totalInvoices']),
+                'percentage' => $quota->getPercentage($agency, 'invoices', $stats['pending_invoices']),
             ],
             'landing_pages' => [
                 'label' => 'Landing Pages',
-                'used' => \App\Models\LandingPage::where('agency_id', $agency->id)->count(),
+                'used' => Cache::remember("analytics:{$agency->id}:landing_pages", 300, function () use ($agency) {
+                    return \App\Models\LandingPage::where('agency_id', $agency->id)->count();
+                }),
                 'limit' => $quota->getLimit($agency, 'landing_pages'),
-                'percentage' => $quota->getPercentage($agency, 'landing_pages', \App\Models\LandingPage::where('agency_id', $agency->id)->count()),
+                'percentage' => $quota->getPercentage($agency, 'landing_pages', Cache::get("analytics:{$agency->id}:landing_pages", 0)),
             ],
         ];
 
