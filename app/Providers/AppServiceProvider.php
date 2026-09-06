@@ -2,6 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\SocialPost;
+use App\Models\Client;
+use App\Models\Campaign;
+use App\Models\AiContentLog;
+use App\Models\Invoice;
+use App\Models\User;
+use App\Models\SocialAccount;
+use App\Observers\SocialPostObserver;
+use App\Observers\ClientObserver;
+use App\Observers\CampaignObserver;
+use App\Observers\AiContentLogObserver;
+use App\Observers\InvoiceObserver;
+use App\Observers\UserObserver;
+use App\Observers\SocialAccountObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +36,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // -----------------------------------------------------------------------
+        // Observers - auto-register model observers
+        // -----------------------------------------------------------------------
+        SocialPost::observe(SocialPostObserver::class);
+        Client::observe(ClientObserver::class);
+        Campaign::observe(CampaignObserver::class);
+        AiContentLog::observe(AiContentLogObserver::class);
+        Invoice::observe(InvoiceObserver::class);
+        User::observe(UserObserver::class);
+        SocialAccount::observe(SocialAccountObserver::class);
+
         // -----------------------------------------------------------------------
         // Rate Limiting Configuration
         // -----------------------------------------------------------------------
