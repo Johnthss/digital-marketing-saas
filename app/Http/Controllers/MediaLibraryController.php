@@ -32,7 +32,7 @@ class MediaLibraryController extends Controller
         }
 
         $assets = $query->orderBy('created_at', 'desc')->paginate(24);
-        $folders = MediaAsset::where('agency_id\$, $agency->id)->distinct()->pluck('folder');
+        $folders = MediaAsset::where('agency_id', $agency->id)->distinct()->pluck('folder');
         $totalSize = MediaAsset::where('agency_id', $agency->id)->sum('file_size');
 
         return view('media.index', compact('agency', 'assets', 'folders', 'totalSize'));

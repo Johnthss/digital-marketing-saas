@@ -14,6 +14,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContentLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SearchController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LandingPageController;
@@ -21,8 +22,15 @@ use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WorkflowController;
-use App\Http\Controllers\FormController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MediaLibraryController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\WhiteLabelController;
+use App\Http\Controllers\GdprController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ActivityFeedController;
+use App\Http\Controllers\Email\EmailCampaignController;
+use App\Http\Controllers\Email\EmailTemplateController;
+use App\Http\Controllers\BillingController;
 
 Route::get('/', function () {
     return auth()->check()
