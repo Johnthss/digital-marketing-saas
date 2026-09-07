@@ -75,6 +75,8 @@ Route::middleware(['auth', 'agency'])->group(function () {
 
     Route::resource('workflows', WorkflowController::class);
     Route::post('workflows/{workflow}/toggle', [WorkflowController::class, 'toggleStatus'])->name('workflows.toggle');
+    Route::get('workflows/builder', [WorkflowController::class, 'builder'])->name('workflows.builder');
+    Route::post('workflows/builder/save', [WorkflowController::class, 'storeFromBuilder'])->name('workflows.builder.save');
 
     Route::resource('inbox', InboxController::class)->except('create', 'store', 'edit', 'update');
     Route::post('inbox/{message}/triage', [InboxController::class, 'triage'])->name('inbox.triage');

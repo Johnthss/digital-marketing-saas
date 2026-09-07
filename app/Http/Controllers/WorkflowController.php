@@ -31,6 +31,11 @@ class WorkflowController extends Controller
         return view('workflows.index', compact('agency', 'workflows'));
     }
 
+    public function builder()
+    {
+        return view('workflows.builder');
+    }
+
     public function create(Request $request)
     {
         $agency = $request->user()->agency;
@@ -49,8 +54,6 @@ class WorkflowController extends Controller
             'trigger_type' => 'required|in:' . implode(',', array_keys(Workflow::TRIGGER_TYPES)),
             'trigger_config' => 'nullable|array',
             'actions' => 'required|array|min:1',
-            'actions.*.type' => 'required|in:' . implode(',', array_keys(Workflow::ACTION_TYPES)),
-            'actions.*.config' => 'nullable|array',
             'conditions' => 'nullable|array',
         ]);
 
@@ -153,5 +156,43 @@ class WorkflowController extends Controller
         $workflow->update(['status' => $newStatus]);
 
         return back()->with('success', 'Workflow status updated.');
+    }
+
+    /**
+     * Store workflow from visual builder.
+     */
+    public function storeFromBuilder(Request $request)
+    {
+        $agency = $request->user()->agency;
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'nodes' => 'required|array|min:1',
+            'connections' => 'nullable|array',
+        ]);
+
+        // Extract trigger and actions from nodes
+        $triggerNode = collect($validated['nodes'])->firstWhere('type', 'trigger');
+        $actionNodes = collect($validated['nodes'])->where('type', 'action')->values()->all();
+
+        $workflow = Workflow::create([
+            'agency_id' => $agency->id,
+            'name' => $validated['name'],
+            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'trigger_type' => $triggerNode['subtype'] ?? 'manual',
+            'trigger_config' => $triggerNode['config'] ?? [],
+            'actions' => array_map(fn($node) => [
+                'type' => $node['subtype'],
+                'config' => $node['config'] ?? [],
+            ], $actionNodes),
+            'conditions' => [],
+            'status' => WorkflowStatus::DRAFT->value,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Workflow saved successfully.',
+            'workflow' => $workflow,
+        ]);
     }
 }

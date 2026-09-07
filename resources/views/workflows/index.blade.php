@@ -5,6 +5,7 @@
     <div class="card-header">
         <h3 class="card-title"><i class="fas fa-project-diagram mr-2"></i>Workflows</h3>
         <div class="card-tools">
+            <a href="{{ route('workflows.builder') }}" class="btn btn-success btn-sm mr-2"><i class="fas fa-magic mr-1"></i> Visual Builder</a>
             <a href="{{ route('workflows.create') }}" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-1"></i> New Workflow</a>
         </div>
     </div>
