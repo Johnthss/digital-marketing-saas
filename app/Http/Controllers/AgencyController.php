@@ -66,7 +66,7 @@ class AgencyController extends Controller
         $member = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make(str()->random(16)),
+            'password' => Hash::make($password = str()->random(16)),
             'agency_id' => $agency->id,
             'role' => $validated['role'],
             'is_active' => true,
@@ -75,7 +75,7 @@ class AgencyController extends Controller
 
         $agency->increment('users_count');
 
-        // TODO: Send invitation email
+        $member->notify(new \App\Notifications\TeamInvitationNotification($agency, $password));
 
         return back()->with('success', 'Team member invited successfully.');
     }
