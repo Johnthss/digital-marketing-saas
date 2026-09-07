@@ -113,7 +113,7 @@
                 <h5>Content</h5>
                 <div class="card bg-light">
                     <div class="card-body">
-                        {!! $campaign->content !!}
+                        {{ $campaign->content }}
                     </div>
                 </div>
             </div>
