@@ -15,7 +15,6 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContentLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Email\EmailCampaignController;
-use App\Http\Controllers\Email\EmailTemplateController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\GdprController;
 use App\Http\Controllers\InboxController;
@@ -122,10 +121,18 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::post('reports/{report}/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
-    // Email Templates
-    Route::resource('email.templates', EmailTemplateController::class);
-    Route::get('email.templates/{template}/preview', [EmailTemplateController::class, 'preview'])->name('email.templates.preview');
-    Route::get('email.templates/{template}/duplicate', [EmailTemplateController::class, 'duplicate'])->name('email.templates.duplicate');
+    // Email Campaigns
+    Route::prefix('email')->name('email.')->group(function () {
+        Route::get('/campaigns', [EmailCampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('/campaigns/create', [EmailCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [EmailCampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('/campaigns/{campaign}', [EmailCampaignController::class, 'show'])->name('campaigns.show');
+        Route::get('/campaigns/{campaign}/edit', [EmailCampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('/campaigns/{campaign}', [EmailCampaignController::class, 'update'])->name('campaigns.update');
+        Route::delete('/campaigns/{campaign}', [EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
+        Route::post('/campaigns/{campaign}/send', [EmailCampaignController::class, 'send'])->name('campaigns.send');
+        Route::post('/campaigns/{campaign}/add-clients', [EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
+    });
 
     // White-Label
     Route::get('white-label', [WhiteLabelController::class, 'index'])->name('white-label.index');
@@ -142,11 +149,15 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::get('agency/billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::get('agency/billing/success', [BillingController::class, 'success'])->name('billing.success');
     Route::get('agency/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
-    Route::post('billing/webhook', [BillingController::class, 'webhook'])->name('billing.webhook');
     Route::post('agency/billing/cancel-subscription', [BillingController::class, 'cancelSubscription'])->name('billing.cancel-subscription');
     Route::get('agency/invoices', [BillingController::class, 'invoices'])->name('agency.invoices');
     Route::get('agency/invoices/{invoice}/download', [BillingController::class, 'downloadInvoice'])->name('billing.invoice.download');
+});
 
+// Billing webhook (public - Stripe can't authenticate)
+Route::post('billing/webhook', [BillingController::class, 'webhook'])->name('billing.webhook');
+
+Route::middleware(['auth', 'agency'])->group(function () {
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
     Route::get('/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
@@ -177,19 +188,6 @@ Route::get('/health', function () {
 
 // Version/Changelog (PUBLIC - no auth required)
 require __DIR__.'/version.php';
-
-// Email Campaign routes
-Route::prefix('email')->name('email.')->group(function () {
-    Route::get('/campaigns', [EmailCampaignController::class, 'index'])->name('campaigns.index');
-    Route::get('/campaigns/create', [EmailCampaignController::class, 'create'])->name('campaigns.create');
-    Route::post('/campaigns', [EmailCampaignController::class, 'store'])->name('campaigns.store');
-    Route::get('/campaigns/{campaign}', [EmailCampaignController::class, 'show'])->name('campaigns.show');
-    Route::get('/campaigns/{campaign}/edit', [EmailCampaignController::class, 'edit'])->name('campaigns.edit');
-    Route::put('/campaigns/{campaign}', [EmailCampaignController::class, 'update'])->name('campaigns.update');
-    Route::delete('/campaigns/{campaign}', [EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
-    Route::post('/campaigns/{campaign}/send', [EmailCampaignController::class, 'send'])->name('campaigns.send');
-    Route::post('/campaigns/{campaign}/add-clients', [EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
-});
 
 // Telegram integration
 require __DIR__.'/telegram.php';
