@@ -11,6 +11,7 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate(['type' => 'nullable|in:social,email,campaign,analytics,custom']);
         $agency = $request->user()->agency;
         $type = $request->input('type');
         $query = Report::where('agency_id', $agency->id)->with('user');

@@ -1,7 +1,5 @@
 <?php
-
 namespace Database\Factories;
-
 use App\Models\Agency;
 use App\Models\MediaAsset;
 use App\Models\User;
@@ -10,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class MediaAssetFactory extends Factory
 {
     protected $model = MediaAsset::class;
-
     public function definition(): array
     {
         return [

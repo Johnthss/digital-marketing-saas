@@ -14,6 +14,11 @@ class CommentController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'commentable_type' => 'nullable|string|max:255',
+            'commentable_id' => 'nullable|integer',
+        ]);
+
         $agency = $request->user()->agency;
         $commentableType = $request->input('commentable_type');
         $commentableId = $request->input('commentable_id');
