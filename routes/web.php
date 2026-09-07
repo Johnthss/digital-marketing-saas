@@ -101,8 +101,24 @@ Route::middleware(['auth', 'agency'])->group(function () {
 
     Route::resource('activity', ActivityLogController::class)->except('create', 'store', 'edit', 'update');
     Route::resource('forms', FormController::class);
+
+    // Media Library
+    Route::resource('media', MediaLibraryController::class);
+    Route::get('media/{asset}/download', [MediaLibraryController::class, 'download'])->name('media.download');
+    Route::post('media/{asset}/duplicate', [MediaLibraryController::class, 'duplicate'])->name('media.duplicate');
+    Route::post('media/bulk-delete', [MediaLibraryController::class, 'bulkDelete'])->name('media.bulk-delete');
     Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
     Route::resource('webhooks', WebhookController::class);
+
+    // Billing & Subscription
+    Route::get('agency/billing', [BillingController::class, 'index'])->name('agency.billing');
+    Route::get('agency/billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
+    Route::get('agency/billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('agency/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+    Route::post('billing/webhook', [BillingController::class, 'webhook'])->name('billing.webhook');
+    Route::post('agency/billing/cancel-subscription', [BillingController::class, 'cancelSubscription'])->name('billing.cancel-subscription');
+    Route::get('agency/invoices', [BillingController::class, 'invoices'])->name('agency.invoices');
+    Route::get('agency/invoices/{invoice}/download', [BillingController::class, 'downloadInvoice'])->name('billing.invoice.download');
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 

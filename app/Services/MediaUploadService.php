@@ -2,77 +2,84 @@
 
 namespace App\Services;
 
+use App\Models\Agency;
+use App\Models\MediaAsset;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MediaUploadService
 {
-    /**
-     * Upload a file to storage with agency-scoped path.
-     */
-    public function upload(
-        UploadedFile $file,
-        int $agencyId,
-        string $directory = 'content',
-        ?string $disk = null
-    ): array {
-        $disk = $disk ?? config('filesystems.default');
-        $extension = $file->getClientOriginalExtension();
-        $filename = Str::uuid() . '.' . $extension;
-        $path = "agencies/{$agencyId}/{$directory}/{$filename}";
+    public function upload(UploadedFile $file, Agency $agency, int $userId, array $data = []): MediaAsset
+    {
+        $folder = $data['folder'] ?? 'uncategorized';
+        $directory = "media/{$agency->id}/{$folder}";
 
-        $storedPath = $file->storeAs("agencies/{$agencyId}/{$directory}", $filename, $disk);
+        // Store file
+        $path = $file->store($directory, 'public');
 
-        return [
-            'path' => $storedPath,
-            'url' => Storage::disk($disk)->url($storedPath),
-            'filename' => $filename,
-            'original_name' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'mime_type' => $file->getMimeType(),
-            'extension' => $extension,
-        ];
+        // Detect file type
+        $mimeType = $file->getMimeType();
+        $fileType = $this->detectFileType($mimeType);
+
+        // Get image dimensions
+        $width = null;
+        $height = null;
+        if ($fileType === 'image') {
+            $dimensions = getimagesize($file->getRealPath());
+            if ($dimensions) {
+                $width = $dimensions[0];
+                $height = $dimensions[1];
+            }
+        }
+
+        return MediaAsset::create([
+            'agency_id' => $agency->id,
+            'user_id' => $userId,
+            'name' => $data['name'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+            'file_path' => $path,
+            'file_type' => $fileType,
+            'mime_type' => $mimeType,
+            'file_size' => $file->getSize(),
+            'width' => $width,
+            'height' => $height,
+            'alt_text' => $data['alt_text'] ?? null,
+            'folder' => $folder,
+            'tags' => $data['tags'] ?? [],
+            'is_public' => $data['is_public'] ?? false,
+        ]);
     }
 
-    /**
-     * Delete a file from storage.
-     */
-    public function delete(string $path, ?string $disk = null): bool
+    public function delete(MediaAsset $asset): void
     {
-        $disk = $disk ?? config('filesystems.default');
-        return Storage::disk($disk)->delete($path);
+        Storage::disk('public')->delete($asset->file_path);
+        $asset->delete();
     }
 
-    /**
-     * Get supported MIME types for social platforms.
-     */
-    public function getSupportedMimeTypes(string $platform): array
+    public function duplicate(MediaAsset $asset): MediaAsset
     {
-        return match ($platform) {
-            'facebook' => ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime'],
-            'instagram' => ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime'],
-            'twitter' => ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
-            'linkedin' => ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
-            'tiktok' => ['video/mp4', 'video/quicktime'],
-            'pinterest' => ['image/jpeg', 'image/png', 'image/gif'],
-            default => ['image/jpeg', 'image/png'],
-        };
+        $newPath = $this->duplicateFile($asset->file_path);
+        $newAsset = $asset->replicate();
+        $newAsset->file_path = $newPath;
+        $newAsset->name = $asset->name . ' (Copy)';
+        $newAsset->usage_count = 0;
+        $newAsset->save();
+        return $newAsset;
     }
 
-    /**
-     * Validate file size for platform.
-     */
-    public function getMaxFileSize(string $platform): int
+    protected function duplicateFile(string $originalPath): string
     {
-        return match ($platform) {
-            'facebook' => 10 * 1024 * 1024, // 10MB
-            'instagram' => 8 * 1024 * 1024, // 8MB
-            'twitter' => 5 * 1024 * 1024, // 5MB
-            'linkedin' => 10 * 1024 * 1024, // 10MB
-            'tiktok' => 50 * 1024 * 1024, // 50MB
-            'pinterest' => 10 * 1024 * 1024, // 10MB
-            default => 10 * 1024 * 1024,
-        };
+        $disk = Storage::disk('public');
+        $pathInfo = pathinfo($originalPath);
+        $newPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '-copy-' . Str::random(4) . '.' . ($pathInfo['extension'] ?? '');
+        $disk->copy($originalPath, $newPath);
+        return $newPath;
+    }
+
+    protected function detectFileType(string $mimeType): string
+    {
+        if (str_starts_with($mimeType, 'image/')) return 'image';
+        if (str_starts_with($mimeType, 'video/')) return 'video';
+        return 'document';
     }
 }

@@ -126,12 +126,14 @@ class AgencyController extends Controller
         $user = $request->user();
         $agency = $user->agency;
 
-        return view('agency.billing', [
-            'user' => $user,
-            'agency' => $agency,
-            'plan' => $agency->getPlanConfig(),
-            'plans' => config('platform.plans'),
-        ]);
+        $invoices = \App\Models\Invoice::where('agency_id', $agency->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        $plans = config('stripe.plans');
+        $currentPlan = $agency->subscription_plan ?? 'free';
+
+        return view('agency.billing', compact('agency', 'invoices', 'plans', 'currentPlan', 'user'));
     }
 
     public function upgrade(Request $request)
