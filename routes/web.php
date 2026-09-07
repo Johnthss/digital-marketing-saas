@@ -110,6 +110,9 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
     Route::resource('webhooks', WebhookController::class);
 
+    // Comments
+    Route::resource('comments', CommentController::class)->only(['index', 'store', 'destroy']);
+
     // Billing & Subscription
     Route::get('agency/billing', [BillingController::class, 'index'])->name('agency.billing');
     Route::get('agency/billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
