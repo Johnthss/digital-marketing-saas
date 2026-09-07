@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\ApiCampaignController;
+use App\Http\Controllers\Api\ApiClientController;
 use App\Http\Controllers\Api\ApiController;
+use App\Http\Controllers\Api\ApiInvoiceController;
+use App\Http\Controllers\Api\ApiSocialAccountController;
+use App\Http\Controllers\Api\ApiSocialPostController;
 use App\Http\Controllers\WorkflowWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,13 +15,15 @@ Route::prefix('v1')->middleware('auth:sanctum')->as('api.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
 
-    // Social
-    Route::apiResource('posts', ApiController::class);
-    Route::apiResource('accounts', ApiController::class);
-    Route::apiResource('campaigns', ApiController::class);
-    Route::apiResource('clients', ApiController::class);
+    // Resources with dedicated controllers
+    Route::apiResource('posts', ApiSocialPostController::class);
+    Route::apiResource('accounts', ApiSocialAccountController::class);
+    Route::apiResource('campaigns', ApiCampaignController::class);
+    Route::apiResource('clients', ApiClientController::class);
+    Route::apiResource('invoices', ApiInvoiceController::class);
+
+    // Workflow & Content (keep using ApiController for now — needs future decomposition)
     Route::apiResource('workflows', ApiController::class);
-    Route::apiResource('invoices', ApiController::class);
     Route::apiResource('content', ApiController::class);
 
     // AI
