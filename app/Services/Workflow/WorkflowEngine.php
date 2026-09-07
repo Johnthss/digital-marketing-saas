@@ -89,6 +89,7 @@ class WorkflowEngine
             'ai_generate' => $this->actionAiGenerate($config, $triggerData),
             'webhook' => $this->actionWebhook($config, $triggerData),
             'sleep' => $this->actionSleep($config),
+            'loop' => $this->actionLoop($config, $triggerData),
             default => ['status' => 'skipped', 'reason' => "Unknown action type: {$type}"],
         };
     }
@@ -207,6 +208,25 @@ class WorkflowEngine
         $seconds = $config['seconds'] ?? 1;
         sleep(min($seconds, 10));
         return ['status' => 'success', 'action' => 'sleep', 'seconds' => $seconds];
+    }
+
+    /**
+     * Execute a loop action - repeats nested actions N times.
+     */
+    protected function actionLoop(array $config, array $triggerData): array
+    {
+        $iterations = $config['iterations'] ?? 1;
+        $actions = $config['actions'] ?? [];
+        $results = [];
+
+        for ($i = 0; $i < $iterations; $i++) {
+            foreach ($actions as $action) {
+                $result = $this->executeAction($action, $triggerData);
+                $results[] = $result;
+            }
+        }
+
+        return ['status' => 'success', 'action' => 'loop', 'iterations' => $iterations, 'results' => $results];
     }
 
     protected function calcDuration(float $startTime): int

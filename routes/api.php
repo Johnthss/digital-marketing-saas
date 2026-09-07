@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ApiController;
+use App\Http\Controllers\WorkflowWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('auth:sanctum')->as('api.')->group(function () {
@@ -27,3 +28,6 @@ Route::prefix('v1')->middleware('auth:sanctum')->as('api.')->group(function () {
     Route::get('/agency/team', [ApiController::class, 'team']);
     Route::get('/agency/billing', [ApiController::class, 'billing']);
 });
+
+// Public webhook endpoint (no auth)
+Route::post('workflows/{workflow}/webhook/{secret}', [WorkflowWebhookController::class, 'handle'])->name('api.workflows.webhook');

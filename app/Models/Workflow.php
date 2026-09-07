@@ -26,6 +26,8 @@ class Workflow extends Model
         'last_executed_at',
         'error_message',
         'is_system',
+        'webhook_secret',
+        'webhook_url',
     ];
 
     protected $casts = [
@@ -52,6 +54,16 @@ class Workflow extends Model
         return $this->hasMany(WorkflowExecution::class);
     }
 
+    public function versions(): HasMany
+    {
+        return $this->hasMany(WorkflowVersion::class);
+    }
+
+    public function webhookLogs(): HasMany
+    {
+        return $this->hasMany(WorkflowWebhookLog::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', WorkflowStatus::ACTIVE->value);
@@ -67,6 +79,61 @@ class Workflow extends Model
         return $query->where('trigger_type', $triggerType);
     }
 
+    /**
+     * Create a snapshot of the current state as a new version.
+     */
+    public function createVersion(string $changeNotes = null, int $userId = null): WorkflowVersion
+    {
+        $lastVersion = $this->versions()->orderBy('version_number', 'desc')->first();
+        $versionNumber = $lastVersion ? $lastVersion->version_number + 1 : 1;
+
+        return $this->versions()->create([
+            'version_number' => $versionNumber,
+            'name' => $this->name,
+            'trigger_type' => $this->trigger_type,
+            'trigger_config' => $this->trigger_config,
+            'actions' => $this->actions,
+            'conditions' => $this->conditions,
+            'change_notes' => $changeNotes,
+            'created_by' => $userId,
+        ]);
+    }
+
+    /**
+     * Restore this workflow to a specific version.
+     */
+    public function restoreFromVersion(WorkflowVersion $version): void
+    {
+        $this->update([
+            'name' => $version->name,
+            'trigger_type' => $version->trigger_type,
+            'trigger_config' => $version->trigger_config,
+            'actions' => $version->actions,
+            'conditions' => $version->conditions,
+        ]);
+    }
+
+    /**
+     * Generate a webhook URL for this workflow.
+     */
+    public function getWebhookUrlAttribute(): ?string
+    {
+        if (!$this->webhook_secret) {
+            return null;
+        }
+        return url("/api/workflows/{$this->id}/webhook/{$this->webhook_secret}");
+    }
+
+    /**
+     * Generate a new webhook secret.
+     */
+    public function generateWebhookSecret(): void
+    {
+        $this->update([
+            'webhook_secret' => bin2hex(random_bytes(32)),
+        ]);
+    }
+
     public const TRIGGER_TYPES = [
         'new_post' => 'New Post Created',
         'post_published' => 'Post Published',
@@ -76,6 +143,7 @@ class Workflow extends Model
         'message_received' => 'Direct Message Received',
         'schedule' => 'Scheduled Time',
         'cron' => 'Cron Schedule',
+        'webhook' => 'Webhook',
     ];
 
     public const ACTION_TYPES = [

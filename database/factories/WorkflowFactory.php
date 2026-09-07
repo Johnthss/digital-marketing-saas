@@ -14,19 +14,22 @@ class WorkflowFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(3, true);
-
+        
         return [
             'agency_id' => Agency::factory(),
-            'name' => $name,
+            'name' => ucfirst($name),
             'slug' => Str::slug($name) . '-' . uniqid(),
-            'description' => fake()->sentence(),
-            'trigger_type' => fake()->randomElement(['comment_received', 'mention', 'new_follower', 'scheduled', 'post_published']),
+            'status' => 'draft',
+            'trigger_type' => fake()->randomElement(['post_published', 'comment_received', 'schedule']),
+            'trigger_config' => [],
             'actions' => [
-                ['type' => 'auto_reply', 'config' => ['message' => 'Thank you for your message!']],
+                ['type' => 'send_notification', 'config' => ['message' => 'Test']],
             ],
-            'is_active' => true,
-            'last_run_at' => null,
-            'run_count' => 0,
+            'conditions' => [],
+            'execution_count' => 0,
+            'last_executed_at' => null,
+            'error_message' => null,
+            'is_system' => false,
         ];
     }
 }
