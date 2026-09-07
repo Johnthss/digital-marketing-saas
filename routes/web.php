@@ -110,8 +110,10 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
     Route::resource('webhooks', WebhookController::class);
 
-    // Comments
-    Route::resource('comments', CommentController::class)->only(['index', 'store', 'destroy']);
+    // Reports
+    Route::resource('reports', ReportController::class);
+    Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
+    Route::post('reports/{report}/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
     // Email Templates
     Route::resource('email.templates', EmailTemplateController::class);
