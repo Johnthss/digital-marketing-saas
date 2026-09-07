@@ -114,6 +114,7 @@ class SocialPostController extends Controller
             abort(403);
         }
 
+        $post->load('campaigns', 'socialAccount');
         return view('social.posts.show', compact('agency', 'post'));
     }
 

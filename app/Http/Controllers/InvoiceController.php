@@ -98,6 +98,8 @@ class InvoiceController extends Controller
             abort(403);
         }
 
+        $invoice->load('items', 'client', 'agency');
+
         return view('invoices.show', compact('agency', 'invoice'));
     }
 

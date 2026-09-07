@@ -14,6 +14,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'agency_id',
+        'client_id',
         'invoice_number',
         'status',
         'type',
@@ -48,6 +49,11 @@ class Invoice extends Model
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class);
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class)->withDefault();
     }
 
     public function items(): HasMany
