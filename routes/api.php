@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\ApiSocialPostController;
 use App\Http\Controllers\WorkflowWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->middleware('auth:sanctum')->as('api.')->group(function () {
+Route::prefix('v1')->middleware('auth')->as('api.')->group(function () {
     Route::get('/status', fn () => ['status' => 'ok']);
 
     // Dashboard

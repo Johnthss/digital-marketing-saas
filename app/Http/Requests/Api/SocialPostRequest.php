@@ -14,9 +14,9 @@ class SocialPostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'platform' => 'required|string|in:facebook,instagram,twitter,linkedin,tiktok,pinterest',
-            'content' => 'required|string|max:5000',
-            'social_account_id' => 'required|exists:social_accounts,id',
+            'platform' => 'sometimes|string|in:facebook,instagram,twitter,linkedin,tiktok,pinterest',
+            'content' => 'sometimes|string|max:5000',
+            'social_account_id' => 'sometimes|exists:social_accounts,id',
             'media' => 'nullable|array',
             'hashtags' => 'nullable|array',
             'scheduled_at' => 'nullable|date',

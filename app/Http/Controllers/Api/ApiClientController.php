@@ -12,7 +12,7 @@ class ApiClientController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', 'agency']);
+        $this->middleware(['auth', 'agency']);
     }
 
     public function index(Request $request): JsonResponse

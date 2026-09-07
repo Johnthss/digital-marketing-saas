@@ -13,7 +13,7 @@ class ApiSocialPostController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', 'agency']);
+        $this->middleware(['auth', 'agency']);
     }
 
     public function index(Request $request): JsonResponse
@@ -38,9 +38,12 @@ class ApiSocialPostController extends Controller
     public function store(SocialPostRequest $request): JsonResponse
     {
         $agency = $request->user()->agency;
+        $validated = $request->validated();
+        $validated['platform'] ??= 'twitter';
+        $validated['social_account_id'] ??= null;
         $post = SocialPost::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            ...$validated,
         ]);
 
         return (new SocialPostResource($post))

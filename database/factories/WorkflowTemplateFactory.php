@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\WorkflowTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class WorkflowTemplateFactory extends Factory
 {
@@ -12,22 +11,17 @@ class WorkflowTemplateFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->words(3, true);
-
         return [
-            'name' => ucfirst($name),
-            'slug' => Str::slug($name).'-'.uniqid(),
+            'name' => fake()->words(3, true),
+            'slug' => fake()->slug(),
             'description' => fake()->sentence(),
-            'category' => fake()->randomElement(['social', 'content', 'engagement', 'analytics', 'automation']),
-            'icon' => fake()->randomElement(['fa-project-diagram', 'fa-robot', 'fa-bell', 'fa-reply', 'fa-globe']),
-            'nodes' => [
-                ['id' => 1, 'type' => 'trigger', 'subtype' => 'post_published', 'x' => 100, 'y' => 200, 'config' => [], 'label' => 'Post Published'],
-                ['id' => 2, 'type' => 'action', 'subtype' => 'send_notification', 'x' => 350, 'y' => 200, 'config' => ['message' => 'New post published!'], 'label' => 'Send Notification'],
-            ],
-            'connections' => [['from' => 1, 'to' => 2]],
+            'category' => fake()->randomElement(['social', 'email', 'automation']),
+            'icon' => 'fas fa-cog',
+            'nodes' => [],
+            'connections' => [],
             'is_public' => true,
             'is_active' => true,
-            'usage_count' => fake()->numberBetween(0, 100),
+            'usage_count' => 0,
         ];
     }
 }
