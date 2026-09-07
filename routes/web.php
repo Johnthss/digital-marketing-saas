@@ -73,11 +73,14 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::post('/ideas', [AiContentController::class, 'ideas'])->name('ideas');
     });
 
+    Route::get('workflows/builder', [WorkflowController::class, 'builder'])->name('workflows.builder');
+    Route::get('workflows/builder/{workflow}', [WorkflowController::class, 'builder'])->name('workflows.builder.edit');
+    Route::post('workflows/builder/save', [WorkflowController::class, 'storeFromBuilder'])->name('workflows.builder.save');
+    Route::post('workflows/builder/update/{workflow}', [WorkflowController::class, 'updateFromBuilder'])->name('workflows.builder.update');
+    Route::post('workflows/{workflow}/execute', [WorkflowController::class, 'execute'])->name('workflows.execute');
+    Route::get('workflows/templates/{template}', [WorkflowController::class, 'createFromTemplate'])->name('workflows.templates.use');
     Route::resource('workflows', WorkflowController::class);
     Route::post('workflows/{workflow}/toggle', [WorkflowController::class, 'toggleStatus'])->name('workflows.toggle');
-    Route::get('workflows/builder', [WorkflowController::class, 'builder'])->name('workflows.builder');
-    Route::post('workflows/builder/save', [WorkflowController::class, 'storeFromBuilder'])->name('workflows.builder.save');
-    Route::get('workflows/templates/{template}', [WorkflowController::class, 'createFromTemplate'])->name('workflows.templates.use');
     Route::get('workflows/{workflow}/versions', [WorkflowController::class, 'versions'])->name('workflows.versions');
     Route::post('workflows/{workflow}/versions/{version}/restore', [WorkflowController::class, 'restoreVersion'])->name('workflows.versions.restore');
     Route::get('workflows/{workflow}/webhook', [WorkflowController::class, 'webhookInfo'])->name('workflows.webhook');

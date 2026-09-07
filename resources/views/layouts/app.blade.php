@@ -11,11 +11,11 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- AdminLTE -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <!-- overlayScrollbars -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.3.0/css/OverlayScrollbars.min.css">
+    <link rel="stylesheet" href="/vendor/css/adminlte.min.css">
+    <!-- overlayScrollBars -->
+    <link rel="stylesheet" href="/vendor/css/OverlayScrollbars.min.css">
     <!-- Toastr -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="/vendor/css/toastr.min.css">
 
     <style>
         .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active,
@@ -449,15 +449,15 @@
 <!-- ./wrapper -->
 
 <!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="/vendor/js/jquery.min.js"></script>
 <!-- Bootstrap 4 -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/vendor/js/bootstrap.bundle.min.js"></script>
 <!-- overlayScrollBars -->
-<script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.3.0/dist/js/OverlayScrollbars.min.js"></script>
+<script src="/vendor/js/OverlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="/vendor/js/adminlte.min.js"></script>
 <!-- Toastr -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="/vendor/js/toastr.min.js"></script>
 
 <script>
     $(function() {

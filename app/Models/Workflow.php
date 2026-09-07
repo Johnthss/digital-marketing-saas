@@ -17,11 +17,14 @@ class Workflow extends Model
         'agency_id',
         'name',
         'slug',
+        'description',
         'status',
         'trigger_type',
         'trigger_config',
         'actions',
         'conditions',
+        'nodes',
+        'connections',
         'execution_count',
         'last_executed_at',
         'error_message',
@@ -34,12 +37,14 @@ class Workflow extends Model
         'trigger_config' => 'array',
         'actions' => 'array',
         'conditions' => 'array',
+        'nodes' => 'array',
+        'connections' => 'array',
         'execution_count' => 'integer',
         'last_executed_at' => 'datetime',
         'is_system' => 'boolean',
     ];
 
-    public function getStatusEnum()
+    public function getStatusEnum(): WorkflowStatus
     {
         return new WorkflowStatus($this->status);
     }
@@ -79,9 +84,6 @@ class Workflow extends Model
         return $query->where('trigger_type', $triggerType);
     }
 
-    /**
-     * Create a snapshot of the current state as a new version.
-     */
     public function createVersion(string $changeNotes = null, int $userId = null): WorkflowVersion
     {
         $lastVersion = $this->versions()->orderBy('version_number', 'desc')->first();
@@ -99,9 +101,6 @@ class Workflow extends Model
         ]);
     }
 
-    /**
-     * Restore this workflow to a specific version.
-     */
     public function restoreFromVersion(WorkflowVersion $version): void
     {
         $this->update([
@@ -113,25 +112,19 @@ class Workflow extends Model
         ]);
     }
 
-    /**
-     * Generate a webhook URL for this workflow.
-     */
-    public function getWebhookUrlAttribute(): ?string
-    {
-        if (!$this->webhook_secret) {
-            return null;
-        }
-        return url("/api/workflows/{$this->id}/webhook/{$this->webhook_secret}");
-    }
-
-    /**
-     * Generate a new webhook secret.
-     */
     public function generateWebhookSecret(): void
     {
         $this->update([
             'webhook_secret' => bin2hex(random_bytes(32)),
         ]);
+    }
+
+    public function getWebhookUrlAttribute($value): ?string
+    {
+        if (!$this->webhook_secret) {
+            return null;
+        }
+        return url("/api/workflows/{$this->id}/webhook/{$this->webhook_secret}");
     }
 
     public const TRIGGER_TYPES = [

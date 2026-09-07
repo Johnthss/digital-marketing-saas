@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Agency;
 use App\Models\Workflow;
 use App\Models\WorkflowTemplate;
+use App\Models\WorkflowVersion;
+use App\Services\Workflow\WorkflowEngine;
 use App\Enums\WorkflowStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,10 +34,33 @@ class WorkflowController extends Controller
         return view('workflows.index', compact('agency', 'workflows'));
     }
 
-    public function builder()
+    /**
+     * Visual workflow builder (new or edit existing).
+     */
+    public function builder(Request $request, ?Workflow $workflow = null)
     {
+        $agency = $request->user()->agency;
         $templates = WorkflowTemplate::active()->public()->orderBy('category')->get();
-        return view('workflows.builder', compact('templates'));
+        
+        $existingWorkflow = null;
+        if ($workflow) {
+            if ($workflow->agency_id !== $agency->id) {
+                abort(403);
+            }
+            $existingWorkflow = [
+                'id' => $workflow->id,
+                'name' => $workflow->name,
+                'description' => $workflow->description ?? '',
+                'trigger_type' => $workflow->trigger_type,
+                'trigger_config' => $workflow->trigger_config,
+                'actions' => $workflow->actions,
+                'conditions' => $workflow->conditions,
+                'nodes' => $workflow->nodes ?? null,
+                'connections' => $workflow->connections ?? null,
+            ];
+        }
+        
+        return view('workflows.builder', compact('templates', 'existingWorkflow'));
     }
 
     public function create(Request $request)
@@ -53,6 +78,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'trigger_type' => 'required|in:' . implode(',', array_keys(Workflow::TRIGGER_TYPES)),
             'trigger_config' => 'nullable|array',
             'actions' => 'required|array|min:1',
@@ -70,7 +96,6 @@ class WorkflowController extends Controller
             'status' => WorkflowStatus::DRAFT->value,
         ]);
 
-        // Create initial version
         $workflow->createVersion('Initial version', Auth::id());
 
         return redirect()->route('workflows.show', $workflow)
@@ -131,7 +156,6 @@ class WorkflowController extends Controller
             'conditions' => $validated['conditions'] ?? [],
         ]);
 
-        // Create version snapshot
         $workflow->createVersion($validated['change_notes'] ?? 'Updated workflow', Auth::id());
 
         return redirect()->route('workflows.show', $workflow)
@@ -178,6 +202,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'nodes' => 'required|array|min:1',
             'connections' => 'nullable|array',
         ]);
@@ -200,12 +225,52 @@ class WorkflowController extends Controller
             'status' => WorkflowStatus::DRAFT->value,
         ]);
 
-        // Create initial version
         $workflow->createVersion('Created from visual builder', Auth::id());
 
         return response()->json([
             'success' => true,
             'message' => 'Workflow saved successfully.',
+            'workflow' => $workflow,
+        ]);
+    }
+
+    /**
+     * Update workflow from visual builder.
+     */
+    public function updateFromBuilder(Request $request, Workflow $workflow)
+    {
+        $agency = $request->user()->agency;
+
+        if ($workflow->agency_id !== $agency->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'nodes' => 'required|array|min:1',
+            'connections' => 'nullable|array',
+        ]);
+
+        $triggerNode = collect($validated['nodes'])->firstWhere('type', 'trigger');
+        $actionNodes = collect($validated['nodes'])->where('type', 'action')->values()->all();
+
+        $workflow->update([
+            'name' => $validated['name'],
+            'trigger_type' => $triggerNode['subtype'] ?? 'manual',
+            'trigger_config' => $triggerNode['config'] ?? [],
+            'actions' => array_map(fn($node) => [
+                'type' => $node['subtype'],
+                'config' => $node['config'] ?? [],
+            ], $actionNodes),
+            'conditions' => [],
+        ]);
+
+        $workflow->createVersion('Updated from visual builder', Auth::id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Workflow updated successfully.',
             'workflow' => $workflow,
         ]);
     }
@@ -232,11 +297,10 @@ class WorkflowController extends Controller
             'status' => WorkflowStatus::DRAFT->value,
         ]);
 
-        // Create initial version and increment template usage
         $workflow->createVersion('Created from template: ' . $template->name, Auth::id());
         $template->incrementUsage();
 
-        return redirect()->route('workflows.builder')
+        return redirect()->route('workflows.builder', $workflow)
             ->with('success', 'Workflow created from template: ' . $template->name);
     }
 
@@ -269,10 +333,7 @@ class WorkflowController extends Controller
 
         $version = $workflow->versions()->findOrFail($versionId);
 
-        // Create a version of current state before restoring
         $workflow->createVersion('Before restore to v' . $version->version_number, Auth::id());
-
-        // Restore
         $workflow->restoreFromVersion($version);
 
         return redirect()->route('workflows.show', $workflow)
@@ -313,5 +374,32 @@ class WorkflowController extends Controller
         $workflow->generateWebhookSecret();
 
         return back()->with('success', 'Webhook secret regenerated. Please update your external service.');
+    }
+
+    /**
+     * Execute a workflow manually (for testing).
+     */
+    public function execute(Request $request, Workflow $workflow, WorkflowEngine $engine)
+    {
+        $agency = $request->user()->agency;
+
+        if ($workflow->agency_id !== $agency->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $execution = $engine->execute($workflow, $request->input('trigger_data', []));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Workflow executed successfully.',
+                'execution' => $execution,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Execution failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

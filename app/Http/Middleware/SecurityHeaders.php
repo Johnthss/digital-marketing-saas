@@ -38,11 +38,11 @@ class SecurityHeaders
             $response->headers->set(
                 'Content-Security-Policy',
                 "default-src 'self'; " .
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.adminlte.io https://cdn.jsdelivr.net https://code.jquery.com; " .
-                "style-src 'self' 'unsafe-inline' https://cdn.adminlte.io https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
-                "font-src 'self' https://cdn.adminlte.io https://fonts.gstatic.com https://cdnjs.cloudflare.com; " .
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " .
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " .
+                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " .
                 "img-src 'self' data: https: blob:; " .
-                "connect-src 'self' ws: wss:; " .
+                "connect-src 'self' ws: wss: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " .
                 "frame-ancestors 'self'; " .
                 "base-uri 'self'; " .
                 "form-action 'self'"
