@@ -9,6 +9,10 @@ class ConsentRecord extends Model
 {
     protected $fillable = ['user_id', 'consent_type', 'granted', 'ip_address', 'user_agent'];
 
+    protected $casts = [
+        'granted' => 'boolean',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

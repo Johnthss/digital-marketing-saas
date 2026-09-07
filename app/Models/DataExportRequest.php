@@ -7,11 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DataExportRequest extends Model
 {
-    protected $fillable = ['user_id', 'export_types', 'status', 'file_path', 'expires_at'];
+    protected $fillable = ['user_id', 'export_types', 'status', 'file_path', 'completed_at'];
 
     protected $casts = [
         'export_types' => 'array',
-        'expires_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
