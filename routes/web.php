@@ -113,6 +113,12 @@ Route::middleware(['auth', 'agency'])->group(function () {
     // Comments
     Route::resource('comments', CommentController::class)->only(['index', 'store', 'destroy']);
 
+    // GDPR
+    Route::get('privacy', [GdprController::class, 'index'])->name('gdpr.index');
+    Route::post('privacy/export', [GdprController::class, 'requestExport'])->name('gdpr.export');
+    Route::post('privacy/delete', [GdprController::class, 'requestDeletion'])->name('gdpr.delete');
+    Route::post('privacy/consent', [GdprController::class, 'updateConsent'])->name('gdpr.consent');
+
     // Billing & Subscription
     Route::get('agency/billing', [BillingController::class, 'index'])->name('agency.billing');
     Route::get('agency/billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
