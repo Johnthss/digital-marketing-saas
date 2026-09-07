@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\FeatureFlag;
 use Illuminate\Database\Seeder;
 
-return new class extends Seeder
+class FeatureFlagSeeder extends Seeder
 {
     public function run(): void
     {
@@ -15,7 +15,7 @@ return new class extends Seeder
                 'feature_name' => 'AI Assistant',
                 'description' => 'Natural language AI assistant for agency management',
                 'enabled' => true,
-                'required_plan' => 1, // Starter plan+
+                'required_plan' => 1,
                 'allowed_roles' => ['owner', 'admin', 'manager'],
                 'settings' => ['max_interactions_per_day' => 100],
             ],
@@ -29,24 +29,31 @@ return new class extends Seeder
                 'settings' => ['allowed_commands' => ['status', 'posts', 'analytics', 'ai']],
             ],
             [
-                'feature_key' => 'workflow_engine',
-                'feature_name' => 'Workflow Engine',
-                'description' => 'Advanced workflow automation',
-                'enabled' => false,
-                'required_plan' => 2, // Pro plan+
+                'feature_key' => 'social_listening',
+                'feature_name' => 'Social Listening',
+                'description' => 'Monitor brand mentions across social platforms',
+                'enabled' => true,
+                'required_plan' => 2,
                 'allowed_roles' => ['owner', 'admin'],
-                'minimum_version' => '1.1.0',
-                'settings' => ['max_workflows' => 10],
+                'settings' => ['monitored_platforms' => ['twitter', 'facebook', 'instagram']],
+            ],
+            [
+                'feature_key' => 'content_calendar',
+                'feature_name' => 'Content Calendar',
+                'description' => 'Visual content calendar for planning posts',
+                'enabled' => true,
+                'required_plan' => 1,
+                'allowed_roles' => ['owner', 'admin', 'manager'],
+                'settings' => ['max_scheduled_posts' => 100],
             ],
             [
                 'feature_key' => 'advanced_analytics',
                 'feature_name' => 'Advanced Analytics',
-                'description' => 'Predictive analytics and insights',
-                'enabled' => false,
+                'description' => 'Advanced reporting and analytics dashboard',
+                'enabled' => true,
                 'required_plan' => 2,
-                'allowed_roles' => ['owner', 'admin', 'manager'],
-                'minimum_version' => '1.2.0',
-                'settings' => ['prediction_horizon_days' => 30],
+                'allowed_roles' => ['owner', 'admin'],
+                'settings' => ['export_formats' => ['pdf', 'csv', 'xlsx']],
             ],
         ];
 
@@ -57,4 +64,4 @@ return new class extends Seeder
             );
         }
     }
-};
+}

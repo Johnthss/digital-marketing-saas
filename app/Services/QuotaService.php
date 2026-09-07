@@ -90,12 +90,12 @@ class QuotaService
     public function isOverQuota(Agency $agency, string $feature): bool
     {
         return match ($feature) {
-            'posts' => $this->remainingPosts($agency) <= 0,
-            'ai_generations' => $this->remainingAiGenerations($agency) <= 0,
-            'ai_requests' => $this->remainingAiRequests($agency) <= 0,
-            'social_accounts' => $this->remainingSocialAccounts($agency) <= 0,
-            'campaigns' => $this->remainingCampaigns($agency) <= 0,
-            'clients' => $this->remainingClients($agency) <= 0,
+            'posts' => $this->remainingPosts($agency) !== -1 && $this->remainingPosts($agency) <= 0,
+            'ai_generations' => $this->remainingAiGenerations($agency) !== -1 && $this->remainingAiGenerations($agency) <= 0,
+            'ai_requests' => $this->remainingAiRequests($agency) !== -1 && $this->remainingAiRequests($agency) <= 0,
+            'social_accounts' => $this->remainingSocialAccounts($agency) !== -1 && $this->remainingSocialAccounts($agency) <= 0,
+            'campaigns' => $this->remainingCampaigns($agency) !== -1 && $this->remainingCampaigns($agency) <= 0,
+            'clients' => $this->remainingClients($agency) !== -1 && $this->remainingClients($agency) <= 0,
             default => false,
         };
     }

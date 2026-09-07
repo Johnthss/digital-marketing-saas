@@ -44,9 +44,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // API requests get JSON responses
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                $statusCode = $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException
-                    ? $e->getStatusCode()
-                    : 500;
+                $statusCode = match (true) {
+                    $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException => $e->getStatusCode(),
+                    $e instanceof ValidationException => 422,
+                    $e instanceof AuthenticationException => 401,
+                    $e instanceof AuthorizationException => 403,
+                    default => 500,
+                };
 
                 $message = config('app.debug') ? $e->getMessage() : match ($statusCode) {
                     400 => 'Bad request.',

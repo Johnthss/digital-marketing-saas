@@ -80,9 +80,14 @@ class EmailCampaignService
             ];
         }
 
-        // Batch insert
+        // Batch insert, skipping duplicates
         foreach (array_chunk($records, 500) as $chunk) {
-            EmailCampaignRecipient::insert($chunk);
+            foreach ($chunk as $record) {
+                EmailCampaignRecipient::firstOrCreate(
+                    ['email_campaign_id' => $record['email_campaign_id'], 'email' => $record['email']],
+                    $record
+                );
+            }
         }
 
         $campaign->update([
