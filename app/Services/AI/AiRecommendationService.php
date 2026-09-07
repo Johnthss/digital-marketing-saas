@@ -102,13 +102,13 @@ class AiRecommendationService
 
         // Score calculation (0-100)
         $score = 0;
-        $score += min($length / 10, 20); // Length contribution
-        $score += min($wordCount / 2, 20); // Word count contribution
-        $score += $hashtagCount * 5; // Hashtags
-        $score += $mentionCount * 3; // Mentions
-        $score += $hasEmoji * 10; // Emoji presence
-        $score += $hasQuestion * 10; // Question
-        $score += $hasCallToAction * 15; // CTA
+        $score += min($length / 10, 20);
+        $score += min($wordCount / 2, 20);
+        $score += $hashtagCount * 5;
+        $score += $mentionCount * 3;
+        $score += $hasEmoji * 10;
+        $score += $hasQuestion * 10;
+        $score += $hasCallToAction * 15;
         $score = min($score, 100);
 
         // Engagement prediction (0-100)
@@ -175,4 +175,153 @@ class AiRecommendationService
             'median_engagement' => round($posts->median('engagement_rate') ?? 0, 2),
             'max_engagement' => round($posts->max('engagement_rate') ?? 0, 2),
             'min_engagement' => round($posts->min('engagement_rate') ?? 0, 2),
-            'top_performing
+            'top_performing' => $topPosts->map(fn ($p) => [
+                'id' => $p->id,
+                'content' => substr($p->content, 0, 100),
+                'engagement_rate' => $p->engagement_rate,
+                'published_at' => $p->published_at?->toDateTimeString(),
+            ])->toArray(),
+            'worst_performing' => $worstPosts->map(fn ($p) => [
+                'id' => $p->id,
+                'content' => substr($p->content, 0, 100),
+                'engagement_rate' => $p->engagement_rate,
+                'published_at' => $p->published_at?->toDateTimeString(),
+            ])->toArray(),
+            'hourly_trends' => $hourlyTrends->toArray(),
+        ];
+    }
+
+    /**
+     * Extract hashtags from content.
+     */
+    protected function extractHashtags(string $content): array
+    {
+        preg_match_all('/#(\w+)/', $content, $matches);
+        return $matches[1] ?? [];
+    }
+
+    /**
+     * Get best hours for a platform.
+     */
+    protected function getBestHoursForPlatform(string $platform): array
+    {
+        $defaults = [
+            'instagram' => ['11:00', '13:00', '17:00', '19:00'],
+            'facebook' => ['09:00', '13:00', '15:00', '19:00'],
+            'twitter' => ['08:00', '12:00', '17:00', '20:00'],
+            'linkedin' => ['08:00', '12:00', '17:00'],
+            'tiktok' => ['11:00', '15:00', '19:00', '21:00'],
+            'pinterest' => ['14:00', '18:00', '21:00'],
+            'threads' => ['10:00', '14:00', '18:00'],
+        ];
+
+        return $defaults[$platform] ?? ['10:00', '14:00', '18:00'];
+    }
+
+    /**
+     * Get best days for a platform.
+     */
+    protected function getBestDaysForPlatform(string $platform): array
+    {
+        $defaults = [
+            'instagram' => ['Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            'facebook' => ['Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            'twitter' => ['Tuesday', 'Wednesday', 'Thursday'],
+            'linkedin' => ['Tuesday', 'Wednesday', 'Thursday'],
+            'tiktok' => ['Tuesday', 'Thursday', 'Friday'],
+            'pinterest' => ['Saturday', 'Sunday', 'Friday'],
+            'threads' => ['Monday', 'Tuesday', 'Wednesday'],
+        ];
+
+        return $defaults[$platform] ?? ['Tuesday', 'Wednesday', 'Thursday'];
+    }
+
+    /**
+     * Generate content improvement suggestions.
+     */
+    protected function generateSuggestions(string $content, string $platform, float $score, int $hashtagCount, int $wordCount): array
+    {
+        $suggestions = [];
+
+        if ($score < 50) {
+            $suggestions[] = 'Consider adding more engaging content elements like questions or calls-to-action.';
+        }
+
+        if ($hashtagCount < 3) {
+            $suggestions[] = 'Add more hashtags to increase discoverability (aim for 5-10).';
+        } elseif ($hashtagCount > 15) {
+            $suggestions[] = 'Too many hashtags may look spammy. Consider reducing to 10-15.';
+        }
+
+        if ($wordCount < 20) {
+            $suggestions[] = 'Content may be too short. Consider adding more context or value.';
+        }
+
+        if (strlen($content) > 2200 && $platform === 'instagram') {
+            $suggestions[] = 'Instagram captions over 2200 characters get truncated. Consider shortening.';
+        }
+
+        if (strlen($content) > 280 && $platform === 'twitter') {
+            $suggestions[] = 'Content exceeds Twitter\'s 280 character limit. Consider shortening.';
+        }
+
+        if (empty($suggestions)) {
+            $suggestions[] = 'Content looks good! Consider A/B testing different variations.';
+        }
+
+        return $suggestions;
+    }
+
+    /**
+     * Get platform best practices.
+     */
+    protected function getPlatformBestPractices(string $platform): array
+    {
+        $practices = [
+            'instagram' => [
+                'Use high-quality visuals',
+                'Include 5-10 relevant hashtags',
+                'Post Reels for higher reach',
+                'Use Stories for engagement',
+            ],
+            'facebook' => [
+                'Use native video content',
+                'Ask questions to drive comments',
+                'Post at peak hours (9am-3pm)',
+                'Use Facebook Live for engagement',
+            ],
+            'twitter' => [
+                'Keep tweets concise and punchy',
+                'Use 1-2 hashtags maximum',
+                'Include images for higher engagement',
+                'Engage in conversations',
+            ],
+            'linkedin' => [
+                'Share professional insights',
+                'Use a conversational tone',
+                'Include industry hashtags',
+                'Tag relevant connections',
+            ],
+            'tiktok' => [
+                'Hook viewers in first 3 seconds',
+                'Use trending sounds',
+                'Keep videos short and engaging',
+                'Post consistently',
+            ],
+            'pinterest' => [
+                'Use vertical images (2:3 ratio)',
+                'Write descriptive pin titles',
+                'Include keywords in descriptions',
+                'Link back to your website',
+            ],
+            'threads' => [
+                'Start conversations',
+                'Share behind-the-scenes content',
+                'Use a casual, authentic tone',
+                'Engage with replies',
+            ],
+        ];
+
+        return $practices[$platform] ?? ['Consistency is key — post regularly and engage with your audience.'];
+    }
+}

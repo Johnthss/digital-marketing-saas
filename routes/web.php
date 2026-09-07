@@ -22,6 +22,7 @@ use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\FormController;
 use App\Http\Controllers\MediaLibraryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WhiteLabelController;

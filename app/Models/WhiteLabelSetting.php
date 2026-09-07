@@ -55,7 +55,7 @@ class WhiteLabelSetting extends Model
         return $this->from_email ?? config('mail.from.address');
     }
 
-    public function getDisplayNameAttribute(): string
+    public function getDisplayFromNameAttribute(): string
     {
         return $this->from_name ?? config('mail.from.name');
     }
