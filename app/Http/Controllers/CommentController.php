@@ -9,7 +9,7 @@ class CommentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(["auth", "agency"]);
+        $this->middleware(['auth', 'agency']);
     }
 
     public function index(Request $request)

@@ -28,7 +28,7 @@ class TeamInvitationNotification extends Notification implements ShouldQueue
             ->subject("You've been invited to {$this->agency->name}")
             ->greeting("Hello {$notifiable->name}!")
             ->line("You've been invited to join {$this->agency->name} on DigitalMarketingSaaS.")
-            ->line('Your temporary password is: ' . $this->temporaryPassword)
+            ->line('Your temporary password is: '.$this->temporaryPassword)
             ->action('Login', url('/login'))
             ->line('Please change your password after first login.')
             ->line('If you did not expect this invitation, no action is needed.');

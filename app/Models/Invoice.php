@@ -90,6 +90,7 @@ class Invoice extends Model
     {
         $year = date('Y');
         $last = static::whereYear('issue_date', $year)->max('id') ?? 0;
+
         return sprintf('INV-%s-%04d', $year, $last + 1);
     }
 }

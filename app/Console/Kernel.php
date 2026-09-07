@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Models\ActivityLog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -31,7 +32,7 @@ class Kernel extends ConsoleKernel
 
         // Clean up old logs weekly
         $schedule->command('model:prune', [
-            '--model' => [\App\Models\ActivityLog::class],
+            '--model' => [ActivityLog::class],
             '--days' => 90,
         ])->weekly();
 

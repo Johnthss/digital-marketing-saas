@@ -13,8 +13,8 @@ class DocsController extends Controller
     public function openapiYaml(): Response
     {
         $path = storage_path('api-docs/openapi.yaml');
-        
-        if (!file_exists($path)) {
+
+        if (! file_exists($path)) {
             return response('OpenAPI spec not found', 404);
         }
 
@@ -32,14 +32,14 @@ class DocsController extends Controller
     public function openapiJson(): JsonResponse
     {
         $path = storage_path('api-docs/openapi.yaml');
-        
-        if (!file_exists($path)) {
+
+        if (! file_exists($path)) {
             return response()->json(['error' => 'OpenAPI spec not found'], 404);
         }
 
         $yaml = file_get_contents($path);
         $data = $this->yamlToArray($yaml);
-        
+
         return response()->json($data);
     }
 

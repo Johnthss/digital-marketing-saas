@@ -14,6 +14,7 @@ class EmailCampaignServiceTest extends TestCase
     use RefreshDatabase;
 
     private EmailCampaignService $service;
+
     private Agency $agency;
 
     protected function setUp(): void

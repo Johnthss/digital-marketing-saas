@@ -38,9 +38,14 @@ class EmailCampaignRecipient extends Model
     }
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_SENT = 'sent';
+
     public const STATUS_OPENED = 'opened';
+
     public const STATUS_CLICKED = 'clicked';
+
     public const STATUS_BOUNCED = 'bounced';
+
     public const STATUS_UNSUBSCRIBED = 'unsubscribed';
 }

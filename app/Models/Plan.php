@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Plan extends Model
 {
@@ -38,9 +38,9 @@ class Plan extends Model
         'is_default' => 'boolean',
     ];
 
-    public function features(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function features(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Feature::class, 'plan_features');
+        return $this->belongsToMany(Feature::class, 'plan_features');
     }
 
     public function scopeActive($query)
@@ -67,7 +67,7 @@ class Plan extends Model
             'forms',
         ];
 
-        if (!in_array($feature, $unlimitedFeatures)) {
+        if (! in_array($feature, $unlimitedFeatures)) {
             return false;
         }
 
@@ -77,6 +77,7 @@ class Plan extends Model
     public function hasFeature(string $featureCode): bool
     {
         $features = $this->features ?? [];
+
         return in_array($featureCode, $features);
     }
 }

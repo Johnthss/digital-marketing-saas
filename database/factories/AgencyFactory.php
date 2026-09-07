@@ -13,8 +13,9 @@ class AgencyFactory extends Factory
     public function definition(): array
     {
         $name = fake()->company();
+
         return [
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'name' => $name,
             'email' => fake()->unique()->safeEmail(),
             'logo' => null,

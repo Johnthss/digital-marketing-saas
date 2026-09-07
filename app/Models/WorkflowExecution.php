@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WorkflowExecution extends Model
 {
     public $timestamps = false;
+
     protected $primaryKey = 'id';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     protected $fillable = [
@@ -46,7 +49,10 @@ class WorkflowExecution extends Model
     }
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_RUNNING = 'running';
+
     public const STATUS_SUCCESS = 'success';
+
     public const STATUS_FAILED = 'failed';
 }

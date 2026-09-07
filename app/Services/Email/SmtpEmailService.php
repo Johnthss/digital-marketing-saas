@@ -28,7 +28,7 @@ class SmtpEmailService
             } catch (\Exception $e) {
                 $recipient->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
                 $results['failed']++;
-                Log::error("Email send failed to {$recipient->email}: " . $e->getMessage());
+                Log::error("Email send failed to {$recipient->email}: ".$e->getMessage());
             }
         }
 
@@ -49,9 +49,11 @@ class SmtpEmailService
             Mail::html($content, function ($message) use ($to, $subject) {
                 $message->to($to)->subject($subject);
             });
+
             return true;
         } catch (\Exception $e) {
-            Log::error("Test email failed: " . $e->getMessage());
+            Log::error('Test email failed: '.$e->getMessage());
+
             return false;
         }
     }
@@ -61,6 +63,7 @@ class SmtpEmailService
         try {
             $transport = Mail::getSymfonyTransport();
             $transport->start();
+
             return ['success' => true, 'message' => 'SMTP connection verified'];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];

@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('social_accounts', 'deleted_at')) {
+        if (! Schema::hasColumn('social_accounts', 'deleted_at')) {
             Schema::table('social_accounts', function (Blueprint $table) {
                 $table->softDeletes();
             });

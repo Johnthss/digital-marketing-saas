@@ -3,11 +3,11 @@
 namespace Tests\Feature\Security;
 
 use App\Models\Agency;
+use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\EmailCampaign;
 use App\Models\Invoice;
 use App\Models\SocialPost;
-use App\Models\Campaign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,22 +17,25 @@ class DataIsolationTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agencyA;
+
     private Agency $agencyB;
+
     private User $userA;
+
     private User $userB;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->agencyA = Agency::factory()->create();
         $this->agencyB = Agency::factory()->create();
-        
+
         $this->userA = User::factory()->create([
             'agency_id' => $this->agencyA->id,
             'password' => bcrypt('password'),
         ]);
-        
+
         $this->userB = User::factory()->create([
             'agency_id' => $this->agencyB->id,
             'password' => bcrypt('password'),
@@ -179,7 +182,7 @@ class DataIsolationTest extends TestCase
 
         $response = $this->actingAs($this->userA)->delete("/social/posts/{$postB->id}");
         $response->assertForbidden();
-        
+
         $this->assertDatabaseHas('social_posts', ['id' => $postB->id]);
     }
 
@@ -189,7 +192,7 @@ class DataIsolationTest extends TestCase
 
         $response = $this->actingAs($this->userA)->delete("/campaigns/{$campaignB->id}");
         $response->assertForbidden();
-        
+
         $this->assertDatabaseHas('campaigns', ['id' => $campaignB->id]);
     }
 
@@ -209,7 +212,7 @@ class DataIsolationTest extends TestCase
             'platform' => 'facebook',
         ]);
         $response->assertForbidden();
-        
+
         $this->assertDatabaseHas('social_posts', [
             'id' => $postB->id,
             'content' => 'Original content',
@@ -228,7 +231,7 @@ class DataIsolationTest extends TestCase
             'email' => $clientB->email,
         ]);
         $response->assertForbidden();
-        
+
         $this->assertDatabaseHas('clients', [
             'id' => $clientB->id,
             'name' => 'Original Name',

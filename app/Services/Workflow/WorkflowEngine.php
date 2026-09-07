@@ -2,10 +2,10 @@
 
 namespace App\Services\Workflow;
 
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
 use App\Models\Workflow;
 use App\Models\WorkflowExecution;
-use App\Models\SocialPost;
-use App\Models\SocialAccount;
 use App\Services\AI\AiContentService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -27,13 +27,14 @@ class WorkflowEngine
         $startTime = microtime(true);
 
         try {
-            if (!$this->evaluateConditions($workflow->conditions, $triggerData)) {
+            if (! $this->evaluateConditions($workflow->conditions, $triggerData)) {
                 $execution->update([
                     'status' => 'success',
                     'action_results' => ['skipped' => 'Conditions not met'],
                     'duration_ms' => $this->calcDuration($startTime),
                     'completed_at' => now(),
                 ]);
+
                 return $execution;
             }
 
@@ -70,10 +71,15 @@ class WorkflowEngine
 
     protected function evaluateConditions(?array $conditions, array $triggerData): bool
     {
-        if (empty($conditions)) return true;
-        foreach ($conditions as $key => $expected) {
-            if (data_get($triggerData, $key) !== $expected) return false;
+        if (empty($conditions)) {
+            return true;
         }
+        foreach ($conditions as $key => $expected) {
+            if (data_get($triggerData, $key) !== $expected) {
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -110,6 +116,7 @@ class WorkflowEngine
                 default:
                     Log::info("[Workflow Notification] {$message}");
             }
+
             return ['status' => 'success', 'action' => 'send_notification', 'channel' => $channel];
         } catch (\Exception $e) {
             return ['status' => 'failed', 'error' => $e->getMessage()];
@@ -121,12 +128,12 @@ class WorkflowEngine
         $accountId = $config['social_account_id'] ?? null;
         $content = $config['content'] ?? $triggerData['content'] ?? null;
 
-        if (!$accountId || !$content) {
+        if (! $accountId || ! $content) {
             return ['status' => 'failed', 'reason' => 'Missing account ID or content'];
         }
 
         $account = SocialAccount::find($accountId);
-        if (!$account) {
+        if (! $account) {
             return ['status' => 'failed', 'reason' => 'Social account not found'];
         }
 
@@ -148,12 +155,12 @@ class WorkflowEngine
         $content = $config['content'] ?? $triggerData['content'] ?? null;
         $scheduledAt = $config['scheduled_at'] ?? null;
 
-        if (!$accountId || !$content || !$scheduledAt) {
+        if (! $accountId || ! $content || ! $scheduledAt) {
             return ['status' => 'failed', 'reason' => 'Missing required fields'];
         }
 
         $account = SocialAccount::find($accountId);
-        if (!$account) {
+        if (! $account) {
             return ['status' => 'failed', 'reason' => 'Social account not found'];
         }
 
@@ -174,7 +181,7 @@ class WorkflowEngine
         $prompt = $config['prompt'] ?? $triggerData['prompt'] ?? null;
         $type = $config['generation_type'] ?? 'social_post';
 
-        if (!$prompt) {
+        if (! $prompt) {
             return ['status' => 'failed', 'reason' => 'Missing prompt'];
         }
 
@@ -187,12 +194,13 @@ class WorkflowEngine
         $method = $config['method'] ?? 'POST';
         $payload = $config['payload'] ?? $triggerData;
 
-        if (!$url) {
+        if (! $url) {
             return ['status' => 'failed', 'reason' => 'Missing webhook URL'];
         }
 
         try {
             $response = Http::timeout(30)->{$method}($url, $payload);
+
             return [
                 'status' => $response->successful() ? 'success' : 'failed',
                 'action' => 'webhook',
@@ -207,6 +215,7 @@ class WorkflowEngine
     {
         $seconds = $config['seconds'] ?? 1;
         sleep(min($seconds, 10));
+
         return ['status' => 'success', 'action' => 'sleep', 'seconds' => $seconds];
     }
 

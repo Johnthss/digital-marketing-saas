@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Permission\Models\Permission;
 
 class Agency extends Model
 {
@@ -59,14 +59,14 @@ class Agency extends Model
         return $this->status === 'active' && $this->subscription_status !== 'cancelled';
     }
 
-    public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(\App\Models\User::class);
+        return $this->hasMany(User::class);
     }
 
     public function owner(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'owner_id');
+        return $this->belongsTo(User::class, 'owner_id');
     }
 
     public function usersByRole(string $role): HasMany
@@ -84,8 +84,8 @@ class Agency extends Model
         }
 
         // Check if agency has the feature enabled
-        $feature = \Spatie\Permission\Models\Permission::where('name', $featureCode)->first();
-        if (!$feature) {
+        $feature = Permission::where('name', $featureCode)->first();
+        if (! $feature) {
             return false;
         }
 
@@ -101,7 +101,7 @@ class Agency extends Model
 
         // Get plan features
         $plan = config("platform.plans.{$this->subscription_plan}");
-        if (!$plan) {
+        if (! $plan) {
             return false;
         }
 

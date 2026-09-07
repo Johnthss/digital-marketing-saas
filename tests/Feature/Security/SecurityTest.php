@@ -3,12 +3,12 @@
 namespace Tests\Feature\Security;
 
 use App\Models\Agency;
-use App\Models\User;
-use App\Models\Client;
-use App\Models\SocialPost;
 use App\Models\Campaign;
+use App\Models\Client;
 use App\Models\Invoice;
 use App\Models\SocialAccount;
+use App\Models\SocialPost;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

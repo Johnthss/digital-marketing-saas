@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\AiActionType;
-use App\Enums\AiContentType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -76,6 +74,7 @@ class AiContentLog extends Model
         if (is_array($this->response)) {
             return implode("\n", $this->response);
         }
+
         return (string) $this->response;
     }
 
@@ -87,6 +86,7 @@ class AiContentLog extends Model
         if (is_array($this->prompt)) {
             return implode("\n", $this->prompt);
         }
+
         return (string) $this->prompt;
     }
 

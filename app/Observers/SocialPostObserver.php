@@ -3,9 +3,8 @@
 namespace App\Observers;
 
 use App\Models\SocialPost;
-use App\Models\Agency;
-use App\Services\QuotaService;
 use App\Services\Analytics\AnalyticsService;
+use App\Services\QuotaService;
 use Illuminate\Support\Facades\Log;
 
 class SocialPostObserver
@@ -36,7 +35,7 @@ class SocialPostObserver
     public function updated(SocialPost $post): void
     {
         $agency = $post->agency;
-        
+
         // Handle status changes
         if ($post->isDirty('status')) {
             $oldStatus = $post->getOriginal('status');

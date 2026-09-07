@@ -17,7 +17,7 @@ class EmailCampaignFactory extends Factory
             'agency_id' => Agency::factory(),
             'name' => fake()->words(3, true),
             'slug' => function (array $attributes) {
-                return Str::slug($attributes['name'] ?? 'campaign') . '-' . Str::random(6);
+                return Str::slug($attributes['name'] ?? 'campaign').'-'.Str::random(6);
             },
             'type' => fake()->randomElement(['newsletter', 'promotional', 'transactional']),
             'status' => 'draft',

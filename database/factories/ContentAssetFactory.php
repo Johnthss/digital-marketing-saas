@@ -20,7 +20,7 @@ class ContentAssetFactory extends Factory
         return [
             'agency_id' => Agency::factory(),
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'type' => $type,
             'description' => fake()->sentence(),
             'content' => fake()->paragraphs(2, true),

@@ -3,12 +3,12 @@
 namespace Tests\Feature\UAT;
 
 use App\Models\Agency;
-use App\Models\SocialAccount;
-use App\Models\User;
-use App\Models\SocialPost;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -133,7 +133,7 @@ class CompleteUserJourneyTest extends TestCase
         // === STEP 8: MARK INVOICE PAID ===
         $paidResponse = $this->actingAs($user)->post("/invoices/{$invoice->id}/paid", [
             'payment_method' => 'bank_transfer',
-            'transaction_id' => 'TXN-' . uniqid(),
+            'transaction_id' => 'TXN-'.uniqid(),
         ]);
         $paidResponse->assertStatus(302);
 
@@ -276,7 +276,7 @@ class CompleteUserJourneyTest extends TestCase
         // Mark as paid
         $response = $this->post("/invoices/{$invoice->id}/paid", [
             'payment_method' => 'credit_card',
-            'transaction_id' => 'TXN-' . uniqid(),
+            'transaction_id' => 'TXN-'.uniqid(),
         ]);
         $response->assertStatus(302);
 

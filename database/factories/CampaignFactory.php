@@ -14,10 +14,11 @@ class CampaignFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(rand(2, 4), true);
+
         return [
             'agency_id' => Agency::factory(),
             'name' => ucfirst($name),
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'type' => fake()->randomElement(['general', 'product_launch', 'seasonal', 'awareness', 'consideration', 'conversion', 'retention']),
             'status' => fake()->randomElement(['draft', 'active', 'paused', 'completed']),
             'description' => fake()->paragraph(),

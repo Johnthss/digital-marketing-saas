@@ -2,36 +2,34 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AgencyController;
+use App\Http\Controllers\AiContentController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\AiContentController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContentLibraryController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SearchController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Email\EmailCampaignController;
+use App\Http\Controllers\Email\EmailTemplateController;
+use App\Http\Controllers\FormController;
+use App\Http\Controllers\GdprController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\MediaLibraryController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
 use App\Http\Controllers\WebhookController;
-use App\Http\Controllers\WorkflowController;
-use App\Http\Controllers\FormController;
-use App\Http\Controllers\MediaLibraryController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WhiteLabelController;
-use App\Http\Controllers\GdprController;
-use App\Http\Controllers\CommentController;
-use App\Http\Controllers\ActivityFeedController;
-use App\Http\Controllers\Email\EmailCampaignController;
-use App\Http\Controllers\Email\EmailTemplateController;
-use App\Http\Controllers\BillingController;
+use App\Http\Controllers\WorkflowController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return auth()->check()
@@ -156,7 +154,7 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::post('/two-factor/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
     Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
 
-    Route::get('/onboarding', function() {
+    Route::get('/onboarding', function () {
         return view('onboarding');
     })->name('onboarding');
 
@@ -173,7 +171,6 @@ Route::middleware(['auth', 'agency'])->group(function () {
 
 });
 
-
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
 });
@@ -183,15 +180,15 @@ require __DIR__.'/version.php';
 
 // Email Campaign routes
 Route::prefix('email')->name('email.')->group(function () {
-    Route::get('/campaigns', [App\Http\Controllers\Email\EmailCampaignController::class, 'index'])->name('campaigns.index');
-    Route::get('/campaigns/create', [App\Http\Controllers\Email\EmailCampaignController::class, 'create'])->name('campaigns.create');
-    Route::post('/campaigns', [App\Http\Controllers\Email\EmailCampaignController::class, 'store'])->name('campaigns.store');
-    Route::get('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'show'])->name('campaigns.show');
-    Route::get('/campaigns/{campaign}/edit', [App\Http\Controllers\Email\EmailCampaignController::class, 'edit'])->name('campaigns.edit');
-    Route::put('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'update'])->name('campaigns.update');
-    Route::delete('/campaigns/{campaign}', [App\Http\Controllers\Email\EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
-    Route::post('/campaigns/{campaign}/send', [App\Http\Controllers\Email\EmailCampaignController::class, 'send'])->name('campaigns.send');
-    Route::post('/campaigns/{campaign}/add-clients', [App\Http\Controllers\Email\EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
+    Route::get('/campaigns', [EmailCampaignController::class, 'index'])->name('campaigns.index');
+    Route::get('/campaigns/create', [EmailCampaignController::class, 'create'])->name('campaigns.create');
+    Route::post('/campaigns', [EmailCampaignController::class, 'store'])->name('campaigns.store');
+    Route::get('/campaigns/{campaign}', [EmailCampaignController::class, 'show'])->name('campaigns.show');
+    Route::get('/campaigns/{campaign}/edit', [EmailCampaignController::class, 'edit'])->name('campaigns.edit');
+    Route::put('/campaigns/{campaign}', [EmailCampaignController::class, 'update'])->name('campaigns.update');
+    Route::delete('/campaigns/{campaign}', [EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
+    Route::post('/campaigns/{campaign}/send', [EmailCampaignController::class, 'send'])->name('campaigns.send');
+    Route::post('/campaigns/{campaign}/add-clients', [EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
 });
 
 // Telegram integration

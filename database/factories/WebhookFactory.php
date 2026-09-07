@@ -14,8 +14,8 @@ class WebhookFactory extends Factory
     {
         return [
             'agency_id' => Agency::factory(),
-            'name' => fake()->words(2, true) . ' Webhook',
-            'url' => fake()->url() . '/webhook',
+            'name' => fake()->words(2, true).' Webhook',
+            'url' => fake()->url().'/webhook',
             'events' => fake()->randomElements(['post.published', 'post.failed', 'campaign.created', 'client.created', 'invoice.paid'], 2),
             'secret' => fake()->sha256(),
             'is_active' => true,

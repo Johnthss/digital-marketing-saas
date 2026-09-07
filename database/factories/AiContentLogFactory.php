@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\AiContentLog;
 use App\Models\Agency;
+use App\Models\AiContentLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AiContentLogFactory extends Factory

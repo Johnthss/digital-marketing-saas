@@ -12,14 +12,15 @@ class EnsureAgencyAccess
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Unauthorized.'], 401);
             }
+
             return redirect()->route('login');
         }
 
-        if (!$user->agency_id) {
+        if (! $user->agency_id) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'No agency assigned.'], 403);
             }
@@ -28,7 +29,7 @@ class EnsureAgencyAccess
 
         $agency = $user->agency;
 
-        if (!$agency || $agency->status === 'cancelled') {
+        if (! $agency || $agency->status === 'cancelled') {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Agency not active.'], 403);
             }

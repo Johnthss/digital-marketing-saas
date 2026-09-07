@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class RetryFailedPosts extends Command
 {
     protected $signature = 'posts:retry-failed';
+
     protected $description = 'Retry failed posts (max 3 attempts)';
 
     public function handle(): int
@@ -15,6 +16,7 @@ class RetryFailedPosts extends Command
         $this->info('Dispatching failed post retry job...');
         RetryFailedPostsJob::dispatch();
         $this->info('Done.');
+
         return self::SUCCESS;
     }
 }

@@ -12,7 +12,7 @@ class FeatureGate
     {
         $user = $request->user();
 
-        if (!$user || !$user->agency) {
+        if (! $user || ! $user->agency) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Unauthorized.'], 401);
             }
@@ -22,7 +22,7 @@ class FeatureGate
         $agency = $user->agency;
 
         foreach ($features as $feature) {
-            if (!$agency->isFeatureAvailable($feature)) {
+            if (! $agency->isFeatureAvailable($feature)) {
                 if ($request->expectsJson()) {
                     return response()->json([
                         'error' => "Feature '{$feature}' is not available on your plan.",

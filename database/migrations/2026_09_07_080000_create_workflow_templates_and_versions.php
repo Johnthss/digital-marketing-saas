@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('usage_count')->default(0);
             $table->timestamps();
-            
+
             $table->index(['category', 'is_public']);
         });
 
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->text('change_notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
-            
+
             $table->unique(['workflow_id', 'version_number']);
         });
 
@@ -62,7 +62,7 @@ return new class extends Migration
             $table->text('response')->nullable();
             $table->timestamp('processed_at')->nullable();
             $table->timestamps();
-            
+
             $table->index(['workflow_id', 'event_type']);
         });
     }
@@ -72,7 +72,7 @@ return new class extends Migration
         Schema::dropIfExists('workflow_webhook_logs');
         Schema::dropIfExists('workflow_versions');
         Schema::dropIfExists('workflow_templates');
-        
+
         Schema::table('workflows', function (Blueprint $table) {
             $table->dropColumn(['webhook_secret', 'webhook_url']);
         });

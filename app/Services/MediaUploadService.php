@@ -61,9 +61,10 @@ class MediaUploadService
         $newPath = $this->duplicateFile($asset->file_path);
         $newAsset = $asset->replicate();
         $newAsset->file_path = $newPath;
-        $newAsset->name = $asset->name . ' (Copy)';
+        $newAsset->name = $asset->name.' (Copy)';
         $newAsset->usage_count = 0;
         $newAsset->save();
+
         return $newAsset;
     }
 
@@ -71,15 +72,21 @@ class MediaUploadService
     {
         $disk = Storage::disk('public');
         $pathInfo = pathinfo($originalPath);
-        $newPath = $pathInfo['dirname'] . '/' . $pathInfo['filename'] . '-copy-' . Str::random(4) . '.' . ($pathInfo['extension'] ?? '');
+        $newPath = $pathInfo['dirname'].'/'.$pathInfo['filename'].'-copy-'.Str::random(4).'.'.($pathInfo['extension'] ?? '');
         $disk->copy($originalPath, $newPath);
+
         return $newPath;
     }
 
     protected function detectFileType(string $mimeType): string
     {
-        if (str_starts_with($mimeType, 'image/')) return 'image';
-        if (str_starts_with($mimeType, 'video/')) return 'video';
+        if (str_starts_with($mimeType, 'image/')) {
+            return 'image';
+        }
+        if (str_starts_with($mimeType, 'video/')) {
+            return 'video';
+        }
+
         return 'document';
     }
 }

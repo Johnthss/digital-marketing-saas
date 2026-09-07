@@ -3,17 +3,17 @@
 namespace Tests\Feature\UAT;
 
 use App\Models\Agency;
-use App\Models\User;
 use App\Models\AiContentLog;
+use App\Models\ContentAsset;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
-use App\Models\ContentAsset;
+use App\Models\User;
 use App\Services\AI\AiContentService;
 use App\Services\AI\Gateway\AiGateway;
-use App\Services\AI\Gateway\AiRequest;
 use App\Services\AI\Gateway\AiResponse;
 use App\Services\QuotaService;
 use Carbon\Carbon;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,6 +25,7 @@ class AIContentWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
         $user = User::factory()->create(['agency_id' => $agency->id, 'role' => $role]);
+
         return [$agency, $user];
     }
 
@@ -776,7 +777,7 @@ class AIContentWorkflowTest extends TestCase
         $this->app->instance(AiGateway::class, $mockGateway);
 
         // Verify the rate limiter is properly defined
-        $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
+        $rateLimiter = app(RateLimiter::class);
         $limiter = $rateLimiter->limiter('ai_generate');
         $this->assertNotNull($limiter);
 

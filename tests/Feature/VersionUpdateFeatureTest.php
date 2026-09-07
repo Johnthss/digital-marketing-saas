@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Jobs\CheckForUpdates;
+use App\Models\FeatureFlag;
 use App\Services\VersionService;
 use Illuminate\Support\Facades\Cache;
+use Tests\TestCase;
 
 class VersionUpdateFeatureTest extends TestCase
 {
@@ -53,11 +55,11 @@ class VersionUpdateFeatureTest extends TestCase
 
     public function test_feature_flag_model_exists()
     {
-        $this->assertTrue(class_exists(\App\Models\FeatureFlag::class));
+        $this->assertTrue(class_exists(FeatureFlag::class));
     }
 
     public function test_check_for_updates_job_exists()
     {
-        $this->assertTrue(class_exists(\App\Jobs\CheckForUpdates::class));
+        $this->assertTrue(class_exists(CheckForUpdates::class));
     }
 }

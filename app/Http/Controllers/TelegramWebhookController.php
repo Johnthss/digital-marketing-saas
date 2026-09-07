@@ -35,7 +35,7 @@ class TelegramWebhookController extends Controller
     {
         $url = $request->input('url');
 
-        if (!$url) {
+        if (! $url) {
             return response()->json(['error' => 'URL required'], 400);
         }
 

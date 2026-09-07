@@ -84,7 +84,7 @@ class Workflow extends Model
         return $query->where('trigger_type', $triggerType);
     }
 
-    public function createVersion(string $changeNotes = null, int $userId = null): WorkflowVersion
+    public function createVersion(?string $changeNotes = null, ?int $userId = null): WorkflowVersion
     {
         $lastVersion = $this->versions()->orderBy('version_number', 'desc')->first();
         $versionNumber = $lastVersion ? $lastVersion->version_number + 1 : 1;
@@ -121,9 +121,10 @@ class Workflow extends Model
 
     public function getWebhookUrlAttribute($value): ?string
     {
-        if (!$this->webhook_secret) {
+        if (! $this->webhook_secret) {
             return null;
         }
+
         return url("/api/workflows/{$this->id}/webhook/{$this->webhook_secret}");
     }
 

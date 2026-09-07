@@ -3,9 +3,8 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Agency;
-use App\Models\SocialPost;
 use App\Models\SocialAccount;
-use App\Models\User;
+use App\Models\SocialPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

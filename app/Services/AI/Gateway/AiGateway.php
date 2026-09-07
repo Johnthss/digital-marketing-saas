@@ -6,7 +6,6 @@ use App\Models\Agency;
 use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\Exceptions\NoProviderAvailableException;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class AiGateway
@@ -27,12 +26,14 @@ class AiGateway
     public function registerProvider(string $name, AiProviderInterface $provider): self
     {
         $this->providers->put($name, $provider);
+
         return $this;
     }
 
     public function setDefaultProvider(string $name): self
     {
         $this->defaultProvider = $name;
+
         return $this;
     }
 
@@ -47,7 +48,7 @@ class AiGateway
         $providerChain = $this->resolveProviderChain($request, $agency);
 
         if ($providerChain->isEmpty()) {
-            throw new NoProviderAvailableException();
+            throw new NoProviderAvailableException;
         }
 
         $lastException = null;
@@ -55,8 +56,9 @@ class AiGateway
         foreach ($providerChain as $providerName) {
             $provider = $this->providers->get($providerName);
 
-            if (!$provider || !$provider->isAvailable()) {
+            if (! $provider || ! $provider->isAvailable()) {
                 Log::debug("AI provider [{$providerName}] not available, skipping.");
+
                 continue;
             }
 
@@ -80,12 +82,13 @@ class AiGateway
             } catch (\Exception $e) {
                 $lastException = $e;
                 Log::warning("AI provider [{$providerName}] failed: {$e->getMessage()}");
+
                 continue;
             }
         }
 
         throw new NoProviderAvailableException(
-            message: 'All AI providers failed. Last error: ' . ($lastException ? $lastException->getMessage() : 'unknown'),
+            message: 'All AI providers failed. Last error: '.($lastException ? $lastException->getMessage() : 'unknown'),
             previous: $lastException,
         );
     }
@@ -100,7 +103,7 @@ class AiGateway
         // Task-based routing config
         $routing = config("platform.ai.routing.{$task}");
 
-        if (is_array($routing) && !empty($routing)) {
+        if (is_array($routing) && ! empty($routing)) {
             return collect($routing)
                 ->map(fn ($modelString) => explode(':', $modelString)[0])
                 ->unique()

@@ -4,7 +4,6 @@ namespace App\Services\Social;
 
 use App\Models\SocialAccount;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 class PlatformRateLimitService
 {
@@ -15,7 +14,7 @@ class PlatformRateLimitService
     {
         $limits = config("platform.social.rate_limits.{$platform}");
 
-        if (!$limits) {
+        if (! $limits) {
             return true;
         }
 

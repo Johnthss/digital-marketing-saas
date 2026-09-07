@@ -42,7 +42,7 @@ class WebhookController extends Controller
             'name' => 'required|string|max:255',
             'url' => 'required|url',
             'events' => 'required|array|min:1',
-            'events.*' => 'in:' . implode(',', array_keys(Webhook::$availableEvents)),
+            'events.*' => 'in:'.implode(',', array_keys(Webhook::$availableEvents)),
             'is_active' => 'boolean',
         ]);
 
@@ -166,7 +166,7 @@ class WebhookController extends Controller
 
             $webhook->increment('total_calls');
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $webhook->increment('failed_calls');
             }
         } catch (\Exception $e) {

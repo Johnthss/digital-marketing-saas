@@ -65,6 +65,7 @@ class BulkOperationService
                 Log::error("Bulk client create error: {$e->getMessage()}");
             }
         }
+
         return $count;
     }
 

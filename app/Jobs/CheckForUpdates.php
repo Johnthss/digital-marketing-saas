@@ -14,6 +14,7 @@ class CheckForUpdates implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 30;
 
     public function handle(VersionService $versionService): void
@@ -21,7 +22,7 @@ class CheckForUpdates implements ShouldQueue
         $latest = $versionService->getLatestRelease();
 
         if ($versionService->isUpdateAvailable($latest['version'] ?? '')) {
-            info('Update available: ' . $latest['version']);
+            info('Update available: '.$latest['version']);
         }
     }
 

@@ -3,17 +3,11 @@
 namespace Tests\Feature\UAT;
 
 use App\Models\Agency;
-use App\Models\User;
-use App\Models\SocialAccount;
-use App\Models\SocialPost;
-use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\ContentAsset;
-use App\Models\LandingPage;
-use App\Models\Form;
-use App\Models\Webhook;
-use App\Models\Workflow;
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,6 +20,7 @@ class EnterpriseWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
         $user = User::factory()->create(['agency_id' => $agency->id, 'role' => 'owner']);
+
         return [$agency, $user];
     }
 

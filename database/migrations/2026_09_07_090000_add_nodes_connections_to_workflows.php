@@ -9,10 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('workflows', function (Blueprint $table) {
-            if (!Schema::hasColumn('workflows', 'nodes')) {
+            if (! Schema::hasColumn('workflows', 'nodes')) {
                 $table->json('nodes')->nullable()->after('conditions');
             }
-            if (!Schema::hasColumn('workflows', 'connections')) {
+            if (! Schema::hasColumn('workflows', 'connections')) {
                 $table->json('connections')->nullable()->after('nodes');
             }
         });

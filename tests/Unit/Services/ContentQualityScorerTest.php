@@ -41,7 +41,7 @@ class ContentQualityScorerTest extends TestCase
     {
         $agency = Agency::factory()->create();
         $account = SocialAccount::factory()->create(['agency_id' => $agency->id]);
-        
+
         // Create two posts with different hashtag counts
         $postWithout = SocialPost::factory()->create([
             'agency_id' => $agency->id,
@@ -55,11 +55,11 @@ class ContentQualityScorerTest extends TestCase
             'content' => 'Test post content for comparison',
             'hashtags' => ['#test', '#social', '#marketing'],
         ]);
-        
+
         // Both scores should be valid
         $scoreWithout = $this->scorer->score($postWithout);
         $scoreWith = $this->scorer->score($postWith);
-        
+
         $this->assertIsInt($scoreWithout);
         $this->assertIsInt($scoreWith);
         $this->assertGreaterThanOrEqual(0, $scoreWithout);
@@ -72,7 +72,7 @@ class ContentQualityScorerTest extends TestCase
     {
         $agency = Agency::factory()->create();
         $account = SocialAccount::factory()->create(['agency_id' => $agency->id]);
-        
+
         $postWithout = SocialPost::factory()->create([
             'agency_id' => $agency->id,
             'social_account_id' => $account->id,
@@ -85,11 +85,11 @@ class ContentQualityScorerTest extends TestCase
             'content' => 'Test post content for media comparison',
             'media' => ['image1.jpg', 'image2.jpg'],
         ]);
-        
+
         // Both scores should be valid
         $scoreWithout = $this->scorer->score($postWithout);
         $scoreWith = $this->scorer->score($postWith);
-        
+
         $this->assertIsInt($scoreWithout);
         $this->assertIsInt($scoreWith);
         $this->assertGreaterThanOrEqual(0, $scoreWithout);

@@ -49,31 +49,31 @@ return new class extends Migration
 
         // Users
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'agency_id')) {
+            if (! Schema::hasColumn('users', 'agency_id')) {
                 $table->foreignId('agency_id')->nullable()->constrained('agencies')->nullOnDelete();
             }
-            if (!Schema::hasColumn('users', 'role')) {
+            if (! Schema::hasColumn('users', 'role')) {
                 $table->string('role')->default('member');
             }
-            if (!Schema::hasColumn('users', 'avatar')) {
+            if (! Schema::hasColumn('users', 'avatar')) {
                 $table->string('avatar')->nullable();
             }
-            if (!Schema::hasColumn('users', 'title')) {
+            if (! Schema::hasColumn('users', 'title')) {
                 $table->string('title')->nullable();
             }
-            if (!Schema::hasColumn('users', 'phone')) {
+            if (! Schema::hasColumn('users', 'phone')) {
                 $table->string('phone')->nullable();
             }
-            if (!Schema::hasColumn('users', 'last_active_at')) {
+            if (! Schema::hasColumn('users', 'last_active_at')) {
                 $table->timestamp('last_active_at')->nullable();
             }
-            if (!Schema::hasColumn('users', 'is_active')) {
+            if (! Schema::hasColumn('users', 'is_active')) {
                 $table->boolean('is_active')->default(true);
             }
-            if (!Schema::hasColumn('users', 'is_approved')) {
+            if (! Schema::hasColumn('users', 'is_approved')) {
                 $table->boolean('is_approved')->default(false);
             }
-            if (!Schema::hasColumn('users', 'notes')) {
+            if (! Schema::hasColumn('users', 'notes')) {
                 $table->text('notes')->nullable();
             }
         });

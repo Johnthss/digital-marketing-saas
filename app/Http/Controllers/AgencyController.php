@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
+use App\Models\Invoice;
 use App\Models\User;
+use App\Notifications\TeamInvitationNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AgencyController extends Controller
@@ -25,7 +25,7 @@ class AgencyController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:agencies,email,' . $agency->id,
+            'email' => 'required|email|unique:agencies,email,'.$agency->id,
             'timezone' => 'nullable|string|max:50',
             'currency' => 'nullable|string|max:3',
             'phone' => 'nullable|string|max:50',
@@ -75,7 +75,7 @@ class AgencyController extends Controller
 
         $agency->increment('users_count');
 
-        $member->notify(new \App\Notifications\TeamInvitationNotification($agency, $password));
+        $member->notify(new TeamInvitationNotification($agency, $password));
 
         return back()->with('success', 'Team member invited successfully.');
     }
@@ -126,10 +126,10 @@ class AgencyController extends Controller
         $user = $request->user();
         $agency = $user->agency;
 
-        $invoices = \App\Models\Invoice::where('agency_id', $agency->id)
+        $invoices = Invoice::where('agency_id', $agency->id)
             ->orderBy('created_at', 'desc')
             ->paginate(15);
-        
+
         $plans = config('stripe.plans');
         $currentPlan = $agency->subscription_plan ?? 'free';
 

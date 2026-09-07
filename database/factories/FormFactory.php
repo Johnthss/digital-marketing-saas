@@ -14,7 +14,7 @@ class FormFactory extends Factory
     {
         return [
             'agency_id' => Agency::factory(),
-            'name' => fake()->words(2, true) . ' Form',
+            'name' => fake()->words(2, true).' Form',
             'slug' => fake()->slug(),
             'description' => fake()->sentence(),
             'fields' => [

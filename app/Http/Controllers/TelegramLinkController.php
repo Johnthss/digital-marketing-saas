@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Agency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class TelegramLinkController extends Controller
@@ -22,10 +20,10 @@ class TelegramLinkController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $linked = !is_null($user->telegram_chat_id);
+        $linked = ! is_null($user->telegram_chat_id);
 
         // Generate a unique linking code if not linked
-        if (!$linked && !$user->telegram_link_code) {
+        if (! $linked && ! $user->telegram_link_code) {
             $user->update(['telegram_link_code' => Str::random(32)]);
         }
 
@@ -100,7 +98,7 @@ class TelegramLinkController extends Controller
 
         $user = User::where('telegram_link_code', $validated['code'])->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['error' => 'Invalid link code'], 404);
         }
 

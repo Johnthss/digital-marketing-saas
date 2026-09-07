@@ -2,12 +2,11 @@
 
 namespace App\Services\Social;
 
+use App\Enums\PostStatus;
 use App\Models\Agency;
 use App\Models\SocialPost;
-use App\Models\SocialAccount;
-use App\Enums\PostStatus;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SocialPostService
 {
@@ -114,7 +113,7 @@ class SocialPostService
     {
         // Facebook Graph API integration
         return [
-            'id' => 'fb_' . uniqid(),
+            'id' => 'fb_'.uniqid(),
             'platform' => 'facebook',
             'status' => 'published',
         ];
@@ -124,7 +123,7 @@ class SocialPostService
     {
         // Instagram Graph API integration
         return [
-            'id' => 'ig_' . uniqid(),
+            'id' => 'ig_'.uniqid(),
             'platform' => 'instagram',
             'status' => 'published',
         ];
@@ -134,7 +133,7 @@ class SocialPostService
     {
         // Twitter/X API v2 integration
         return [
-            'id' => 'tw_' . uniqid(),
+            'id' => 'tw_'.uniqid(),
             'platform' => 'twitter',
             'status' => 'published',
         ];
@@ -144,7 +143,7 @@ class SocialPostService
     {
         // LinkedIn API integration
         return [
-            'id' => 'li_' . uniqid(),
+            'id' => 'li_'.uniqid(),
             'platform' => 'linkedin',
             'status' => 'published',
         ];
@@ -154,7 +153,7 @@ class SocialPostService
     {
         // TikTok API integration
         return [
-            'id' => 'tt_' . uniqid(),
+            'id' => 'tt_'.uniqid(),
             'platform' => 'tiktok',
             'status' => 'published',
         ];
@@ -164,7 +163,7 @@ class SocialPostService
     {
         // Pinterest API integration
         return [
-            'id' => 'pt_' . uniqid(),
+            'id' => 'pt_'.uniqid(),
             'platform' => 'pinterest',
             'status' => 'published',
         ];

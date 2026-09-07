@@ -4,7 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Models\Agency;
 use App\Models\Workflow;
-use App\Models\WorkflowExecution;
+use App\Services\AI\AiContentService;
 use App\Services\Workflow\WorkflowEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -15,13 +15,14 @@ class WorkflowEngineTest extends TestCase
     use RefreshDatabase;
 
     private WorkflowEngine $engine;
+
     private Agency $agency;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->engine = new WorkflowEngine(
-            \Mockery::mock(\App\Services\AI\AiContentService::class)
+            \Mockery::mock(AiContentService::class)
         );
         $this->agency = Agency::factory()->create();
     }
@@ -48,7 +49,7 @@ class WorkflowEngineTest extends TestCase
         $workflow = Workflow::factory()->create([
             'agency_id' => $this->agency->id,
             'name' => 'Test Workflow',
-            'slug' => 'test-workflow-' . uniqid(),
+            'slug' => 'test-workflow-'.uniqid(),
             'trigger_type' => 'post_published',
             'actions' => [
                 ['type' => 'send_notification', 'config' => ['message' => 'Hello']],

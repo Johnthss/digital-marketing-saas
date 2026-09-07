@@ -15,7 +15,7 @@ class AgencySettingsRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:agencies,email,' . $this->user()->agency_id,
+            'email' => 'required|email|unique:agencies,email,'.$this->user()->agency_id,
             'timezone' => 'nullable|string|max:50',
             'currency' => 'nullable|string|max:3',
             'phone' => 'nullable|string|max:50',

@@ -49,11 +49,11 @@ class WorkflowWebhookController extends Controller
                 'execution_id' => $execution->id,
             ]);
         } catch (\Exception $e) {
-            $log->markAsProcessed('Failed: ' . $e->getMessage());
+            $log->markAsProcessed('Failed: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Workflow execution failed: ' . $e->getMessage(),
+                'message' => 'Workflow execution failed: '.$e->getMessage(),
             ], 500);
         }
     }

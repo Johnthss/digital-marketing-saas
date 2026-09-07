@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\LandingPage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class LandingPageController extends Controller
@@ -51,7 +49,7 @@ class LandingPageController extends Controller
         $page = LandingPage::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'title' => $validated['title'] ?? null,
             'headline' => $validated['headline'] ?? null,
             'content' => $validated['content'] ?? null,
@@ -139,8 +137,8 @@ class LandingPageController extends Controller
         }
 
         $page->update([
-            'is_published' => !$page->is_published,
-            'published_at' => !$page->is_published ? now() : null,
+            'is_published' => ! $page->is_published,
+            'published_at' => ! $page->is_published ? now() : null,
         ]);
 
         return back()->with('success', 'Landing page status updated.');

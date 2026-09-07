@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\Invoice;
 use App\Services\Billing\StripeGateway;
 use Illuminate\Http\Request;
@@ -21,7 +20,7 @@ class BillingController extends Controller
         $invoices = Invoice::where('agency_id', $agency->id)
             ->orderBy('created_at', 'desc')
             ->paginate(15);
-        
+
         $plans = config('stripe.plans');
         $currentPlan = $agency->subscription_plan ?? 'free';
 
@@ -31,21 +30,23 @@ class BillingController extends Controller
     public function checkout(Request $request, string $plan)
     {
         $agency = $request->user()->agency;
-        
+
         if ($plan === 'free') {
             return back()->with('error', 'Free plan does not require checkout.');
         }
 
-        if (!config("stripe.plans.{$plan}.monthly")) {
+        if (! config("stripe.plans.{$plan}.monthly")) {
             return back()->with('error', 'Invalid plan selected.');
         }
 
         try {
-            $gateway = new StripeGateway();
+            $gateway = new StripeGateway;
             $session = $gateway->createCheckoutSession($agency, $plan);
+
             return redirect($session->url);
         } catch (\Exception $e) {
-            Log::error('Checkout failed: ' . $e->getMessage());
+            Log::error('Checkout failed: '.$e->getMessage());
+
             return back()->with('error', 'Could not create checkout session. Please try again.');
         }
     }
@@ -53,6 +54,7 @@ class BillingController extends Controller
     public function success(Request $request)
     {
         $agency = $request->user()->agency;
+
         return view('agency.billing-success', compact('agency'));
     }
 
@@ -68,11 +70,13 @@ class BillingController extends Controller
         $sigHeader = $request->header('Stripe-Signature');
 
         try {
-            $gateway = new StripeGateway();
+            $gateway = new StripeGateway;
             $gateway->handleWebhook($payload, $sigHeader);
+
             return response()->json(['status' => 'ok']);
         } catch (\Exception $e) {
-            Log::error('Webhook error: ' . $e->getMessage());
+            Log::error('Webhook error: '.$e->getMessage());
+
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -80,10 +84,11 @@ class BillingController extends Controller
     public function cancelSubscription(Request $request)
     {
         $agency = $request->user()->agency;
-        
+
         try {
-            $gateway = new StripeGateway();
+            $gateway = new StripeGateway;
             $gateway->cancelSubscription($agency);
+
             return back()->with('success', 'Subscription canceled.');
         } catch (\Exception $e) {
             return back()->with('error', 'Could not cancel subscription.');
@@ -96,7 +101,7 @@ class BillingController extends Controller
         $invoices = Invoice::where('agency_id', $agency->id)
             ->orderBy('created_at', 'desc')
             ->paginate(15);
-        
+
         return view('agency.invoices', compact('agency', 'invoices'));
     }
 
@@ -106,7 +111,7 @@ class BillingController extends Controller
         if ($invoice->agency_id !== $agency->id) {
             abort(403);
         }
-        
+
         return redirect()->route('agency.invoices')
             ->with('info', 'Invoice download coming soon.');
     }

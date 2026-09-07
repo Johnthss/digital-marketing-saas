@@ -11,8 +11,11 @@ class WebhookLog extends Model
     use HasFactory;
 
     public $timestamps = true;
+
     protected $primaryKey = 'id';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     protected $fillable = [

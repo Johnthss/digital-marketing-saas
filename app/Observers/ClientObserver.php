@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use App\Models\Client;
 use App\Events\ClientCreated;
+use App\Models\Client;
 use App\Services\Analytics\AnalyticsService;
 
 class ClientObserver

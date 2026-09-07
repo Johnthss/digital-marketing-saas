@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\WorkflowTemplate;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class WorkflowTemplateSeeder extends Seeder
 {

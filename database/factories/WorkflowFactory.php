@@ -14,11 +14,11 @@ class WorkflowFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(3, true);
-        
+
         return [
             'agency_id' => Agency::factory(),
             'name' => ucfirst($name),
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'status' => 'draft',
             'trigger_type' => fake()->randomElement(['post_published', 'comment_received', 'schedule']),
             'trigger_config' => [],

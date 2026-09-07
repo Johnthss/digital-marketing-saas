@@ -3,16 +3,15 @@
 namespace App\Services\Analytics;
 
 use App\Models\Agency;
-use App\Models\SocialPost;
-use App\Models\EmailCampaign;
+use App\Models\AiContentLog;
 use App\Models\Campaign;
 use App\Models\Client;
+use App\Models\EmailCampaign;
 use App\Models\Invoice;
-use App\Models\AiContentLog;
 use App\Models\SocialAccount;
+use App\Models\SocialPost;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class AnalyticsService
 {

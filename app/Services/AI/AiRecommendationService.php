@@ -4,9 +4,6 @@ namespace App\Services\AI;
 
 use App\Models\Agency;
 use App\Models\SocialPost;
-use App\Models\SocialAccount;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 
 class AiRecommendationService
 {
@@ -25,7 +22,7 @@ class AiRecommendationService
         $recommendations = [];
         foreach ($posts->take($count) as $post) {
             $recommendations[] = [
-                'title' => $post->content ? substr($post->content, 0, 100) . '...' : 'Untitled',
+                'title' => $post->content ? substr($post->content, 0, 100).'...' : 'Untitled',
                 'type' => 'content_recommendation',
                 'content' => $post->content ?? '',
                 'hashtags' => $this->extractHashtags($post->content ?? ''),
@@ -134,7 +131,7 @@ class AiRecommendationService
     /**
      * Get post performance analytics.
      */
-    public function getPostPerformanceAnalytics(Agency $agency, string $platform = null): array
+    public function getPostPerformanceAnalytics(Agency $agency, ?string $platform = null): array
     {
         $query = SocialPost::where('agency_id', $agency->id);
 
@@ -197,6 +194,7 @@ class AiRecommendationService
     protected function extractHashtags(string $content): array
     {
         preg_match_all('/#(\w+)/', $content, $matches);
+
         return $matches[1] ?? [];
     }
 

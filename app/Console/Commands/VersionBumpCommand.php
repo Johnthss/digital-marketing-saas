@@ -20,17 +20,18 @@ class VersionBumpCommand extends Command
         $type = $this->argument('type');
         $prerelease = $this->option('prerelease');
 
-        if (!in_array($type, ['major', 'minor', 'patch'])) {
+        if (! in_array($type, ['major', 'minor', 'patch'])) {
             $this->error('Invalid bump type. Use: major, minor, patch');
+
             return self::FAILURE;
         }
 
         $current = $version->getVersion();
         $parts = explode('.', $current);
 
-        $major = (int)($parts[0] ?? 0);
-        $minor = (int)($parts[1] ?? 0);
-        $patch = (int)($parts[2] ?? 0);
+        $major = (int) ($parts[0] ?? 0);
+        $minor = (int) ($parts[1] ?? 0);
+        $patch = (int) ($parts[2] ?? 0);
 
         switch ($type) {
             case 'major':

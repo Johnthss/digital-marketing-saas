@@ -1,5 +1,7 @@
 <?php
+
 namespace Database\Factories;
+
 use App\Models\ActivityFeed;
 use App\Models\Agency;
 use App\Models\User;
@@ -8,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ActivityFeedFactory extends Factory
 {
     protected $model = ActivityFeed::class;
+
     public function definition(): array
     {
         return [

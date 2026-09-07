@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
+use App\Enums\CampaignStatus;
 use App\Models\Campaign;
 use App\Models\Client;
-use App\Models\SocialPost;
-use App\Enums\CampaignStatus;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class CampaignController extends Controller
@@ -51,7 +48,7 @@ class CampaignController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:' . implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
+            'type' => 'required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
             'description' => 'nullable|string',
             'objective' => 'nullable|string|max:255',
             'target_audience' => 'nullable|string|max:255',
@@ -63,7 +60,7 @@ class CampaignController extends Controller
         $campaign = Campaign::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'type' => $validated['type'],
             'description' => $validated['description'] ?? null,
             'objective' => $validated['objective'] ?? null,
@@ -117,7 +114,7 @@ class CampaignController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:' . implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
+            'type' => 'required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
             'description' => 'nullable|string',
             'objective' => 'nullable|string|max:255',
             'target_audience' => 'nullable|string|max:255',

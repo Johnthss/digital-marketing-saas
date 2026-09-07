@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
-use App\Models\InboxMessage;
-use App\Models\SocialAccount;
 use App\Enums\InboxMessageStatus;
+use App\Models\InboxMessage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class InboxController extends Controller
 {
@@ -43,7 +40,7 @@ class InboxController extends Controller
     {
         $agency = $request->user()->agency;
 
-        if ((int)$message->agency_id !== (int)$agency->id) {
+        if ((int) $message->agency_id !== (int) $agency->id) {
             abort(403);
         }
 
@@ -58,7 +55,7 @@ class InboxController extends Controller
     {
         $agency = $request->user()->agency;
 
-        if ((int)$message->agency_id !== (int)$agency->id) {
+        if ((int) $message->agency_id !== (int) $agency->id) {
             abort(403);
         }
 
@@ -84,7 +81,7 @@ class InboxController extends Controller
         $message->update(['status' => InboxMessageStatus::TRIAGED->value]);
 
         // If auto-reply, mark as replied
-        if ($validated['action'] === 'auto_reply' && !empty($validated['reply_content'])) {
+        if ($validated['action'] === 'auto_reply' && ! empty($validated['reply_content'])) {
             InboxMessage::markReplied($message, $validated['reply_content'], $request->user());
         }
 
@@ -95,7 +92,7 @@ class InboxController extends Controller
     {
         $agency = $request->user()->agency;
 
-        if ((int)$message->agency_id !== (int)$agency->id) {
+        if ((int) $message->agency_id !== (int) $agency->id) {
             abort(403);
         }
 
@@ -112,7 +109,7 @@ class InboxController extends Controller
     {
         $agency = $request->user()->agency;
 
-        if ((int)$message->agency_id !== (int)$agency->id) {
+        if ((int) $message->agency_id !== (int) $agency->id) {
             abort(403);
         }
 

@@ -15,7 +15,7 @@ class ClientRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:clients,email,' . ($this->client?->id ?? 'NULL'),
+            'email' => 'required|email|unique:clients,email,'.($this->client?->id ?? 'NULL'),
             'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'industry' => 'nullable|string|max:100',

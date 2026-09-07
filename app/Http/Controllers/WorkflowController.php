@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
+use App\Enums\WorkflowStatus;
 use App\Models\Workflow;
 use App\Models\WorkflowTemplate;
-use App\Models\WorkflowVersion;
 use App\Services\Workflow\WorkflowEngine;
-use App\Enums\WorkflowStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -41,7 +39,7 @@ class WorkflowController extends Controller
     {
         $agency = $request->user()->agency;
         $templates = WorkflowTemplate::active()->public()->orderBy('category')->get();
-        
+
         $existingWorkflow = null;
         if ($workflow) {
             if ($workflow->agency_id !== $agency->id) {
@@ -59,7 +57,7 @@ class WorkflowController extends Controller
                 'connections' => $workflow->connections ?? null,
             ];
         }
-        
+
         return view('workflows.builder', compact('templates', 'existingWorkflow'));
     }
 
@@ -79,7 +77,7 @@ class WorkflowController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'trigger_type' => 'required|in:' . implode(',', array_keys(Workflow::TRIGGER_TYPES)),
+            'trigger_type' => 'required|in:'.implode(',', array_keys(Workflow::TRIGGER_TYPES)),
             'trigger_config' => 'nullable|array',
             'actions' => 'required|array|min:1',
             'conditions' => 'nullable|array',
@@ -88,7 +86,7 @@ class WorkflowController extends Controller
         $workflow = Workflow::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $validated['trigger_type'],
             'trigger_config' => $validated['trigger_config'] ?? [],
             'actions' => $validated['actions'],
@@ -141,7 +139,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'trigger_type' => 'required|in:' . implode(',', array_keys(Workflow::TRIGGER_TYPES)),
+            'trigger_type' => 'required|in:'.implode(',', array_keys(Workflow::TRIGGER_TYPES)),
             'trigger_config' => 'nullable|array',
             'actions' => 'required|array|min:1',
             'conditions' => 'nullable|array',
@@ -214,10 +212,10 @@ class WorkflowController extends Controller
         $workflow = Workflow::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $triggerNode['subtype'] ?? 'manual',
             'trigger_config' => $triggerNode['config'] ?? [],
-            'actions' => array_map(fn($node) => [
+            'actions' => array_map(fn ($node) => [
                 'type' => $node['subtype'],
                 'config' => $node['config'] ?? [],
             ], $actionNodes),
@@ -259,7 +257,7 @@ class WorkflowController extends Controller
             'name' => $validated['name'],
             'trigger_type' => $triggerNode['subtype'] ?? 'manual',
             'trigger_config' => $triggerNode['config'] ?? [],
-            'actions' => array_map(fn($node) => [
+            'actions' => array_map(fn ($node) => [
                 'type' => $node['subtype'],
                 'config' => $node['config'] ?? [],
             ], $actionNodes),
@@ -286,10 +284,10 @@ class WorkflowController extends Controller
         $workflow = Workflow::create([
             'agency_id' => $agency->id,
             'name' => $template->name,
-            'slug' => Str::slug($template->name) . '-' . uniqid(),
+            'slug' => Str::slug($template->name).'-'.uniqid(),
             'trigger_type' => $template->nodes[0]['subtype'] ?? 'manual',
             'trigger_config' => [],
-            'actions' => collect($template->nodes)->where('type', 'action')->values()->map(fn($node) => [
+            'actions' => collect($template->nodes)->where('type', 'action')->values()->map(fn ($node) => [
                 'type' => $node['subtype'],
                 'config' => $node['config'] ?? [],
             ])->all(),
@@ -297,11 +295,11 @@ class WorkflowController extends Controller
             'status' => WorkflowStatus::DRAFT->value,
         ]);
 
-        $workflow->createVersion('Created from template: ' . $template->name, Auth::id());
+        $workflow->createVersion('Created from template: '.$template->name, Auth::id());
         $template->incrementUsage();
 
         return redirect()->route('workflows.builder', $workflow)
-            ->with('success', 'Workflow created from template: ' . $template->name);
+            ->with('success', 'Workflow created from template: '.$template->name);
     }
 
     /**
@@ -333,11 +331,11 @@ class WorkflowController extends Controller
 
         $version = $workflow->versions()->findOrFail($versionId);
 
-        $workflow->createVersion('Before restore to v' . $version->version_number, Auth::id());
+        $workflow->createVersion('Before restore to v'.$version->version_number, Auth::id());
         $workflow->restoreFromVersion($version);
 
         return redirect()->route('workflows.show', $workflow)
-            ->with('success', 'Workflow restored to version ' . $version->version_number);
+            ->with('success', 'Workflow restored to version '.$version->version_number);
     }
 
     /**
@@ -351,7 +349,7 @@ class WorkflowController extends Controller
             abort(403);
         }
 
-        if (!$workflow->webhook_secret) {
+        if (! $workflow->webhook_secret) {
             $workflow->generateWebhookSecret();
         }
 
@@ -398,7 +396,7 @@ class WorkflowController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Execution failed: ' . $e->getMessage(),
+                'message' => 'Execution failed: '.$e->getMessage(),
             ], 500);
         }
     }

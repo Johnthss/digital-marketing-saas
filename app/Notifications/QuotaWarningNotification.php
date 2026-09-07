@@ -4,9 +4,9 @@ namespace App\Notifications;
 
 use App\Models\Agency;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class QuotaWarningNotification extends Notification implements ShouldQueue
 {

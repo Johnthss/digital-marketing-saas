@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\AiContentLog;
 use App\Services\AI\AiContentService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AiContentController extends Controller
 {
@@ -48,15 +46,15 @@ class AiContentController extends Controller
 
         // Build full prompt with tone and context
         $fullPrompt = $validated['prompt'];
-        if (!empty($validated['tone'])) {
-            $fullPrompt .= "\n\nTone: " . $validated['tone'];
+        if (! empty($validated['tone'])) {
+            $fullPrompt .= "\n\nTone: ".$validated['tone'];
         }
-        if (!empty($validated['length'])) {
+        if (! empty($validated['length'])) {
             $lengthMap = ['short' => '50-100 words', 'medium' => '150-250 words', 'long' => '300-500 words'];
-            $fullPrompt .= "\n\nLength: " . ($lengthMap[$validated['length']] ?? 'medium');
+            $fullPrompt .= "\n\nLength: ".($lengthMap[$validated['length']] ?? 'medium');
         }
-        if (!empty($validated['context'])) {
-            $fullPrompt .= "\n\nAdditional context: " . $validated['context'];
+        if (! empty($validated['context'])) {
+            $fullPrompt .= "\n\nAdditional context: ".$validated['context'];
         }
 
         try {
@@ -67,7 +65,7 @@ class AiContentController extends Controller
             );
 
             // Return HTML view if not AJAX
-            if (!$request->ajax() && !$request->wantsJson()) {
+            if (! $request->ajax() && ! $request->wantsJson()) {
                 $recentGenerations = AiContentLog::where('agency_id', $agency->id)
                     ->orderBy('created_at', 'desc')
                     ->take(10)
@@ -92,8 +90,8 @@ class AiContentController extends Controller
                 'model' => $response->model,
             ]);
         } catch (\Exception $e) {
-            if (!$request->ajax() && !$request->wantsJson()) {
-                return back()->with('error', 'Generation failed: ' . $e->getMessage())->withInput();
+            if (! $request->ajax() && ! $request->wantsJson()) {
+                return back()->with('error', 'Generation failed: '.$e->getMessage())->withInput();
             }
 
             return response()->json([

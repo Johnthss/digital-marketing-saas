@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\ContentAsset;
-use App\Models\ContentTemplate;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ContentLibraryController extends Controller
@@ -26,7 +23,7 @@ class ContentLibraryController extends Controller
             $query->where('type', $request->type);
         }
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $assets = $query->orderBy('created_at', 'desc')->paginate(15);
@@ -60,7 +57,7 @@ class ContentLibraryController extends Controller
         $asset = ContentAsset::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'type' => $validated['type'],
             'content' => $validated['content'],
             'media_url' => $validated['media_url'] ?? null,

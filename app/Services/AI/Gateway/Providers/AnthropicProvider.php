@@ -2,9 +2,9 @@
 
 namespace App\Services\AI\Gateway\Providers;
 
-use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\AiRequest;
 use App\Services\AI\Gateway\AiResponse;
+use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\Enums\FinishReason;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Log;
 class AnthropicProvider implements AiProviderInterface
 {
     protected string $apiKey;
+
     protected string $apiBaseUrl = 'https://api.anthropic.com/v1';
+
     protected string $defaultModel;
+
     protected array $pricing = [
         'claude-3-5-sonnet-20241022' => ['input' => 3.00, 'output' => 15.00],
         'claude-3-haiku-20240307' => ['input' => 0.25, 'output' => 1.25],
@@ -72,11 +75,30 @@ class AnthropicProvider implements AiProviderInterface
         }
     }
 
-    public function getName(): string { return 'anthropic'; }
-    public function getDisplayName(): string { return 'Anthropic Claude'; }
-    public function isAvailable(): bool { return !empty($this->apiKey); }
-    public function getSupportedModels(): array { return ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229']; }
-    public function getDefaultModel(): string { return $this->defaultModel; }
+    public function getName(): string
+    {
+        return 'anthropic';
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'Anthropic Claude';
+    }
+
+    public function isAvailable(): bool
+    {
+        return ! empty($this->apiKey);
+    }
+
+    public function getSupportedModels(): array
+    {
+        return ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'];
+    }
+
+    public function getDefaultModel(): string
+    {
+        return $this->defaultModel;
+    }
 
     public function calculateCost(AiResponse $response): float
     {
@@ -84,6 +106,7 @@ class AnthropicProvider implements AiProviderInterface
         $pricing = $this->pricing[$model] ?? $this->pricing['claude-3-5-sonnet-20241022'];
         $inputCost = ($response->promptTokens / 1_000_000) * $pricing['input'];
         $outputCost = ($response->completionTokens / 1_000_000) * $pricing['output'];
+
         return round($inputCost + $outputCost, 6);
     }
 }

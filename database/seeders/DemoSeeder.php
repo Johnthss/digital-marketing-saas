@@ -2,27 +2,26 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityLog;
 use App\Models\Agency;
-use App\Models\User;
-use App\Models\Plan;
-use App\Models\Feature;
-use App\Models\SocialAccount;
-use App\Models\SocialPost;
+use App\Models\AiContentLog;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\ContentAsset;
 use App\Models\ContentTemplate;
-use App\Models\LandingPage;
+use App\Models\Feature;
 use App\Models\Form;
 use App\Models\FormResponse;
+use App\Models\InboxMessage;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Workflow;
+use App\Models\LandingPage;
+use App\Models\Plan;
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
+use App\Models\User;
 use App\Models\Webhook;
-use App\Models\ActivityLog;
-use App\Models\AiContentLog;
-use App\Models\InboxMessage;
-use App\Models\ClientSubscription;
+use App\Models\Workflow;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -202,7 +201,7 @@ class DemoSeeder extends Seeder
     protected function seedAgency(): Agency
     {
         return Agency::create([
-            'slug' => 'demo-agency-' . Str::random(6),
+            'slug' => 'demo-agency-'.Str::random(6),
             'name' => 'Digital Marketing Pro',
             'email' => 'contact@digitalmarketingpro.com',
             'website' => 'https://digitalmarketingpro.com',
@@ -305,7 +304,7 @@ class DemoSeeder extends Seeder
             SocialAccount::create(array_merge($account, [
                 'agency_id' => $agency->id,
                 'platform_account_id' => Str::uuid(),
-                'access_token' => 'demo_' . Str::random(64),
+                'access_token' => 'demo_'.Str::random(64),
                 'is_active' => true,
                 'is_verified' => true,
             ]));
@@ -384,8 +383,8 @@ class DemoSeeder extends Seeder
         foreach ($clients as $client) {
             $created[] = Client::create(array_merge($client, [
                 'agency_id' => $agency->id,
-                'phone' => '+1 (555) ' . rand(100, 999) . '-' . rand(1000, 9999),
-                'notes' => 'Demo client for ' . $client['industry'] . ' industry.',
+                'phone' => '+1 (555) '.rand(100, 999).'-'.rand(1000, 9999),
+                'notes' => 'Demo client for '.$client['industry'].' industry.',
                 'last_contact_at' => Carbon::now()->subDays(rand(1, 30)),
             ]));
         }
@@ -406,7 +405,7 @@ class DemoSeeder extends Seeder
         foreach ($campaigns as $i => $campaign) {
             Campaign::create(array_merge($campaign, [
                 'agency_id' => $agency->id,
-                'slug' => Str::slug($campaign['name']) . '-' . Str::random(6),
+                'slug' => Str::slug($campaign['name']).'-'.Str::random(6),
                 'client_id' => $clients[$i % count($clients)]?->id,
                 'objective' => 'Increase engagement and conversions',
                 'target_audience' => '25-45 year old professionals',
@@ -441,7 +440,7 @@ class DemoSeeder extends Seeder
         foreach ($assets as $asset) {
             ContentAsset::create(array_merge($asset, [
                 'agency_id' => $agency->id,
-                'slug' => Str::slug($asset['name']) . '-' . Str::random(6),
+                'slug' => Str::slug($asset['name']).'-'.Str::random(6),
                 'tags' => ['demo', 'content', strtolower($asset['type'])],
                 'status' => 'active',
                 'usage_count' => rand(1, 20),
@@ -458,7 +457,7 @@ class DemoSeeder extends Seeder
         foreach ($templates as $template) {
             ContentTemplate::create(array_merge($template, [
                 'agency_id' => $agency->id,
-                'slug' => Str::slug($template['name']) . '-' . Str::random(6),
+                'slug' => Str::slug($template['name']).'-'.Str::random(6),
                 'variables' => ['product_name', 'description', 'link'],
                 'hashtags' => ['#marketing', '#socialmedia'],
                 'status' => 'active',
@@ -521,12 +520,12 @@ class DemoSeeder extends Seeder
             FormResponse::create([
                 'form_id' => $contactForm->id,
                 'data' => [
-                    'name' => 'Demo User ' . ($i + 1),
-                    'email' => 'user' . ($i + 1) . '@example.com',
-                    'company' => 'Demo Company ' . ($i + 1),
-                    'message' => 'This is a demo form submission message number ' . ($i + 1) . '.',
+                    'name' => 'Demo User '.($i + 1),
+                    'email' => 'user'.($i + 1).'@example.com',
+                    'company' => 'Demo Company '.($i + 1),
+                    'message' => 'This is a demo form submission message number '.($i + 1).'.',
                 ],
-                'ip_address' => '192.168.1.' . rand(1, 255),
+                'ip_address' => '192.168.1.'.rand(1, 255),
                 'user_agent' => 'Mozilla/5.0 Demo Browser',
                 'submitted_at' => Carbon::now()->subDays(rand(1, 30)),
             ]);
@@ -572,7 +571,7 @@ class DemoSeeder extends Seeder
                 'due_date' => $inv['due_date'],
                 'paid_date' => $inv['status'] === 'paid' ? $inv['due_date'] : null,
                 'payment_method' => $inv['status'] === 'paid' ? 'stripe' : null,
-                'transaction_id' => $inv['status'] === 'paid' ? 'txn_' . Str::random(20) : null,
+                'transaction_id' => $inv['status'] === 'paid' ? 'txn_'.Str::random(20) : null,
             ]);
 
             InvoiceItem::create([
@@ -607,7 +606,7 @@ class DemoSeeder extends Seeder
             Workflow::create([
                 'agency_id' => $agency->id,
                 'name' => $wf['name'],
-                'slug' => Str::slug($wf['name']) . '-' . Str::random(6),
+                'slug' => Str::slug($wf['name']).'-'.Str::random(6),
                 'status' => 'active',
                 'trigger_type' => $wf['trigger_type'],
                 'actions' => $wf['actions'],
@@ -689,8 +688,8 @@ class DemoSeeder extends Seeder
                 'model' => $model,
                 'action' => $actions[array_rand($actions)],
                 'content_type' => $contentTypes[array_rand($contentTypes)],
-                'prompt' => 'Demo prompt for content generation #' . ($i + 1),
-                'response' => 'Demo AI-generated response for content #' . ($i + 1),
+                'prompt' => 'Demo prompt for content generation #'.($i + 1),
+                'response' => 'Demo AI-generated response for content #'.($i + 1),
                 'total_tokens' => rand(100, 2000),
                 'prompt_tokens' => rand(50, 500),
                 'completion_tokens' => rand(50, 1500),

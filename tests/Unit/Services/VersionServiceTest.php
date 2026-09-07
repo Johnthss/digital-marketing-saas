@@ -30,7 +30,7 @@ class VersionServiceTest extends TestCase
     public function test_it_returns_version_info_array(): void
     {
         $info = $this->service->getVersionInfo();
-        
+
         $this->assertIsArray($info);
         $this->assertArrayHasKey('full', $info);
         $this->assertArrayHasKey('major', $info);

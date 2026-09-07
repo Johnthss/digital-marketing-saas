@@ -7,7 +7,6 @@ use App\Http\Requests\EmailCampaignRequest;
 use App\Models\EmailCampaign;
 use App\Services\Email\EmailCampaignService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class EmailCampaignController extends Controller
 {
@@ -46,12 +45,13 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 
         $this->authorize('view', $campaign);
         $campaign->load('recipients', 'agency');
+
         return view('email.campaigns.show', compact('campaign'));
     }
 
@@ -61,11 +61,12 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 
         $this->authorize('update', $campaign);
+
         return view('email.campaigns.edit', compact('campaign'));
     }
 
@@ -75,7 +76,7 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 
@@ -92,7 +93,7 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 
@@ -109,7 +110,7 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 
@@ -117,6 +118,7 @@ class EmailCampaignController extends Controller
 
         try {
             $this->service->send($campaign);
+
             return redirect()->route('email.campaigns.show', $campaign)
                 ->with('success', 'Campaign is being sent!');
         } catch (\InvalidArgumentException $e) {
@@ -131,7 +133,7 @@ class EmailCampaignController extends Controller
             ->where('agency_id', auth()->user()->agency_id)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             abort(404);
         }
 

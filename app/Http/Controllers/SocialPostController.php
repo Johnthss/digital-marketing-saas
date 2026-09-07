@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
-use App\Models\SocialPost;
-use App\Models\SocialAccount;
-use App\Models\Campaign;
-use App\Services\Social\SocialPostService;
-use App\Services\ContentQualityScorer;
 use App\Enums\PostStatus;
+use App\Models\Campaign;
+use App\Models\SocialAccount;
+use App\Models\SocialPost;
+use App\Services\ContentQualityScorer;
+use App\Services\Social\SocialPostService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SocialPostController extends Controller
 {
@@ -33,7 +31,7 @@ class SocialPostController extends Controller
             $query->where('platform', $request->platform);
         }
         if ($request->filled('search')) {
-            $query->where('content', 'like', '%' . $request->search . '%');
+            $query->where('content', 'like', '%'.$request->search.'%');
         }
 
         $posts = $query->orderBy('created_at', 'desc')->paginate(15);
@@ -98,7 +96,7 @@ class SocialPostController extends Controller
         ]);
 
         // Attach to campaign if specified
-        if (!empty($validated['campaign_id'])) {
+        if (! empty($validated['campaign_id'])) {
             $post->campaigns()->attach($validated['campaign_id']);
         }
 
@@ -188,7 +186,7 @@ class SocialPostController extends Controller
             return redirect()->route('social.posts.index')->with('success', 'Post published successfully!');
         }
 
-        return back()->with('error', 'Failed to publish: ' . $result['message']);
+        return back()->with('error', 'Failed to publish: '.$result['message']);
     }
 
     public function retry(Request $request, SocialPost $post, SocialPostService $postService)

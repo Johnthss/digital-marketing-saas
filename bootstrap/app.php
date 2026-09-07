@@ -1,14 +1,23 @@
 <?php
 
+use App\Http\Middleware\EnforceQuota;
+use App\Http\Middleware\EnsureAgencyAccess;
+use App\Http\Middleware\FeatureGate;
+use App\Http\Middleware\HstsMiddleware;
+use App\Http\Middleware\SecurityHeaders;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
-use App\Http\Middleware\HstsMiddleware;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,33 +28,33 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'agency' => \App\Http\Middleware\EnsureAgencyAccess::class,
-            'feature' => \App\Http\Middleware\FeatureGate::class,
-            'quota' => \App\Http\Middleware\EnforceQuota::class,
+            'agency' => EnsureAgencyAccess::class,
+            'feature' => FeatureGate::class,
+            'quota' => EnforceQuota::class,
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\SecurityHeaders::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            SecurityHeaders::class,
+            AddLinkHeadersForPreloadedAssets::class,
             HstsMiddleware::class,
         ]);
 
         $middleware->api(append: [
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            SubstituteBindings::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontReport([
             NotFoundHttpException::class,
-            \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException::class,
-            \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException::class,
+            AccessDeniedHttpException::class,
+            MethodNotAllowedHttpException::class,
         ]);
 
         // API requests get JSON responses
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 $statusCode = match (true) {
-                    $e instanceof \Symfony\Component\HttpKernel\Exception\HttpException => $e->getStatusCode(),
+                    $e instanceof HttpException => $e->getStatusCode(),
                     $e instanceof ValidationException => 422,
                     $e instanceof AuthenticationException => 401,
                     $e instanceof AuthorizationException => 403,

@@ -2,37 +2,36 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use App\Events\PostPublished;
-use App\Events\PostFailed;
-use App\Events\PostScheduled;
 use App\Events\CampaignStatusChanged;
 use App\Events\ClientCreated;
 use App\Events\InvoicePaid;
-use App\Events\AiGenerationCompleted;
+use App\Events\PostFailed;
+use App\Events\PostPublished;
+use App\Events\PostScheduled;
 use App\Events\SubscriptionUpgraded;
+use App\Listeners\Billing\LogInvoiceActivity;
+use App\Listeners\Billing\LogSubscriptionUpgrade;
 use App\Listeners\Social\ClearPostCache;
 use App\Listeners\Social\LogPostActivity;
 use App\Listeners\Social\SendPostNotification;
-use App\Listeners\Billing\LogInvoiceActivity;
-use App\Listeners\Billing\LogSubscriptionUpgrade;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
         PostPublished::class => [
-            ClearPostCache::class . '@handlePostPublished',
-            LogPostActivity::class . '@handlePostPublished',
-            SendPostNotification::class . '@handlePostPublished',
+            ClearPostCache::class.'@handlePostPublished',
+            LogPostActivity::class.'@handlePostPublished',
+            SendPostNotification::class.'@handlePostPublished',
         ],
         PostScheduled::class => [
-            ClearPostCache::class . '@handlePostScheduled',
-            LogPostActivity::class . '@handlePostScheduled',
+            ClearPostCache::class.'@handlePostScheduled',
+            LogPostActivity::class.'@handlePostScheduled',
         ],
         PostFailed::class => [
-            ClearPostCache::class . '@handlePostFailed',
-            LogPostActivity::class . '@handlePostFailed',
-            SendPostNotification::class . '@handlePostFailed',
+            ClearPostCache::class.'@handlePostFailed',
+            LogPostActivity::class.'@handlePostFailed',
+            SendPostNotification::class.'@handlePostFailed',
         ],
         CampaignStatusChanged::class => [
             // LogCampaignActivity
@@ -41,10 +40,10 @@ class EventServiceProvider extends ServiceProvider
             // LogClientActivity
         ],
         InvoicePaid::class => [
-            LogInvoiceActivity::class . '@handle',
+            LogInvoiceActivity::class.'@handle',
         ],
         SubscriptionUpgraded::class => [
-            LogSubscriptionUpgrade::class . '@handle',
+            LogSubscriptionUpgrade::class.'@handle',
         ],
     ];
 

@@ -2,26 +2,27 @@
 
 namespace Tests\Unit\Services;
 
-use Tests\TestCase;
 use App\Models\Agency;
-use App\Models\SocialPost;
+use App\Models\AiContentLog;
 use App\Models\EmailCampaign;
 use App\Models\Invoice;
-use App\Models\AiContentLog;
+use App\Models\SocialPost;
 use App\Services\Analytics\AnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class AnalyticsServiceTest extends TestCase
 {
     use RefreshDatabase;
 
     private AnalyticsService $service;
+
     private Agency $agency;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new AnalyticsService();
+        $this->service = new AnalyticsService;
         $this->agency = Agency::factory()->create();
     }
 

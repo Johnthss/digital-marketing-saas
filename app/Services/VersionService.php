@@ -4,13 +4,13 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class VersionService
 {
     private const CACHE_KEY = 'app:version';
+
     private const CHANGELOG_KEY = 'app:changelog';
+
     private const CACHE_TTL = 3600; // 1 hour
 
     /**
@@ -32,9 +32,9 @@ class VersionService
 
             return [
                 'full' => $version,
-                'major' => (int)($parts[0] ?? 0),
-                'minor' => (int)($parts[1] ?? 0),
-                'patch' => (int)($parts[2] ?? 0),
+                'major' => (int) ($parts[0] ?? 0),
+                'minor' => (int) ($parts[1] ?? 0),
+                'patch' => (int) ($parts[2] ?? 0),
                 'codename' => config('version.codename', ''),
                 'release_date' => config('version.release_date', ''),
                 'minimum_php' => config('version.minimum_php', '8.4'),
@@ -48,7 +48,7 @@ class VersionService
      */
     public function getChangelog(int $limit = 10): array
     {
-        return Cache::remember(self::CHANGELOG_KEY . ':' . $limit, self::CACHE_TTL, function () use ($limit) {
+        return Cache::remember(self::CHANGELOG_KEY.':'.$limit, self::CACHE_TTL, function () use ($limit) {
             return $this->parseChangelog($limit);
         });
     }
@@ -60,7 +60,7 @@ class VersionService
     {
         $path = base_path('CHANGELOG.md');
 
-        if (!File::exists($path)) {
+        if (! File::exists($path)) {
             return [];
         }
 
@@ -74,7 +74,9 @@ class VersionService
 ## |\z)/s', $content, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $i => $match) {
-            if ($i >= $limit) break;
+            if ($i >= $limit) {
+                break;
+            }
 
             $version = $match[1];
             $date = $match[2];
@@ -94,12 +96,14 @@ class VersionService
 
             // Parse categories
             $currentCategory = null;
-            $lines = explode("
-", $body);
+            $lines = explode('
+', $body);
 
             foreach ($lines as $line) {
                 $line = trim($line);
-                if (empty($line)) continue;
+                if (empty($line)) {
+                    continue;
+                }
 
                 // Check for category headers
                 foreach (['Added', 'Changed', 'Fixed', 'Security', 'Deprecated', 'Removed'] as $cat) {
@@ -127,6 +131,7 @@ class VersionService
     public function getLatestRelease(): ?array
     {
         $changelog = $this->getChangelog(1);
+
         return $changelog[0] ?? null;
     }
 

@@ -53,6 +53,7 @@ class ContentTemplate extends Model
         foreach ($variables as $key => $value) {
             $content = str_replace("{{$key}}", $value, $content);
         }
+
         return $content;
     }
 }

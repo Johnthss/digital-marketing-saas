@@ -2,9 +2,9 @@
 
 namespace App\Services\AI\Gateway\Providers;
 
-use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\AiRequest;
 use App\Services\AI\Gateway\AiResponse;
+use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\Enums\FinishReason;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Log;
 class OpenAiProvider implements AiProviderInterface
 {
     protected string $apiKey;
+
     protected string $apiBaseUrl;
+
     protected string $defaultModel;
+
     protected array $pricing = [
         'gpt-4o' => ['input' => 2.50, 'output' => 10.00],
         'gpt-4o-mini' => ['input' => 0.15, 'output' => 0.60],
@@ -70,11 +73,30 @@ class OpenAiProvider implements AiProviderInterface
         }
     }
 
-    public function getName(): string { return 'openai'; }
-    public function getDisplayName(): string { return 'OpenAI'; }
-    public function isAvailable(): bool { return !empty($this->apiKey); }
-    public function getSupportedModels(): array { return ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo']; }
-    public function getDefaultModel(): string { return $this->defaultModel; }
+    public function getName(): string
+    {
+        return 'openai';
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'OpenAI';
+    }
+
+    public function isAvailable(): bool
+    {
+        return ! empty($this->apiKey);
+    }
+
+    public function getSupportedModels(): array
+    {
+        return ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
+    }
+
+    public function getDefaultModel(): string
+    {
+        return $this->defaultModel;
+    }
 
     public function calculateCost(AiResponse $response): float
     {
@@ -82,6 +104,7 @@ class OpenAiProvider implements AiProviderInterface
         $pricing = $this->pricing[$model] ?? $this->pricing['gpt-4o'];
         $inputCost = ($response->promptTokens / 1_000_000) * $pricing['input'];
         $outputCost = ($response->completionTokens / 1_000_000) * $pricing['output'];
+
         return round($inputCost + $outputCost, 6);
     }
 }

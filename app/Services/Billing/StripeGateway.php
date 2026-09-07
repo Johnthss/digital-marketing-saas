@@ -4,9 +4,10 @@ namespace App\Services\Billing;
 
 use App\Models\Agency;
 use App\Models\Invoice;
-use Stripe\Stripe;
 use Stripe\Checkout\Session as CheckoutSession;
 use Stripe\Customer;
+use Stripe\InvoiceItem;
+use Stripe\Stripe;
 use Stripe\Subscription;
 use Stripe\Webhook;
 
@@ -33,6 +34,7 @@ class StripeGateway
         ]);
 
         $agency->update(['customer_id' => $customer->id]);
+
         return $customer->id;
     }
 
@@ -43,7 +45,7 @@ class StripeGateway
     {
         $priceId = config("services.stripe.plans.{$plan}.{$billing}");
 
-        if (!$priceId) {
+        if (! $priceId) {
             throw new \RuntimeException("Stripe price ID not found for plan: {$plan}/{$billing}");
         }
 
@@ -57,8 +59,8 @@ class StripeGateway
                 'quantity' => 1,
             ]],
             'mode' => 'subscription',
-            'success_url' => route('agency.billing') . '?checkout=success',
-            'cancel_url' => route('agency.billing') . '?checkout=canceled',
+            'success_url' => route('agency.billing').'?checkout=success',
+            'cancel_url' => route('agency.billing').'?checkout=canceled',
             'metadata' => [
                 'agency_id' => $agency->id,
                 'plan' => $plan,
@@ -71,15 +73,15 @@ class StripeGateway
      */
     public function createInvoice(Invoice $invoice): void
     {
-        if (!$invoice->agency->customer_id) {
+        if (! $invoice->agency->customer_id) {
             throw new \RuntimeException('No Stripe customer ID for agency.');
         }
 
-        \Stripe\InvoiceItem::create([
+        InvoiceItem::create([
             'customer' => $invoice->agency->customer_id,
             'amount' => (int) ($invoice->total * 100), // cents
             'currency' => strtolower($invoice->currency),
-            "description" => "Invoice {$invoice->invoice_number}",
+            'description' => "Invoice {$invoice->invoice_number}",
         ]);
 
         \Stripe\Invoice::create([
@@ -97,7 +99,7 @@ class StripeGateway
      */
     public function cancelSubscription(Agency $agency): void
     {
-        if (!$agency->subscription_id) {
+        if (! $agency->subscription_id) {
             throw new \RuntimeException('No active subscription.');
         }
 
@@ -110,7 +112,7 @@ class StripeGateway
     public function handleWebhook(string $payload, string $sigHeader): void
     {
         $endpointSecret = config('services.stripe.webhook_secret');
-        
+
         try {
             $event = Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
         } catch (\Exception $e) {

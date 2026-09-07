@@ -13,10 +13,10 @@ class WorkflowTemplateFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(3, true);
-        
+
         return [
             'name' => ucfirst($name),
-            'slug' => Str::slug($name) . '-' . uniqid(),
+            'slug' => Str::slug($name).'-'.uniqid(),
             'description' => fake()->sentence(),
             'category' => fake()->randomElement(['social', 'content', 'engagement', 'analytics', 'automation']),
             'icon' => fake()->randomElement(['fa-project-diagram', 'fa-robot', 'fa-bell', 'fa-reply', 'fa-globe']),

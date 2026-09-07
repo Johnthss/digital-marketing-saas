@@ -1,5 +1,7 @@
 <?php
+
 namespace Database\Factories;
+
 use App\Models\DataExportRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -7,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class DataExportRequestFactory extends Factory
 {
     protected $model = DataExportRequest::class;
+
     public function definition(): array
     {
         return [

@@ -2,14 +2,14 @@
 
 namespace App\Services\AI;
 
+use App\Models\ActivityLog;
 use App\Models\Agency;
-use App\Models\User;
-use App\Models\SocialPost;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\SocialPost;
+use App\Models\User;
 use App\Services\QuotaService;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AgencyAIAssistantService
@@ -25,7 +25,7 @@ class AgencyAIAssistantService
     public function processCommand(Agency $agency, User $user, string $message): array
     {
         $intent = $this->detectIntent(strtolower(trim($message)));
-        
+
         return match ($intent['action']) {
             'dashboard_stats' => $this->getDashboardStats($agency),
             'list_posts' => $this->listPosts($agency, $intent),
@@ -117,18 +117,18 @@ class AgencyAIAssistantService
         $posts = $query->orderBy('created_at', 'desc')->limit(5)->get();
 
         if ($posts->isEmpty()) {
-            return ['type' => 'text', 'content' => "No posts found."];
+            return ['type' => 'text', 'content' => 'No posts found.'];
         }
 
         $text = "📝 **Recent Posts**\n\n";
         foreach ($posts as $post) {
-            $status = match($post->status) {
+            $status = match ($post->status) {
                 'published' => '✅',
                 'scheduled' => '⏰',
                 'failed' => '❌',
                 default => '📝'
             };
-            $text .= "{$status} " . Str::limit($post->content ?? '', 50) . "\n";
+            $text .= "{$status} ".Str::limit($post->content ?? '', 50)."\n";
         }
 
         return ['type' => 'text', 'content' => $text];
@@ -149,12 +149,12 @@ class AgencyAIAssistantService
         $campaigns = Campaign::where('agency_id', $agency->id)->orderBy('created_at', 'desc')->limit(5)->get();
 
         if ($campaigns->isEmpty()) {
-            return ['type' => 'text', 'content' => "No campaigns found."];
+            return ['type' => 'text', 'content' => 'No campaigns found.'];
         }
 
         $text = "📢 **Recent Campaigns**\n\n";
         foreach ($campaigns as $campaign) {
-            $status = match($campaign->status) {
+            $status = match ($campaign->status) {
                 'active' => '🟢',
                 'paused' => '🟡',
                 'completed' => '✅',
@@ -184,12 +184,12 @@ class AgencyAIAssistantService
         $clients = $query->orderBy('created_at', 'desc')->limit(5)->get();
 
         if ($clients->isEmpty()) {
-            return ['type' => 'text', 'content' => "No clients found."];
+            return ['type' => 'text', 'content' => 'No clients found.'];
         }
 
         $text = "👥 **Recent Clients**\n\n";
         foreach ($clients as $client) {
-            $status = match($client->status) {
+            $status = match ($client->status) {
                 'active' => '🟢',
                 'lead' => '🟡',
                 default => '⚪'
@@ -220,12 +220,12 @@ class AgencyAIAssistantService
         $invoices = $query->orderBy('created_at', 'desc')->limit(5)->get();
 
         if ($invoices->isEmpty()) {
-            return ['type' => 'text', 'content' => "No invoices found."];
+            return ['type' => 'text', 'content' => 'No invoices found.'];
         }
 
         $text = "💰 **Recent Invoices**\n\n";
         foreach ($invoices as $invoice) {
-            $status = match($invoice->status) {
+            $status = match ($invoice->status) {
                 'paid' => '✅',
                 'overdue' => '🔴',
                 'sent' => '📤',
@@ -255,7 +255,7 @@ class AgencyAIAssistantService
         $text = "📊 **Plan Usage** ({$agency->subscription_plan})\n\n";
         foreach ($quotas as $key => $value) {
             $label = ucfirst(str_replace('_', ' ', $key));
-            $text .= "• {$label}: " . ($value === -1 ? '∞' : $value) . "\n";
+            $text .= "• {$label}: ".($value === -1 ? '∞' : $value)."\n";
         }
 
         return ['type' => 'text', 'content' => $text];
@@ -263,14 +263,14 @@ class AgencyAIAssistantService
 
     private function getRecentActivity(Agency $agency): array
     {
-        $activities = \App\Models\ActivityLog::where('agency_id', $agency->id)
+        $activities = ActivityLog::where('agency_id', $agency->id)
             ->with('user')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         if ($activities->isEmpty()) {
-            return ['type' => 'text', 'content' => "No recent activity."];
+            return ['type' => 'text', 'content' => 'No recent activity.'];
         }
 
         $text = "📋 **Recent Activity**\n\n";
@@ -324,7 +324,7 @@ class AgencyAIAssistantService
         $text .= "Examples:\n";
         $text .= "• \"Show me my stats\"\n";
         $text .= "• \"List my published posts\"\n";
-        $text .= "• \"Write a tweet about our new product\"";
+        $text .= '• "Write a tweet about our new product"';
 
         return ['type' => 'text', 'content' => $text];
     }
@@ -336,7 +336,7 @@ class AgencyAIAssistantService
         $text .= "Or try natural language like:\n";
         $text .= "• \"Show me my dashboard\"\n";
         $text .= "• \"List my campaigns\"\n";
-        $text .= "• \"Check my quota\"";
+        $text .= '• "Check my quota"';
 
         return ['type' => 'text', 'content' => $text];
     }

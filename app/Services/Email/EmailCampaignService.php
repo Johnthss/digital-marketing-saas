@@ -2,10 +2,10 @@
 
 namespace App\Services\Email;
 
-use App\Models\EmailCampaign;
-use App\Models\EmailCampaignRecipient;
 use App\Models\Agency;
 use App\Models\Client;
+use App\Models\EmailCampaign;
+use App\Models\EmailCampaignRecipient;
 use Illuminate\Support\Str;
 
 class EmailCampaignService
@@ -18,7 +18,7 @@ class EmailCampaignService
         $campaign = EmailCampaign::create([
             'agency_id' => $agency->id,
             'name' => $data['name'],
-            'slug' => Str::slug($data['name']) . '-' . Str::random(6),
+            'slug' => Str::slug($data['name']).'-'.Str::random(6),
             'type' => $data['type'] ?? 'newsletter',
             'status' => 'draft',
             'subject' => $data['subject'],
@@ -31,7 +31,7 @@ class EmailCampaignService
         ]);
 
         // Add recipients if provided
-        if (!empty($data['recipients'])) {
+        if (! empty($data['recipients'])) {
             $this->addRecipients($campaign, $data['recipients']);
         }
 
@@ -43,7 +43,7 @@ class EmailCampaignService
      */
     public function update(EmailCampaign $campaign, array $data): EmailCampaign
     {
-        if (!$campaign->isEditable()) {
+        if (! $campaign->isEditable()) {
             throw new \InvalidArgumentException('Campaign cannot be edited in current status');
         }
 
@@ -58,7 +58,7 @@ class EmailCampaignService
             'scheduled_at' => $data['scheduled_at'] ?? $campaign->scheduled_at,
         ]);
 
-        if (!empty($data['recipients'])) {
+        if (! empty($data['recipients'])) {
             $this->addRecipients($campaign, $data['recipients']);
         }
 
@@ -167,7 +167,9 @@ class EmailCampaignService
     public function calculateRates(EmailCampaign $campaign): void
     {
         $total = $campaign->recipients_count;
-        if ($total === 0) return;
+        if ($total === 0) {
+            return;
+        }
 
         $campaign->update([
             'open_rate' => round(($campaign->opened_count / $total) * 100, 2),
@@ -217,6 +219,7 @@ class EmailCampaignService
         if ($campaign->status === 'sending') {
             throw new \InvalidArgumentException('Cannot delete campaign while sending');
         }
+
         return $campaign->delete();
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
@@ -17,8 +16,8 @@ class OAuthController extends Controller
     public function redirect(string $provider)
     {
         $allowedProviders = ['google', 'facebook', 'twitter', 'linkedin'];
-        
-        if (!in_array($provider, $allowedProviders)) {
+
+        if (! in_array($provider, $allowedProviders)) {
             abort(404);
         }
 
@@ -40,6 +39,7 @@ class OAuthController extends Controller
 
         if ($user) {
             Auth::login($user);
+
             return redirect()->route('dashboard');
         }
 
@@ -52,6 +52,7 @@ class OAuthController extends Controller
         ]);
 
         Auth::login($user);
+
         return redirect()->route('onboarding');
     }
 }

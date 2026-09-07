@@ -34,7 +34,7 @@ class ExportService
     public function exportPostsCsv(array $posts): StreamedResponse
     {
         $headers = ['ID', 'Platform', 'Content', 'Status', 'Scheduled At', 'Published At', 'Views', 'Likes', 'Comments', 'Shares'];
-        $data = $posts->map(fn($post) => [
+        $data = $posts->map(fn ($post) => [
             $post->id,
             $post->platform,
             Str::limit($post->content, 100),
@@ -47,7 +47,7 @@ class ExportService
             $post->shares_count,
         ])->toArray();
 
-        return $this->exportCsv($headers, $data, 'posts-export-' . date('Y-m-d') . '.csv');
+        return $this->exportCsv($headers, $data, 'posts-export-'.date('Y-m-d').'.csv');
     }
 
     /**
@@ -56,7 +56,7 @@ class ExportService
     public function exportClientsCsv(array $clients): StreamedResponse
     {
         $headers = ['ID', 'Name', 'Email', 'Company', 'Industry', 'Status', 'Created At'];
-        $data = $clients->map(fn($client) => [
+        $data = $clients->map(fn ($client) => [
             $client->id,
             $client->name,
             $client->email,
@@ -66,6 +66,6 @@ class ExportService
             $client->created_at?->format('Y-m-d'),
         ])->toArray();
 
-        return $this->exportCsv($headers, $data, 'clients-export-' . date('Y-m-d') . '.csv');
+        return $this->exportCsv($headers, $data, 'clients-export-'.date('Y-m-d').'.csv');
     }
 }

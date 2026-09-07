@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WorkflowLog extends Model
 {
     public $timestamps = false;
+
     protected $primaryKey = 'id';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     protected $fillable = [
@@ -29,6 +32,8 @@ class WorkflowLog extends Model
     }
 
     public const LEVEL_INFO = 'info';
+
     public const LEVEL_WARNING = 'warning';
+
     public const LEVEL_ERROR = 'error';
 }

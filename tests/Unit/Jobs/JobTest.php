@@ -13,14 +13,14 @@ class JobTest extends TestCase
     /** @test */
     public function check_for_updates_job_can_be_dispatched(): void
     {
-        $job = new CheckForUpdates();
+        $job = new CheckForUpdates;
         $this->assertInstanceOf(CheckForUpdates::class, $job);
     }
 
     /** @test */
     public function job_implements_should_queue(): void
     {
-        $job = new CheckForUpdates();
+        $job = new CheckForUpdates;
         $this->assertTrue(method_exists($job, 'handle'));
     }
 }

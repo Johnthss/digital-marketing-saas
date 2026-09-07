@@ -3,14 +3,13 @@
 namespace Tests\Unit\Models;
 
 use App\Models\ActivityFeed;
-use App\Models\Agency;
 use App\Models\Comment;
 use App\Models\ConsentRecord;
 use App\Models\DataDeletionRequest;
-use App\Models\DataExportRequest;
 use App\Models\EmailTemplate;
 use App\Models\MediaAsset;
 use App\Models\Report;
+use App\Models\SocialPost;
 use App\Models\WhiteLabelSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -101,6 +100,6 @@ class ModelTest extends TestCase
     {
         Comment::factory()->create(['commentable_type' => 'App\Models\SocialPost', 'commentable_id' => 1]);
         Comment::factory()->create(['commentable_type' => 'App\Models\SocialPost', 'commentable_id' => 2]);
-        $this->assertEquals(1, Comment::forCommentable(new \App\Models\SocialPost(['id' => 1]))->count());
+        $this->assertEquals(1, Comment::forCommentable(new SocialPost(['id' => 1]))->count());
     }
 }

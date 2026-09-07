@@ -16,7 +16,9 @@ class PublishPost implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $backoff = 60;
+
     public int $timeout = 120;
 
     public function __construct(public SocialPost $post) {}
@@ -26,7 +28,7 @@ class PublishPost implements ShouldQueue
         try {
             $result = $service->publishPost($this->post);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 Log::warning("PublishPost job failed for post #{$this->post->id}");
             }
         } catch (\Exception $e) {

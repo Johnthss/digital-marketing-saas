@@ -37,9 +37,28 @@ class ApiController extends Controller
     }
 
     // Resource stubs
-    public function index() { return ['message' => 'Index']; }
-    public function store() { return ['message' => 'Store']; }
-    public function show() { return ['message' => 'Show']; }
-    public function update() { return ['message' => 'Update']; }
-    public function destroy() { return ['message' => 'Destroy']; }
+    public function index()
+    {
+        return ['message' => 'Index'];
+    }
+
+    public function store()
+    {
+        return ['message' => 'Store'];
+    }
+
+    public function show()
+    {
+        return ['message' => 'Show'];
+    }
+
+    public function update()
+    {
+        return ['message' => 'Update'];
+    }
+
+    public function destroy()
+    {
+        return ['message' => 'Destroy'];
+    }
 }

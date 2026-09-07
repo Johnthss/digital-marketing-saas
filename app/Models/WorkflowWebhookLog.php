@@ -40,7 +40,7 @@ class WorkflowWebhookLog extends Model
         return $query->where('status', 'processed');
     }
 
-    public function markAsProcessed(string $response = null): void
+    public function markAsProcessed(?string $response = null): void
     {
         $this->update([
             'status' => 'processed',

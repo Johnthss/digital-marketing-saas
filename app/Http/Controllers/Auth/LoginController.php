@@ -26,13 +26,15 @@ class LoginController extends Controller
             $request->session()->regenerate();
 
             $user = Auth::user();
-            if (!$user->agency_id) {
+            if (! $user->agency_id) {
                 Auth::logout();
+
                 return back()->with('error', 'Your account is not associated with any agency.');
             }
 
-            if (!$user->agency->isActive) {
+            if (! $user->agency->isActive) {
                 Auth::logout();
+
                 return back()->with('error', 'Your agency account is not active.');
             }
 
@@ -49,6 +51,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login')->with('success', 'You have been logged out.');
     }
 }

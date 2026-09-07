@@ -13,7 +13,7 @@ class EnforceQuota
     {
         $user = $request->user();
 
-        if (!$user || !$user->agency) {
+        if (! $user || ! $user->agency) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Unauthorized.'], 401);
             }

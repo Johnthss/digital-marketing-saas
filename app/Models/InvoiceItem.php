@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InvoiceItem extends Model
 {
     public $timestamps = false;
+
     protected $primaryKey = 'id';
+
     public $incrementing = true;
+
     protected $keyType = 'int';
 
     protected $fillable = [
@@ -33,7 +36,10 @@ class InvoiceItem extends Model
     }
 
     public const TYPE_LINE_ITEM = 'line_item';
+
     public const TYPE_TAX = 'tax';
+
     public const TYPE_DISCOUNT = 'discount';
+
     public const TYPE_SHIPPING = 'shipping';
 }

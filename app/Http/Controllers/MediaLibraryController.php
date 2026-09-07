@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\MediaAsset;
 use App\Services\MediaUploadService;
 use Illuminate\Http\Request;
@@ -28,7 +27,7 @@ class MediaLibraryController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $assets = $query->orderBy('created_at', 'desc')->paginate(24);
@@ -42,6 +41,7 @@ class MediaLibraryController extends Controller
     {
         $agency = $request->user()->agency;
         $folders = MediaAsset::where('agency_id', $agency->id)->distinct()->pluck('folder');
+
         return view('media.create', compact('agency', 'folders'));
     }
 
@@ -64,7 +64,7 @@ class MediaLibraryController extends Controller
         }
 
         return redirect()->route('media.index')
-            ->with('success', count($uploaded) . ' file(s) uploaded successfully.');
+            ->with('success', count($uploaded).' file(s) uploaded successfully.');
     }
 
     public function show(Request $request, MediaAsset $asset)
@@ -73,6 +73,7 @@ class MediaLibraryController extends Controller
         if ($asset->agency_id !== $agency->id) {
             abort(403);
         }
+
         return view('media.show', compact('agency', 'asset'));
     }
 
@@ -83,6 +84,7 @@ class MediaLibraryController extends Controller
             abort(403);
         }
         $uploadService->delete($asset);
+
         return redirect()->route('media.index')->with('success', 'File deleted.');
     }
 
@@ -92,7 +94,8 @@ class MediaLibraryController extends Controller
         if ($asset->agency_id !== $agency->id) {
             abort(403);
         }
-        $path = storage_path('app/public/' . $asset->file_path);
+        $path = storage_path('app/public/'.$asset->file_path);
+
         return response()->download($path, $asset->name);
     }
 
@@ -103,6 +106,7 @@ class MediaLibraryController extends Controller
             abort(403);
         }
         $uploadService->duplicate($asset);
+
         return back()->with('success', 'File duplicated.');
     }
 
@@ -114,6 +118,7 @@ class MediaLibraryController extends Controller
         foreach ($assets as $asset) {
             app(MediaUploadService::class)->delete($asset);
         }
+
         return response()->json(['success' => true, 'count' => $assets->count()]);
     }
 }

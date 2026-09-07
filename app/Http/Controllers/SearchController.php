@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\ContentAsset;
@@ -10,7 +9,6 @@ use App\Models\Invoice;
 use App\Models\SocialPost;
 use App\Models\Workflow;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {

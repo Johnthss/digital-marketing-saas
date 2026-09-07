@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SocialAccount extends Model
@@ -53,21 +54,22 @@ class SocialAccount extends Model
         return $this->belongsTo(Agency::class);
     }
 
-    public function posts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function posts(): HasMany
     {
         return $this->hasMany(SocialPost::class);
     }
 
-    public function inboxMessages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function inboxMessages(): HasMany
     {
         return $this->hasMany(InboxMessage::class);
     }
 
     public function isExpired(): bool
     {
-        if (!$this->token_expires_at) {
+        if (! $this->token_expires_at) {
             return false;
         }
+
         return $this->token_expires_at->isPast();
     }
 

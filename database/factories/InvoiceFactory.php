@@ -21,7 +21,7 @@ class InvoiceFactory extends Factory
         return [
             'agency_id' => Agency::factory(),
             'client_id' => Client::factory(),
-            'invoice_number' => 'INV-' . strtoupper(fake()->bothify('##??##')),
+            'invoice_number' => 'INV-'.strtoupper(fake()->bothify('##??##')),
             'issue_date' => $issueDate,
             'due_date' => $dueDate,
             'subtotal' => fake()->randomFloat(2, 100, 5000),

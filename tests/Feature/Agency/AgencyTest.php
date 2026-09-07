@@ -12,6 +12,7 @@ class AgencyTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $owner;
 
     protected function setUp(): void

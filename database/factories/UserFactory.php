@@ -14,7 +14,7 @@ class UserFactory extends Factory
     {
         return [
             'name' => 'Test User',
-            'email' => 'test' . uniqid() . '@example.com',
+            'email' => 'test'.uniqid().'@example.com',
             'email_verified_at' => null,
             'password' => Hash::make('password123'),
             'agency_id' => null,

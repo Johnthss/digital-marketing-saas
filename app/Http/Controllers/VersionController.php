@@ -31,7 +31,7 @@ class VersionController extends Controller
      */
     public function changelog(Request $request): JsonResponse
     {
-        $limit = min(50, max(1, (int)$request->query('limit', 10)));
+        $limit = min(50, max(1, (int) $request->query('limit', 10)));
 
         return response()->json([
             'changelog' => $this->version->getChangelog($limit),

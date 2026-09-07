@@ -16,7 +16,7 @@ class CacheTest extends TestCase
     public function it_caches_dashboard_stats(): void
     {
         $agency = Agency::factory()->create();
-        $service = new AnalyticsService();
+        $service = new AnalyticsService;
         $stats1 = $service->getDashboardStats($agency);
         $stats2 = $service->getDashboardStats($agency);
         $this->assertEquals($stats1, $stats2);

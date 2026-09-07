@@ -7,8 +7,8 @@ use App\Models\Agency;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class RegisterController extends Controller
@@ -30,7 +30,7 @@ class RegisterController extends Controller
         $user = DB::transaction(function () use ($validated) {
             $agency = Agency::create([
                 'name' => $validated['agency_name'],
-                'slug' => Str::slug($validated['agency_name']) . '-' . uniqid(),
+                'slug' => Str::slug($validated['agency_name']).'-'.uniqid(),
                 'email' => $validated['email'],
                 'status' => 'active',
                 'subscription_plan' => 'free',

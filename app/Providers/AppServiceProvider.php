@@ -2,20 +2,20 @@
 
 namespace App\Providers;
 
-use App\Models\SocialPost;
-use App\Models\Client;
-use App\Models\Campaign;
 use App\Models\AiContentLog;
+use App\Models\Campaign;
+use App\Models\Client;
 use App\Models\Invoice;
-use App\Models\User;
 use App\Models\SocialAccount;
-use App\Observers\SocialPostObserver;
-use App\Observers\ClientObserver;
-use App\Observers\CampaignObserver;
+use App\Models\SocialPost;
+use App\Models\User;
 use App\Observers\AiContentLogObserver;
+use App\Observers\CampaignObserver;
+use App\Observers\ClientObserver;
 use App\Observers\InvoiceObserver;
-use App\Observers\UserObserver;
 use App\Observers\SocialAccountObserver;
+use App\Observers\SocialPostObserver;
+use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;

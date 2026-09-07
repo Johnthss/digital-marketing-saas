@@ -21,9 +21,28 @@ class Report extends Model
         'last_generated_at' => 'datetime',
     ];
 
-    public function agency(): BelongsTo { return $this->belongsTo(Agency::class); }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function scopeForAgency($query, int $agencyId) { return $query->where('agency_id', $agencyId); }
-    public function scopePending($query) { return $query->where('status', 'pending'); }
-    public function getDownloadUrlAttribute(): ?string { return $this->file_path ? asset('storage/' . $this->file_path) : null; }
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(Agency::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function scopeForAgency($query, int $agencyId)
+    {
+        return $query->where('agency_id', $agencyId);
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function getDownloadUrlAttribute(): ?string
+    {
+        return $this->file_path ? asset('storage/'.$this->file_path) : null;
+    }
 }

@@ -13,6 +13,7 @@ class SocialAccountFactory extends Factory
     public function definition(): array
     {
         $platform = fake()->randomElement(['facebook', 'instagram', 'twitter', 'linkedin', 'tiktok', 'pinterest']);
+
         return [
             'agency_id' => Agency::factory(),
             'platform' => $platform,

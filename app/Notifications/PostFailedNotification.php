@@ -28,7 +28,7 @@ class PostFailedNotification extends Notification implements ShouldQueue
             ->subject('Post Failed to Publish')
             ->greeting("Hello {$notifiable->name}!")
             ->line("Your post failed to publish to {$this->post->platform}.")
-            ->line('Error: ' . $this->errorMessage)
+            ->line('Error: '.$this->errorMessage)
             ->action('View Post', url("/social/posts/{$this->post->id}"))
             ->line('Please check the post and try again.');
     }

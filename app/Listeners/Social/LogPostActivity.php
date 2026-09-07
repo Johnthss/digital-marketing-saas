@@ -2,8 +2,8 @@
 
 namespace App\Listeners\Social;
 
-use App\Events\PostPublished;
 use App\Events\PostFailed;
+use App\Events\PostPublished;
 use App\Events\PostScheduled;
 use App\Models\ActivityLog;
 

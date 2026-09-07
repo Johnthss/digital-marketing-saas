@@ -3,18 +3,19 @@
 namespace App\Console\Commands;
 
 use App\Models\Agency;
-use App\Models\User;
-use App\Models\SocialPost;
 use App\Models\Campaign;
 use App\Models\Client;
 use App\Models\Invoice;
+use App\Models\SocialPost;
+use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AppStatus extends Command
 {
     protected $signature = 'app:status';
+
     protected $description = 'Show comprehensive application status';
 
     public function handle(): int
@@ -52,7 +53,7 @@ class AppStatus extends Command
 
         $this->table(
             ['Plan', 'Count'],
-            collect($plans)->map(fn($count, $plan) => [ucfirst($plan), $count])->toArray()
+            collect($plans)->map(fn ($count, $plan) => [ucfirst($plan), $count])->toArray()
         );
         $this->newLine();
 
@@ -71,7 +72,7 @@ class AppStatus extends Command
 
         // Cache
         $this->info('⚡ CACHE');
-        $this->line('  Driver: ' . config('cache.default'));
+        $this->line('  Driver: '.config('cache.default'));
         $this->newLine();
 
         // Scheduler
@@ -86,6 +87,7 @@ class AppStatus extends Command
 
         $this->newLine();
         $this->info('═══════════════════════════════════════════════');
+
         return self::SUCCESS;
     }
 }

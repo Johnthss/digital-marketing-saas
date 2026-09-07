@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
-use App\Models\SocialPost;
 use App\Models\ActivityLog;
+use App\Models\AiContentLog;
+use App\Models\LandingPage;
+use App\Models\SocialPost;
 use App\Services\Analytics\AnalyticsService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class DashboardController extends Controller
             'ai' => [
                 'label' => 'AI Generations',
                 'used' => Cache::remember("analytics:{$agency->id}:ai_generations", 300, function () use ($agency) {
-                    return \App\Models\AiContentLog::where('agency_id', $agency->id)->count();
+                    return AiContentLog::where('agency_id', $agency->id)->count();
                 }),
                 'limit' => $quota->getLimit($agency, 'ai_generations'),
                 'percentage' => $quota->getPercentage($agency, 'ai_generations', Cache::get("analytics:{$agency->id}:ai_generations", 0)),
@@ -73,7 +74,7 @@ class DashboardController extends Controller
             'landing_pages' => [
                 'label' => 'Landing Pages',
                 'used' => Cache::remember("analytics:{$agency->id}:landing_pages", 300, function () use ($agency) {
-                    return \App\Models\LandingPage::where('agency_id', $agency->id)->count();
+                    return LandingPage::where('agency_id', $agency->id)->count();
                 }),
                 'limit' => $quota->getLimit($agency, 'landing_pages'),
                 'percentage' => $quota->getPercentage($agency, 'landing_pages', Cache::get("analytics:{$agency->id}:landing_pages", 0)),

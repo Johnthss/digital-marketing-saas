@@ -21,6 +21,7 @@ class TeamManagementWorkflowTest extends TestCase
             'agency_id' => $agency->id,
             'role' => 'owner',
         ]);
+
         return [$agency, $owner];
     }
 

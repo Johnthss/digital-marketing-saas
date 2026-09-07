@@ -18,12 +18,13 @@ class AiGatewayTest extends TestCase
     use RefreshDatabase;
 
     private AiGateway $gateway;
+
     private Agency $agency;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->gateway = new AiGateway();
+        $this->gateway = new AiGateway;
         $this->agency = Agency::factory()->create();
     }
 
@@ -410,6 +411,7 @@ class AiGatewayTest extends TestCase
         $google->shouldReceive('isAvailable')->once()->andReturn(true);
         $google->shouldReceive('send')->once()->andReturnUsing(function () use (&$callLog) {
             $callLog[] = 'google';
+
             return new AiResponse(
                 content: 'Final success',
                 model: 'gemini-pro',

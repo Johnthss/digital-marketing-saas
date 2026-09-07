@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\SocialAccount;
-use App\Models\Platform;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SocialAccountController extends Controller
 {
@@ -41,7 +38,7 @@ class SocialAccountController extends Controller
         $agency = $request->user()->agency;
 
         $validated = $request->validate([
-            'platform' => 'required|in:' . implode(',', array_keys(SocialAccount::SUPPORTED_PLATFORMS)),
+            'platform' => 'required|in:'.implode(',', array_keys(SocialAccount::SUPPORTED_PLATFORMS)),
             'access_token' => 'required|string',
             'refresh_token' => 'nullable|string',
             'platform_account_id' => 'nullable|string',
@@ -89,7 +86,7 @@ class SocialAccountController extends Controller
             abort(403);
         }
 
-        $account->update(['is_active' => !$account->is_active]);
+        $account->update(['is_active' => ! $account->is_active]);
 
         return redirect()->route('social.accounts.index')->with('success', 'Account status updated.');
     }

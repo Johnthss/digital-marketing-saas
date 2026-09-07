@@ -2,9 +2,9 @@
 
 namespace App\Services\AI\Gateway\Providers;
 
-use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\AiRequest;
 use App\Services\AI\Gateway\AiResponse;
+use App\Services\AI\Gateway\Contracts\AiProviderInterface;
 use App\Services\AI\Gateway\Enums\FinishReason;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Log;
 class GoogleProvider implements AiProviderInterface
 {
     protected string $apiKey;
+
     protected string $apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+
     protected string $defaultModel;
+
     protected array $pricing = [
         'gemini-1.5-pro' => ['input' => 1.25, 'output' => 5.00],
         'gemini-1.5-flash' => ['input' => 0.075, 'output' => 0.30],
@@ -33,7 +36,7 @@ class GoogleProvider implements AiProviderInterface
         try {
             $prompt = $request->prompt;
             if ($request->systemPrompt) {
-                $prompt = $request->systemPrompt . "\n\n" . $prompt;
+                $prompt = $request->systemPrompt."\n\n".$prompt;
             }
 
             $response = Http::timeout(60)
@@ -76,11 +79,30 @@ class GoogleProvider implements AiProviderInterface
         }
     }
 
-    public function getName(): string { return 'google'; }
-    public function getDisplayName(): string { return 'Google Gemini'; }
-    public function isAvailable(): bool { return !empty($this->apiKey); }
-    public function getSupportedModels(): array { return ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro']; }
-    public function getDefaultModel(): string { return $this->defaultModel; }
+    public function getName(): string
+    {
+        return 'google';
+    }
+
+    public function getDisplayName(): string
+    {
+        return 'Google Gemini';
+    }
+
+    public function isAvailable(): bool
+    {
+        return ! empty($this->apiKey);
+    }
+
+    public function getSupportedModels(): array
+    {
+        return ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'];
+    }
+
+    public function getDefaultModel(): string
+    {
+        return $this->defaultModel;
+    }
 
     public function calculateCost(AiResponse $response): float
     {
@@ -88,6 +110,7 @@ class GoogleProvider implements AiProviderInterface
         $pricing = $this->pricing[$model] ?? $this->pricing['gemini-1.5-pro'];
         $inputCost = ($response->promptTokens / 1_000_000) * $pricing['input'];
         $outputCost = ($response->completionTokens / 1_000_000) * $pricing['output'];
+
         return round($inputCost + $outputCost, 6);
     }
 }

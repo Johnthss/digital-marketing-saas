@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services;
 
-use App\Models\Agency;
 use App\Services\AI\AgencyAIAssistantService;
 use App\Services\Telegram\TelegramBotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +15,7 @@ class TelegramBotServiceTest extends TestCase
     {
         $assistant = $this->app->make(AgencyAIAssistantService::class);
         $service = new TelegramBotService($assistant);
-        
+
         $this->assertInstanceOf(TelegramBotService::class, $service);
     }
 
@@ -24,7 +23,7 @@ class TelegramBotServiceTest extends TestCase
     {
         $assistant = $this->app->make(AgencyAIAssistantService::class);
         $service = new TelegramBotService($assistant);
-        
+
         // Mock the API call - just verify structure
         $this->assertInstanceOf(TelegramBotService::class, $service);
     }

@@ -3,8 +3,8 @@
 namespace App\Observers;
 
 use App\Models\AiContentLog;
-use App\Services\QuotaService;
 use App\Services\Analytics\AnalyticsService;
+use App\Services\QuotaService;
 
 class AiContentLogObserver
 {

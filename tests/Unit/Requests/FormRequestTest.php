@@ -13,14 +13,14 @@ class FormRequestTest extends TestCase
     /** @test */
     public function store_social_post_request_has_rules(): void
     {
-        $request = new StoreSocialPostRequest();
+        $request = new StoreSocialPostRequest;
         $this->assertArrayHasKey('content', $request->rules());
     }
 
     /** @test */
     public function store_social_post_request_has_messages(): void
     {
-        $request = new StoreSocialPostRequest();
+        $request = new StoreSocialPostRequest;
         $this->assertIsArray($request->messages());
     }
 }

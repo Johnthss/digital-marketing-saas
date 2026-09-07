@@ -2,20 +2,22 @@
 
 namespace Tests\Feature\Email;
 
-use Tests\TestCase;
 use App\Models\Agency;
-use App\Models\User;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
+use App\Models\User;
 use App\Services\Email\EmailCampaignService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class EmailCampaignTest extends TestCase
 {
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
+
     private EmailCampaignService $service;
 
     protected function setUp(): void

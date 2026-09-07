@@ -61,6 +61,7 @@ class ActivityFeed extends Model
     public function getDescriptionAttribute(): string
     {
         $userName = $this->user->name ?? 'Someone';
+
         return match ($this->action) {
             'post_created' => "{$userName} created a new post",
             'post_published' => "{$UserName} published a post",

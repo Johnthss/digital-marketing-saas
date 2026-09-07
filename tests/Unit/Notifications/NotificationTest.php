@@ -5,6 +5,7 @@ namespace Tests\Unit\Notifications;
 use App\Models\Agency;
 use App\Notifications\QuotaWarningNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
@@ -24,6 +25,6 @@ class NotificationTest extends TestCase
     {
         $agency = Agency::factory()->create();
         $notification = new QuotaWarningNotification($agency, 'posts', 90, 100);
-        $this->assertContains('mail', $notification->via(new \Illuminate\Notifications\AnonymousNotifiable()));
+        $this->assertContains('mail', $notification->via(new AnonymousNotifiable));
     }
 }

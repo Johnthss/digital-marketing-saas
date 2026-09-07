@@ -120,7 +120,7 @@ class AiContentService
         $platformHint = $platform ? " for {$platform}" : '';
 
         $prompt = "Generate {$count} relevant, high-performing hashtags{$platformHint} for: {$topic}."
-            . "\n\nReturn ONLY a comma-separated list of hashtags (with # prefix). No extra text.";
+            ."\n\nReturn ONLY a comma-separated list of hashtags (with # prefix). No extra text.";
 
         $response = $this->generate(
             agency: $agency,
@@ -146,8 +146,8 @@ class AiContentService
         $platformHint = $platform ? " optimized for {$platform}" : '';
 
         $prompt = "Generate {$count} creative content ideas{$platformHint} about: {$topic}."
-            . "\n\nFor each idea, provide:\n- Title (catchy headline)\n- Format (post, video, carousel, story, reel)\n- Brief description (2-3 sentences)\n- Target emotion/call-to-action"
-            . "\n\nReturn as a JSON array of objects with keys: title, format, description, cta";
+            ."\n\nFor each idea, provide:\n- Title (catchy headline)\n- Format (post, video, carousel, story, reel)\n- Brief description (2-3 sentences)\n- Target emotion/call-to-action"
+            ."\n\nReturn as a JSON array of objects with keys: title, format, description, cta";
 
         $response = $this->generate(
             agency: $agency,
@@ -192,7 +192,7 @@ class AiContentService
         string $targetLanguage,
     ): string {
         $prompt = "Translate the following content to {$targetLanguage}:\n\n{$content}"
-            . "\n\nIMPORTANT: Return ONLY the translated text. No explanations, no notes.";
+            ."\n\nIMPORTANT: Return ONLY the translated text. No explanations, no notes.";
 
         $response = $this->generate(
             agency: $agency,
@@ -219,8 +219,8 @@ class AiContentService
             $parts = explode(',', $content);
             foreach ($parts as $part) {
                 $tag = trim($part);
-                if (!str_starts_with($tag, '#')) {
-                    $tag = '#' . $tag;
+                if (! str_starts_with($tag, '#')) {
+                    $tag = '#'.$tag;
                 }
                 if (strlen($tag) > 1) {
                     $hashtags[] = $tag;
@@ -231,8 +231,8 @@ class AiContentService
             $lines = explode("\n", $content);
             foreach ($lines as $line) {
                 $tag = trim($line);
-                if (!str_starts_with($tag, '#')) {
-                    $tag = '#' . $tag;
+                if (! str_starts_with($tag, '#')) {
+                    $tag = '#'.$tag;
                 }
                 if (strlen($tag) > 1) {
                     $hashtags[] = $tag;
@@ -256,6 +256,7 @@ class AiContentService
         }
 
         $decoded = json_decode($content, true);
+
         return is_array($decoded) ? $decoded : [];
     }
 

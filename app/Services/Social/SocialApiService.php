@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class SocialApiService
 {
     protected string $facebookApiVersion = 'v18.0';
+
     protected string $twitterApiVersion = '2';
 
     /**
@@ -19,7 +20,7 @@ class SocialApiService
     {
         try {
             $url = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}/feed";
-            
+
             $response = Http::timeout(30)->post($url, [
                 'message' => $post->content,
                 'access_token' => $account->access_token,
@@ -38,7 +39,8 @@ class SocialApiService
                 'error' => $response->json()['error']['message'] ?? 'Unknown error',
             ];
         } catch (\Exception $e) {
-            Log::error("Facebook publish failed: " . $e->getMessage());
+            Log::error('Facebook publish failed: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -51,13 +53,13 @@ class SocialApiService
         try {
             // Instagram requires media - create container first
             $containerUrl = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}/media";
-            
+
             $containerResponse = Http::timeout(30)->post($containerUrl, [
                 'access_token' => $account->access_token,
                 'caption' => $post->content,
             ]);
 
-            if (!$containerResponse->successful()) {
+            if (! $containerResponse->successful()) {
                 return [
                     'success' => false,
                     'error' => $containerResponse->json()['error']['message'] ?? 'Container creation failed',
@@ -86,7 +88,8 @@ class SocialApiService
                 'error' => $publishResponse->json()['error']['message'] ?? 'Publish failed',
             ];
         } catch (\Exception $e) {
-            Log::error("Instagram publish failed: " . $e->getMessage());
+            Log::error('Instagram publish failed: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -98,7 +101,7 @@ class SocialApiService
     {
         try {
             $url = "https://api.twitter.com/{$this->twitterApiVersion}/tweets";
-            
+
             $response = Http::withToken($account->access_token)
                 ->timeout(30)
                 ->post($url, ['text' => $post->content]);
@@ -116,7 +119,8 @@ class SocialApiService
                 'error' => $response->json()['detail'] ?? 'Unknown error',
             ];
         } catch (\Exception $e) {
-            Log::error("Twitter publish failed: " . $e->getMessage());
+            Log::error('Twitter publish failed: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -127,8 +131,8 @@ class SocialApiService
     public function publishToLinkedIn(SocialAccount $account, SocialPost $post): array
     {
         try {
-            $url = "https://api.linkedin.com/v2/ugcPosts";
-            
+            $url = 'https://api.linkedin.com/v2/ugcPosts';
+
             $response = Http::withToken($account->access_token)
                 ->timeout(30)
                 ->withHeaders(['X-Restli-Protocol-Version' => '2.0.0'])
@@ -157,7 +161,8 @@ class SocialApiService
                 'error' => $response->json()['message'] ?? 'Unknown error',
             ];
         } catch (\Exception $e) {
-            Log::error("LinkedIn publish failed: " . $e->getMessage());
+            Log::error('LinkedIn publish failed: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -168,8 +173,8 @@ class SocialApiService
     public function publishToTikTok(SocialAccount $account, SocialPost $post): array
     {
         try {
-            $url = "https://open-api.tiktok.com/share/video/upload/";
-            
+            $url = 'https://open-api.tiktok.com/share/video/upload/';
+
             $response = Http::withToken($account->access_token)
                 ->timeout(30)
                 ->post($url, [
@@ -188,7 +193,8 @@ class SocialApiService
                 'error' => $response->json()['message'] ?? 'Unknown error',
             ];
         } catch (\Exception $e) {
-            Log::error("TikTok publish failed: " . $e->getMessage());
+            Log::error('TikTok publish failed: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }

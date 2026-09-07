@@ -2,12 +2,11 @@
 
 namespace Tests\Feature\Workflow;
 
+use App\Enums\WorkflowStatus;
 use App\Models\Agency;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowExecution;
-use App\Models\SocialAccount;
-use App\Enums\WorkflowStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +15,7 @@ class WorkflowExecutionTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void

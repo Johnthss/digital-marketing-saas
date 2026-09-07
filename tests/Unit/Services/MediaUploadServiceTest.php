@@ -5,7 +5,6 @@ namespace Tests\Unit\Services;
 use App\Services\MediaUploadService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MediaUploadServiceTest extends TestCase
@@ -17,7 +16,7 @@ class MediaUploadServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new MediaUploadService();
+        $this->service = new MediaUploadService;
     }
 
     /** @test */
@@ -46,6 +45,7 @@ class MediaUploadServiceTest extends TestCase
         $reflection = new \ReflectionClass($object);
         $method = $reflection->getMethod($method);
         $method->setAccessible(true);
+
         return $method->invokeArgs($object, $args);
     }
 }

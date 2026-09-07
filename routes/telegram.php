@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\TelegramLinkController;
+use App\Http\Controllers\TelegramWebhookController;
 
 // Public webhook endpoint (no auth)
 app('router')->post('/telegram/webhook', [TelegramWebhookController::class, 'handle'])

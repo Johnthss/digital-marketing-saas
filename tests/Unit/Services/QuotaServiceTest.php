@@ -3,7 +3,6 @@
 namespace Tests\Unit\Services;
 
 use App\Models\Agency;
-use App\Models\Plan;
 use App\Services\QuotaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\Form;
+use App\Models\FormResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -27,6 +27,7 @@ class FormController extends Controller
     public function create(Request $request)
     {
         $agency = $request->user()->agency;
+
         return view('forms.create', compact('agency'));
     }
 
@@ -44,7 +45,7 @@ class FormController extends Controller
         $form = Form::create([
             'agency_id' => $agency->id,
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']) . '-' . uniqid(),
+            'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'fields' => $validated['fields'],
             'success_message' => $validated['success_message'] ?? 'Thank you!',
             'redirect_url' => $validated['redirect_url'] ?? null,
@@ -124,8 +125,8 @@ class FormController extends Controller
         }
 
         $form->update([
-            'is_published' => !$form->is_published,
-            'published_at' => !$form->is_published ? now() : null,
+            'is_published' => ! $form->is_published,
+            'published_at' => ! $form->is_published ? now() : null,
         ]);
 
         return redirect()->route('forms.index')->with('success', 'Form status updated.');
@@ -153,7 +154,7 @@ class FormController extends Controller
 
         $validated = $request->validate($rules);
 
-        \App\Models\FormResponse::create([
+        FormResponse::create([
             'form_id' => $form->id,
             'data' => $validated,
             'ip_address' => $request->ip(),

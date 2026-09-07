@@ -3,9 +3,9 @@
 namespace App\Providers;
 
 use App\Services\AI\Gateway\AiGateway;
-use App\Services\AI\Gateway\Providers\OpenAiProvider;
 use App\Services\AI\Gateway\Providers\AnthropicProvider;
 use App\Services\AI\Gateway\Providers\GoogleProvider;
+use App\Services\AI\Gateway\Providers\OpenAiProvider;
 use Illuminate\Support\ServiceProvider;
 
 class AiGatewayServiceProvider extends ServiceProvider
@@ -13,20 +13,20 @@ class AiGatewayServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AiGateway::class, function ($app) {
-            $gateway = new AiGateway();
+            $gateway = new AiGateway;
 
             // Register providers
-            $openAi = new OpenAiProvider();
+            $openAi = new OpenAiProvider;
             if ($openAi->isAvailable()) {
                 $gateway->registerProvider('openai', $openAi);
             }
 
-            $anthropic = new AnthropicProvider();
+            $anthropic = new AnthropicProvider;
             if ($anthropic->isAvailable()) {
                 $gateway->registerProvider('anthropic', $anthropic);
             }
 
-            $google = new GoogleProvider();
+            $google = new GoogleProvider;
             if ($google->isAvailable()) {
                 $gateway->registerProvider('google', $google);
             }

@@ -1,5 +1,7 @@
 <?php
+
 namespace Database\Factories;
+
 use App\Models\Agency;
 use App\Models\WhiteLabelSetting;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -7,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class WhiteLabelSettingFactory extends Factory
 {
     protected $model = WhiteLabelSetting::class;
+
     public function definition(): array
     {
         return [

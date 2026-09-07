@@ -2,7 +2,6 @@
 
 namespace App\Services\Telegram;
 
-use App\Models\Agency;
 use App\Models\User;
 use App\Services\AI\AgencyAIAssistantService;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class TelegramBotService
 {
     private string $botToken;
+
     private string $apiBase = 'https://api.telegram.org/bot';
 
     public function __construct(private AgencyAIAssistantService $assistant)
@@ -88,7 +88,7 @@ class TelegramBotService
                 $this->handleCallback($update['callback_query']);
             }
         } catch (\Throwable $e) {
-            Log::error('Telegram webhook error: ' . $e->getMessage());
+            Log::error('Telegram webhook error: '.$e->getMessage());
         }
     }
 
@@ -100,22 +100,24 @@ class TelegramBotService
         $chatId = $message['chat']['id'] ?? null;
         $text = $message['text'] ?? '';
 
-        if (!$chatId || empty($text)) {
+        if (! $chatId || empty($text)) {
             return;
         }
 
         // Find the user by Telegram chat ID
         $user = User::where('telegram_chat_id', $chatId)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->sendMessage($chatId, "⚠️ Your Telegram account is not linked to any agency.\n\nPlease link your account from the agency settings panel.");
+
             return;
         }
 
         $agency = $user->agency;
 
-        if (!$agency) {
-            $this->sendMessage($chatId, "⚠️ No agency found for your account.");
+        if (! $agency) {
+            $this->sendMessage($chatId, '⚠️ No agency found for your account.');
+
             return;
         }
 
@@ -133,13 +135,15 @@ class TelegramBotService
         $chatId = $callback['message']['chat']['id'] ?? null;
         $data = $callback['data'] ?? '';
 
-        if (!$chatId || empty($data)) {
+        if (! $chatId || empty($data)) {
             return;
         }
 
         // Handle callback actions
         $user = User::where('telegram_chat_id', $chatId)->first();
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         // Process callback data...
         $this->sendMessage($chatId, "Action received: {$data}");
@@ -166,13 +170,15 @@ class TelegramBotService
      */
     private function api(string $method, array $params = []): array
     {
-        $url = $this->apiBase . $this->botToken . '/' . $method;
+        $url = $this->apiBase.$this->botToken.'/'.$method;
 
         try {
             $response = Http::timeout(30)->post($url, $params);
+
             return $response->json() ?? [];
         } catch (\Throwable $e) {
-            Log::error("Telegram API error [{$method}]: " . $e->getMessage());
+            Log::error("Telegram API error [{$method}]: ".$e->getMessage());
+
             return ['ok' => false, 'error' => $e->getMessage()];
         }
     }

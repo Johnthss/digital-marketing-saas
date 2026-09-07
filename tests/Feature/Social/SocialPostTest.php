@@ -14,6 +14,7 @@ class SocialPostTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private SocialAccount $account;
 
     protected function setUp(): void

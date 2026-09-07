@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agency;
 use App\Models\Client;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ClientController extends Controller
 {
@@ -25,9 +23,9 @@ class ClientController extends Controller
         }
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('email', 'like', '%' . $request->search . '%')
-                    ->orWhere('company', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('email', 'like', '%'.$request->search.'%')
+                    ->orWhere('company', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -102,7 +100,7 @@ class ClientController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:clients,email,' . $client->id,
+            'email' => 'required|email|unique:clients,email,'.$client->id,
             'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'industry' => 'nullable|string|max:100',

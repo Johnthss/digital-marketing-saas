@@ -3,17 +3,12 @@
 namespace App\Services;
 
 use App\Models\Agency;
-use App\Models\AiContentLog;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class QuotaService
 {
     private const CACHE_TTL = 600; // 10 minutes
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function remainingPosts(Agency $agency): int
     {
@@ -153,6 +148,7 @@ class QuotaService
         if ($limit === -1 || $limit === 0) {
             return 0.0;
         }
+
         return round(min(100, ($used / $limit) * 100), 1);
     }
 

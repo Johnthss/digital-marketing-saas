@@ -16,7 +16,9 @@ class EmailMarketingWorkflowTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
+
     private EmailCampaignService $service;
 
     protected function setUp(): void

@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\ActivityLog;
 use App\Models\Agency;
 use App\Models\User;
-use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ActivityLogFactory extends Factory
