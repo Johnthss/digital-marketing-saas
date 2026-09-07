@@ -4,9 +4,9 @@ namespace App\Notifications;
 
 use App\Models\SocialPost;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class PostPublishedNotification extends Notification implements ShouldQueue
 {
@@ -16,16 +16,18 @@ class PostPublishedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
             ->subject('Post Published Successfully')
-            ->line("Your post #{$this->post->id} has been published to {$this->post->platform}.")
+            ->greeting("Hello {$notifiable->name}!")
+            ->line("Your post has been published to {$this->post->platform}.")
+            ->line('Content: ' . \Illuminate\Support\Str::limit($this->post->content, 100))
             ->action('View Post', url("/social/posts/{$this->post->id}"))
-            ->line('Thank you for using ' . config('app.name') . '!');
+            ->line('Keep up the great work!');
     }
 
     public function toArray(object $notifiable): array
@@ -33,8 +35,7 @@ class PostPublishedNotification extends Notification implements ShouldQueue
         return [
             'post_id' => $this->post->id,
             'platform' => $this->post->platform,
-            'message' => "Post #{$this->post->id} published to {$this->post->platform}",
-            'url' => "/social/posts/{$this->post->id}",
+            'message' => 'Post published successfully',
         ];
     }
 }

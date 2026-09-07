@@ -25,8 +25,13 @@ class RunWorkflows implements ShouldQueue
             ->get();
 
         foreach ($workflows as $workflow) {
-            // TODO: Execute workflow via WorkflowEngine
-            Log::info("Running workflow #{$workflow->id}: {$workflow->name}");
+            try {
+                $engine = app(\App\Services\Workflow\WorkflowEngine::class);
+                $engine->execute($workflow, ['triggered_at' => now()->toISOString()]);
+                Log::info("Workflow #{$workflow->id} executed successfully");
+            } catch (\Exception $e) {
+                Log::error("Workflow #{$workflow->id} execution failed: " . $e->getMessage());
+            }
         }
     }
 }
