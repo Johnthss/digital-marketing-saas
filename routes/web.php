@@ -113,6 +113,15 @@ Route::middleware(['auth', 'agency'])->group(function () {
     // Comments
     Route::resource('comments', CommentController::class)->only(['index', 'store', 'destroy']);
 
+    // Email Templates
+    Route::resource('email.templates', EmailTemplateController::class);
+    Route::get('email.templates/{template}/preview', [EmailTemplateController::class, 'preview'])->name('email.templates.preview');
+    Route::get('email.templates/{template}/duplicate', [EmailTemplateController::class, 'duplicate'])->name('email.templates.duplicate');
+
+    // White-Label
+    Route::get('white-label', [WhiteLabelController::class, 'index'])->name('white-label.index');
+    Route::post('white-label', [WhiteLabelController::class, 'update'])->name('white-label.update');
+
     // GDPR
     Route::get('privacy', [GdprController::class, 'index'])->name('gdpr.index');
     Route::post('privacy/export', [GdprController::class, 'requestExport'])->name('gdpr.export');
