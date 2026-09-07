@@ -4,11 +4,12 @@
 @section('content')
 <div class="row">
     <div class="col-md-8">
+        <!-- Main Generator Card -->
         <div class="card card-primary card-outline">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-robot mr-2"></i>AI Content Generator</h3>
                 <div class="card-tools">
-                    <span class="badge badge-info">{{ $remaining ?? 'Unlimited' }} generations left</span>
+                    <span class="badge badge-info">{{ $remaining ?? 'Unlimited' }} generations left today</span>
                 </div>
             </div>
             <div class="card-body">
@@ -69,11 +70,25 @@
                         <i class="fas fa-magic mr-1"></i> Generate Content
                     </button>
                 </form>
+
+                <!-- Loading Indicator (hidden by default) -->
+                <div id="loadingIndicator" class="text-center mt-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Generating...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Generating your content... This may take a few seconds.</p>
+                </div>
+
+                <!-- Error Display (hidden by default) -->
+                <div id="errorDisplay" class="alert alert-danger mt-4" style="display: none;">
+                    <strong>Generation Failed:</strong> <span id="errorMessage"></span>
+                </div>
             </div>
         </div>
 
+        <!-- Generated Content Card (shown after generation) -->
         @if(isset($generatedContent))
-        <div class="card card-success card-outline">
+        <div class="card card-success card-outline mt-4">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-check-circle mr-2"></i>Generated Content</h3>
                 <div class="card-tools">
@@ -107,22 +122,24 @@
     </div>
 
     <div class="col-md-4">
+        <!-- AI Tips Card -->
         <div class="card card-outline card-warning">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-lightbulb mr-2"></i>AI Tips</h3>
             </div>
             <div class="card-body">
                 <ul class="list-unstyled">
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i></li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i></li>
-                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i></li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Be specific about your target audience</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Include brand voice and tone preferences</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Mention key points you want covered</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Specify the platform for optimized content</li>
+                    <li class="mb-2"><i class="fas fa-check text-success mr-2"></i>Add context about your industry</li>
                 </ul>
             </div>
         </div>
 
-        <div class="card card-outline card-info">
+        <!-- Recent Generations Card -->
+        <div class="card card-outline card-info mt-3">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-history mr-2"></i>Recent Generations</h3>
             </div>
@@ -131,10 +148,10 @@
                     @forelse($recentGenerations ?? [] as $gen)
                     <li class="list-group-item">
                         <div class="d-flex justify-content-between">
-                            <span class="badge badge-{{ $gen->content_type_color }}">{{ ucfirst($gen->content_type ?? 'post') }}</span>
+                            <span class="badge badge-{{ $gen->content_type_color }}">{{ $gen->content_type_label }}</span>
                             <small>{{ $gen->created_at->diffForHumans() }}</small>
                         </div>
-                        <p class="mt-1 mb-0 text-truncate">{{ \Str::limit($gen->output, 60) }}</p>
+                        <p class="mt-1 mb-0 text-truncate">{{ Str::limit($gen->response_text, 60) }}</p>
                     </li>
                     @empty
                     <li class="list-group-item text-center text-muted py-3">No generations yet</li>
@@ -143,7 +160,8 @@
             </div>
         </div>
 
-        <div class="card card-outline card-primary">
+        <!-- AI Tools Card -->
+        <div class="card card-outline card-primary mt-3">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-tools mr-2"></i>AI Tools</h3>
             </div>
@@ -264,6 +282,54 @@
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('aiGenerateForm');
+    const loading = document.getElementById('loadingIndicator');
+    const errorDiv = document.getElementById('errorDisplay');
+    const errorSpan = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('generateBtn');
+
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Hide previous error
+            errorDiv.style.display = 'none';
+            
+            // Show loading
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Reload page with generated content
+                    window.location.href = window.location.pathname + '?generated=1';
+                } else {
+                    errorSpan.textContent = data.message || 'An error occurred during generation.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorSpan.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+});
+
 function copyToClipboard() {
     const text = document.getElementById('generatedText').innerText;
     navigator.clipboard.writeText(text).then(() => {
@@ -273,13 +339,13 @@ function copyToClipboard() {
 
 function useAsPost() {
     const text = document.getElementById('generatedText').innerText;
-    localStorage.setItem('postContent', text);
+    sessionStorage.setItem('postContent', text);
     window.location.href = '{{ route("social.posts.create") }}';
 }
 
 function useAsContent() {
     const text = document.getElementById('generatedText').innerText;
-    localStorage.setItem('contentBody', text);
+    sessionStorage.setItem('contentBody', text);
     window.location.href = '{{ route("content.create") }}';
 }
 

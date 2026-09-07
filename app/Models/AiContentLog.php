@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AiContentLog extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'agency_id',
         'provider',
@@ -65,5 +66,63 @@ class AiContentLog extends Model
     public function getTotalCostAttribute(): float
     {
         return (float) $this->cost_usd;
+    }
+
+    /**
+     * Get the response as a string (handles array cast).
+     */
+    public function getResponseTextAttribute(): string
+    {
+        if (is_array($this->response)) {
+            return implode("\n", $this->response);
+        }
+        return (string) $this->response;
+    }
+
+    /**
+     * Get the prompt as a string (handles array cast).
+     */
+    public function getPromptTextAttribute(): string
+    {
+        if (is_array($this->prompt)) {
+            return implode("\n", $this->prompt);
+        }
+        return (string) $this->prompt;
+    }
+
+    /**
+     * Get a color badge class for content type.
+     */
+    public function getContentTypeColorAttribute(): string
+    {
+        return match ($this->content_type) {
+            'post' => 'primary',
+            'caption' => 'info',
+            'hashtag' => 'success',
+            'headline' => 'warning',
+            'email' => 'danger',
+            'ad_copy' => 'secondary',
+            'landing_page' => 'primary',
+            'blog' => 'info',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Get a human-readable content type label.
+     */
+    public function getContentTypeLabelAttribute(): string
+    {
+        return match ($this->content_type) {
+            'post' => 'Social Post',
+            'caption' => 'Caption',
+            'hashtag' => 'Hashtags',
+            'headline' => 'Headline',
+            'email' => 'Email Copy',
+            'ad_copy' => 'Ad Copy',
+            'landing_page' => 'Landing Page',
+            'blog' => 'Blog Outline',
+            default => ucfirst($this->content_type ?? 'post'),
+        };
     }
 }

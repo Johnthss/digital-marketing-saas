@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use App\Models\AiContentLog;
 use App\Services\AI\AiContentService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
@@ -20,9 +21,16 @@ class AiContentController extends Controller
         $agency = $request->user()->agency;
         $quotaService = app(QuotaService::class);
 
+        // Get recent generations
+        $recentGenerations = AiContentLog::where('agency_id', $agency->id)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
         return view('ai.index', [
             'agency' => $agency,
             'remaining' => $quotaService->remainingAiGenerations($agency),
+            'recentGenerations' => $recentGenerations,
         ]);
     }
 
@@ -32,25 +40,48 @@ class AiContentController extends Controller
 
         $validated = $request->validate([
             'prompt' => 'required|string|max:2000',
-            'content_type' => 'required|in:post,caption,hashtag,headline,email,ad_copy',
-            'model' => 'nullable|string|max:100',
-            'temperature' => 'nullable|numeric|min:0|max:2',
-            'max_tokens' => 'nullable|integer|min:50|max:8000',
+            'content_type' => 'required|in:post,caption,hashtag,headline,email,ad_copy,landing_page,blog',
+            'tone' => 'nullable|string|in:professional,casual,friendly,persuasive,informative,humorous',
+            'length' => 'nullable|string|in:short,medium,long',
+            'context' => 'nullable|string|max:1000',
         ]);
 
-        $model = $validated['model'] ?? 'gpt-4o';
-        $temperature = $validated['temperature'] ?? 0.7;
-        $maxTokens = $validated['max_tokens'] ?? 2000;
+        // Build full prompt with tone and context
+        $fullPrompt = $validated['prompt'];
+        if (!empty($validated['tone'])) {
+            $fullPrompt .= "\n\nTone: " . $validated['tone'];
+        }
+        if (!empty($validated['length'])) {
+            $lengthMap = ['short' => '50-100 words', 'medium' => '150-250 words', 'long' => '300-500 words'];
+            $fullPrompt .= "\n\nLength: " . ($lengthMap[$validated['length']] ?? 'medium');
+        }
+        if (!empty($validated['context'])) {
+            $fullPrompt .= "\n\nAdditional context: " . $validated['context'];
+        }
 
         try {
             $response = $service->generate(
                 agency: $agency,
-                prompt: $validated['prompt'],
+                prompt: $fullPrompt,
                 contentType: $validated['content_type'],
-                model: $model,
-                temperature: (float) $temperature,
-                maxTokens: (int) $maxTokens,
             );
+
+            // Return HTML view if not AJAX
+            if (!$request->ajax() && !$request->wantsJson()) {
+                $recentGenerations = AiContentLog::where('agency_id', $agency->id)
+                    ->orderBy('created_at', 'desc')
+                    ->take(10)
+                    ->get();
+
+                return view('ai.index', [
+                    'agency' => $agency,
+                    'remaining' => app(QuotaService::class)->remainingAiGenerations($agency),
+                    'recentGenerations' => $recentGenerations,
+                    'generatedContent' => $response->content,
+                    'tokensUsed' => $response->totalTokens,
+                    'costUsd' => $response->costUsd,
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -61,6 +92,10 @@ class AiContentController extends Controller
                 'model' => $response->model,
             ]);
         } catch (\Exception $e) {
+            if (!$request->ajax() && !$request->wantsJson()) {
+                return back()->with('error', 'Generation failed: ' . $e->getMessage())->withInput();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -133,7 +168,6 @@ class AiContentController extends Controller
         $validated = $request->validate([
             'topic' => 'required|string|max:500',
             'count' => 'nullable|integer|min:1|max:10',
-            'platform' => 'nullable|string|max:50',
         ]);
 
         try {
@@ -141,7 +175,6 @@ class AiContentController extends Controller
                 agency: $agency,
                 topic: $validated['topic'],
                 count: (int) ($validated['count'] ?? 5),
-                platform: $validated['platform'] ?? null,
             );
 
             return response()->json([
