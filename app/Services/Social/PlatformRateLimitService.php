@@ -71,6 +71,9 @@ class PlatformRateLimitService
 
     /**
      * Wait until capacity is available (for queued jobs).
+     *
+     * Note: This method uses sleep() which blocks the queue worker.
+     * For production, consider using delayed job retries instead.
      */
     public function waitForCapacity(SocialAccount $account, string $platform, int $maxWaitSeconds = 30): bool
     {
@@ -84,5 +87,22 @@ class PlatformRateLimitService
         }
 
         return false;
+    }
+
+    /**
+     * Calculate the number of seconds to wait before retrying.
+     * Used with queue job backoff for non-blocking rate limit handling.
+     */
+    public function getRetryAfterSeconds(SocialAccount $account, string $platform): int
+    {
+        if ($this->isAllowed($account, $platform)) {
+            return 0;
+        }
+
+        $limits = config("platform.social.rate_limits.{$platform}");
+        $hourlyKey = "rate_limit:{$platform}:hourly:{$account->id}";
+        $hourlyTtl = Cache::get($hourlyKey) ? now()->addHour()->diffInSeconds(now()) : 60;
+
+        return min($hourlyTtl, 3600);
     }
 }

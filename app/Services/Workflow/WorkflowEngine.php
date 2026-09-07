@@ -214,9 +214,8 @@ class WorkflowEngine
     protected function actionSleep(array $config): array
     {
         $seconds = $config['seconds'] ?? 1;
-        sleep(min($seconds, 10));
 
-        return ['status' => 'success', 'action' => 'sleep', 'seconds' => $seconds];
+        return ['status' => 'success', 'action' => 'sleep', 'seconds' => $seconds, 'message' => "Sleep action recorded ({$seconds}s). Use a delayed job for actual waiting."];
     }
 
     /**
