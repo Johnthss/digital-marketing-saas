@@ -23,7 +23,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_lists_templates(): void
+    public function it_lists_templates(): void
     {
         EmailTemplate::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('email.templates.index'));
@@ -31,7 +31,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_creates_a_template(): void
+    public function it_creates_a_template(): void
     {
         $response = $this->actingAs($this->user)->post(route('email.templates.store'), [
             'name' => 'Test Template',
@@ -44,14 +44,14 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_validates_template_creation(): void
+    public function it_validates_template_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('email.templates.store'), []);
         $response->assertSessionHasErrors(['name', 'subject', 'category', 'html_content']);
     }
 
     /** @test */
-    public function test_it_shows_a_template(): void
+    public function it_shows_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('email.templates.show', $template));
@@ -59,7 +59,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_edits_a_template(): void
+    public function it_edits_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('email.templates.edit', $template));
@@ -67,7 +67,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_updates_a_template(): void
+    public function it_updates_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->put(route('email.templates.update', $template), [
@@ -81,7 +81,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_deletes_a_template(): void
+    public function it_deletes_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('email.templates.destroy', $template));
@@ -90,7 +90,7 @@ class EmailTemplateTest extends TestCase
     }
 
     /** @test */
-    public function test_it_prevents_access_to_other_agency_templates(): void
+    public function it_prevents_access_to_other_agency_templates(): void
     {
         $otherAgency = Agency::factory()->create();
         $template = EmailTemplate::factory()->create(['agency_id' => $otherAgency->id]);
