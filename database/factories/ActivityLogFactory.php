@@ -16,11 +16,12 @@ class ActivityLogFactory extends Factory
         return [
             'agency_id' => Agency::factory(),
             'user_id' => User::factory(),
+            'action' => fake()->randomElement(['created', 'updated', 'deleted', 'published', 'scheduled']),
             'description' => fake()->sentence(),
-            'action_type' => fake()->randomElement(['created', 'updated', 'deleted', 'published', 'scheduled']),
-            'model_type' => null,
-            'model_id' => null,
+            'subject_type' => null,
+            'subject_id' => null,
             'metadata' => null,
+            'created_at' => fake()->dateTimeThisMonth(),
         ];
     }
 }
