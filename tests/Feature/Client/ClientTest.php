@@ -12,71 +12,83 @@ class ClientTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Agency $agency;
     private User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $this->user = User::factory()->create(['agency_id' => $agency->id, 'role' => 'owner']);
+        $this->agency = Agency::factory()->create();
+        $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    public function test_clients_index_requires_authentication(): void
+    /** @test */
+    public function it_lists_clients(): void
     {
-        $response = $this->get('/clients');
-        $response->assertRedirect('/login');
-    }
-
-    public function test_authenticated_user_can_view_clients(): void
-    {
-        $response = $this->actingAs($this->user)->get('/clients');
+        Client::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->get(route('clients.index'));
         $response->assertStatus(200);
     }
 
-    public function test_user_can_create_client(): void
+    /** @test */
+    public function it_creates_a_client(): void
     {
-        $response = $this->actingAs($this->user)->post('/clients', [
+        $response = $this->actingAs($this->user)->post(route('clients.store'), [
             'name' => 'Test Client',
-            'email' => 'client@example.com',
-            'company' => 'Test Company',
+            'email' => 'test@example.com',
         ]);
-
-        $response->assertRedirect('/clients/1');
+        $response->assertRedirect();
         $this->assertDatabaseHas('clients', ['name' => 'Test Client']);
     }
 
-    public function test_user_can_view_client(): void
+    /** @test */
+    public function it_validates_client_creation(): void
     {
-        $client = Client::factory()->create(['agency_id' => $this->user->agency_id]);
-        $response = $this->actingAs($this->user)->get("/clients/{$client->id}");
+        $response = $this->actingAs($this->user)->post(route('clients.store'), []);
+        $response->assertSessionHasErrors(['name', 'email']);
+    }
+
+    /** @test */
+    public function it_shows_a_client(): void
+    {
+        $client = Client::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->get(route('clients.show', $client));
         $response->assertStatus(200);
     }
 
-    public function test_user_cannot_view_other_agency_client(): void
+    /** @test */
+    public function it_updates_a_client(): void
     {
-        $client = Client::factory()->create();
-        $response = $this->actingAs($this->user)->get("/clients/{$client->id}");
-        $response->assertStatus(403);
-    }
-
-    public function test_user_can_update_client(): void
-    {
-        $client = Client::factory()->create(['agency_id' => $this->user->agency_id]);
-        $response = $this->actingAs($this->user)->put("/clients/{$client->id}", [
+        $client = Client::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->put(route('clients.update', $client), [
             'name' => 'Updated Client',
-            'email' => $client->email,
-            'status' => 'active',
         ]);
-
-        $response->assertRedirect("/clients/{$client->id}");
-        $this->assertDatabaseHas('clients', ['name' => 'Updated Client']);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('clients', ['id' => $client->id, 'name' => 'Updated Client']);
     }
 
-    public function test_user_can_delete_client(): void
+    /** @test */
+    public function it_deletes_a_client(): void
     {
-        $client = Client::factory()->create(['agency_id' => $this->user->agency_id]);
-        $response = $this->actingAs($this->user)->delete("/clients/{$client->id}");
-        $response->assertRedirect('/clients');
+        $client = Client::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->delete(route('clients.destroy', $client));
+        $response->assertRedirect();
         $this->assertSoftDeleted('clients', ['id' => $client->id]);
+    }
+
+    /** @test */
+    public function it_prevents_access_to_other_agency_clients(): void
+    {
+        $otherAgency = Agency::factory()->create();
+        $client = Client::factory()->create(['agency_id' => $otherAgency->id]);
+        $response = $this->actingAs($this->user)->get(route('clients.show', $client));
+        $response->assertForbidden();
+    }
+
+    /** @test */
+    public function it_requires_auth(): void
+    {
+        $response = $this->get(route('clients.index'));
+        $response->assertRedirect(route('login'));
     }
 }

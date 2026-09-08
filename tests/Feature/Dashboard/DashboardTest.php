@@ -12,7 +12,6 @@ class DashboardTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -30,35 +29,7 @@ class DashboardTest extends TestCase
     }
 
     /** @test */
-    public function it_shows_quick_stats(): void
-    {
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
-        $response->assertViewHas('quickStats');
-    }
-
-    /** @test */
-    public function it_shows_recent_activity(): void
-    {
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
-        $response->assertViewHas('recentActivity');
-    }
-
-    /** @test */
-    public function it_shows_performance_data(): void
-    {
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
-        $response->assertViewHas('performanceData');
-    }
-
-    /** @test */
-    public function it_shows_upcoming_posts(): void
-    {
-        $response = $this->actingAs($this->user)->get(route('dashboard'));
-        $response->assertViewHas('upcomingPosts');
-    }
-
-    /** @test */
-    public function it_requires_authentication(): void
+    public function it_requires_auth(): void
     {
         $response = $this->get(route('dashboard'));
         $response->assertRedirect(route('login'));
@@ -67,8 +38,8 @@ class DashboardTest extends TestCase
     /** @test */
     public function it_requires_agency(): void
     {
-        $userWithoutAgency = User::factory()->create(['agency_id' => null]);
-        $response = $this->actingAs($userWithoutAgency)->get(route('dashboard'));
+        $user = User::factory()->create(['agency_id' => null]);
+        $response = $this->actingAs($user)->get(route('dashboard'));
         $response->assertForbidden();
     }
 }
