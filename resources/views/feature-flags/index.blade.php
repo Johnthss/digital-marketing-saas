@@ -1,0 +1,57 @@
+@extends('layouts.app')
+@section('title', 'Feature Flags')
+
+@section('content')
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Feature Flags</h1>
+                <a href="{{ route('feature-flags.create') }}" class="btn btn-primary">Create Flag</a>
+            </div>
+        </div>
+    </div>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Name</th>
+                                <th>Enabled</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($flags as $flag)
+                            <tr>
+                                <td><code>{{ $flag->feature_key }}</code></td>
+                                <td>{{ $flag->feature_name }}</td>
+                                <td>
+                                    <span class="badge badge-{{ $flag->enabled ? 'success' : 'secondary' }}">
+                                        {{ $flag->enabled ? 'On' : 'Off' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ route('feature-flags.show', $flag) }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ route('feature-flags.edit', $flag) }}" class="btn btn-sm btn-warning">Edit</a>
+                                    <form action="{{ route('feature-flags.destroy', $flag) }}" method="POST" class="d-inline">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    {{ $flags->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

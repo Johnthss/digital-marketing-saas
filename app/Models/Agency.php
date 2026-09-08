@@ -185,6 +185,11 @@ class Agency extends Model
         return $query->where('subscription_plan', $plan);
     }
 
+    public function featureFlags(): HasMany
+    {
+        return $this->hasMany(FeatureFlag::class);
+    }
+
     public function incrementCount(string $count): void
     {
         $this->increment($count);
