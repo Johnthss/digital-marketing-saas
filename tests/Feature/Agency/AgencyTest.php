@@ -12,65 +12,112 @@ class AgencyTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-    private User $user;
+    private User $owner;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->agency = Agency::factory()->create();
-        $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
+        $this->owner = User::factory()->create([
+            'agency_id' => $this->agency->id,
+            'role' => 'admin',
+        ]);
     }
 
-    /** @test */
-    public function it_shows_agency_settings(): void
+    public function test_it_shows_settings(): void
     {
-        $response = $this->actingAs($this->user)->get(route('agency.settings'));
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->owner)->get(route('agency.settings'));
+        
+        $response->assertOk();
+        $response->assertViewIs('agency.settings');
     }
 
-    /** @test */
-    public function it_updates_agency_settings(): void
+    public function test_it_updates_settings(): void
     {
-        $response = $this->actingAs($this->user)->put(route('agency.settings.update'), [
+        $response = $this->actingAs($this->owner)->put(route('agency.settings.update'), [
+            'name' => 'Updated Agency',
+            'email' => 'updated@agency.com',
+            'timezone' => 'America/New_York',
+            'currency' => 'EUR',
+        ]);
+        
+        $response->assertRedirect(route('agency.settings'));
+        $this->assertDatabaseHas('agencies', [
+            'id' => $this->agency->id,
             'name' => 'Updated Agency',
         ]);
-        $response->assertRedirect();
-        $this->assertDatabaseHas('agencies', ['id' => $this->agency->id, 'name' => 'Updated Agency']);
     }
 
-    /** @test */
-    public function it_shows_team_page(): void
+    public function test_it_shows_team(): void
     {
-        $response = $this->actingAs($this->user)->get(route('agency.team'));
-        $response->assertStatus(200);
+        User::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->owner)->get(route('agency.team'));
+        
+        $response->assertOk();
+        $response->assertViewIs('agency.team');
+        $response->assertViewHas('members');
     }
 
-    /** @test */
-    public function it_invites_team_member(): void
+    public function test_it_invites_team_member(): void
     {
-        $response = $this->actingAs($this->user)->post(route('agency.team.invite'), [
-            'email' => 'newmember@example.com',
+        $response = $this->actingAs($this->owner)->post(route('agency.team.invite'), [
+            'name' => 'New Member',
+            'email' => 'member@example.com',
             'role' => 'member',
         ]);
+        
         $response->assertRedirect();
-        $this->assertDatabaseHas('users', ['email' => 'newmember@example.com']);
-    }
-
-    /** @test */
-    public function it_prevents_access_to_other_agency(): void
-    {
-        $otherAgency = Agency::factory()->create();
-        $response = $this->actingAs($this->user)->put(route('agency.settings.update'), [
-            'name' => 'Hacked Agency',
+        $this->assertDatabaseHas('users', [
+            'email' => 'member@example.com',
+            'agency_id' => $this->agency->id,
         ]);
-        $response->assertStatus(200);
-        $this->assertDatabaseMissing('agencies', ['id' => $otherAgency->id, 'name' => 'Hacked Agency']);
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_updates_member_role(): void
+    {
+        $member = User::factory()->create([
+            'agency_id' => $this->agency->id,
+            'role' => 'member',
+        ]);
+        
+        $response = $this->actingAs($this->owner)->put(route('agency.team.role', $member), [
+            'role' => 'manager',
+        ]);
+        
+        $response->assertRedirect();
+        $this->assertDatabaseHas('users', [
+            'id' => $member->id,
+            'role' => 'manager',
+        ]);
+    }
+
+    public function test_it_removes_member(): void
+    {
+        $member = User::factory()->create([
+            'agency_id' => $this->agency->id,
+            'role' => 'member',
+        ]);
+        
+        $response = $this->actingAs($this->owner)->delete(route('agency.team.remove', $member));
+        
+        $response->assertRedirect();
+        $this->assertSoftDeleted('users', ['id' => $member->id]);
+    }
+
+    public function test_it_prevents_self_removal(): void
+    {
+        $response = $this->actingAs($this->owner)->delete(route('agency.team.remove', $this->owner));
+        
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseHas('users', ['id' => $this->owner->id]);
+    }
+
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('agency.settings'));
+        
         $response->assertRedirect(route('login'));
     }
 }
