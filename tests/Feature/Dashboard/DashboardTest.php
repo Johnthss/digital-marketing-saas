@@ -21,25 +21,29 @@ class DashboardTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_shows_dashboard(): void
+    public function test_it_shows_dashboard(): void
     {
         $response = $this->actingAs($this->user)->get(route('dashboard'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('dashboard.index');
+        $response->assertViewHas('stats');
+        $response->assertViewHas('quotas');
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('dashboard'));
+        
         $response->assertRedirect(route('login'));
     }
 
-    /** @test */
-    public function it_requires_agency(): void
+    public function test_it_requires_agency(): void
     {
         $user = User::factory()->create(['agency_id' => null]);
+        
         $response = $this->actingAs($user)->get(route('dashboard'));
+        
         $response->assertForbidden();
     }
 }
