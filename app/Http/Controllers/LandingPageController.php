@@ -65,33 +65,38 @@ class LandingPageController extends Controller
             ->with('success', 'Landing page created successfully.');
     }
 
-    public function show(Request $request, LandingPage $page)
+    public function show(Request $request, LandingPage $landingPage)
     {
         $agency = $request->user()->agency;
 
-        if ($page->agency_id !== $agency->id) {
+        if ($landingPage->agency_id !== $agency->id) {
             abort(403);
         }
+
+        $page = $landingPage;
 
         return view('landing-pages.show', compact('agency', 'page'));
     }
 
-    public function edit(Request $request, LandingPage $page)
+    public function edit(Request $request, LandingPage $landingPage)
     {
         $agency = $request->user()->agency;
 
-        if ($page->agency_id !== $agency->id) {
+        if ($landingPage->agency_id !== $agency->id) {
             abort(403);
         }
 
-        return view('landing-pages.edit', compact('agency', 'page'));
+        $types = ContentAsset::ASSET_TYPES;
+        $page = $landingPage;
+
+        return view('landing-pages.edit', compact('agency', 'page', 'types'));
     }
 
-    public function update(Request $request, LandingPage $page)
+    public function update(Request $request, LandingPage $landingPage)
     {
         $agency = $request->user()->agency;
 
-        if ($page->agency_id !== $agency->id) {
+        if ($landingPage->agency_id !== $agency->id) {
             abort(403);
         }
 
@@ -102,14 +107,14 @@ class LandingPageController extends Controller
             'content' => 'nullable|string',
             'cta_text' => 'nullable|string|max:100',
             'cta_url' => 'nullable|url',
-            'background_color' => 'nullable|string|max:7',
-            'text_color' => 'nullable|string|max:7',
+            'background_color' => 'nullable|string|max-7',
+            'text_color' => 'nullable|string|max-7',
             'button_color' => 'nullable|string|max-7',
         ]);
 
-        $page->update($validated);
+        $landingPage->update($validated);
 
-        return redirect()->route('landing-pages.show', $page)
+        return redirect()->route('landing-pages.show', $landingPage)
             ->with('success', 'Landing page updated successfully.');
     }
 
