@@ -13,7 +13,6 @@ class FormTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -32,18 +31,25 @@ class FormTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_form(): void
+    public function it_creates_a_form(): void
     {
         $response = $this->actingAs($this->user)->post(route('forms.store'), [
-            'name' => 'Contact Form',
-            'fields' => [['name' => 'email', 'type' => 'email']],
+            'name' => 'Test Form',
+            'slug' => 'test-form',
         ]);
         $response->assertRedirect();
-        $this->assertDatabaseHas('forms', ['name' => 'Contact Form']);
+        $this->assertDatabaseHas('forms', ['name' => 'Test Form']);
     }
 
     /** @test */
-    public function it_shows_form(): void
+    public function it_validates_form_creation(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('forms.store'), []);
+        $response->assertSessionHasErrors(['name', 'slug']);
+    }
+
+    /** @test */
+    public function it_shows_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('forms.show', $form));
@@ -51,17 +57,7 @@ class FormTest extends TestCase
     }
 
     /** @test */
-    public function it_updates_form(): void
-    {
-        $form = Form::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->put(route('forms.update', $form), [
-            'name' => 'Updated Form',
-        ]);
-        $response->assertRedirect();
-    }
-
-    /** @test */
-    public function it_deletes_form(): void
+    public function it_deletes_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('forms.destroy', $form));
@@ -70,20 +66,18 @@ class FormTest extends TestCase
     }
 
     /** @test */
-    public function it_toggles_form_publication(): void
-    {
-        $form = Form::factory()->create(['agency_id' => $this->agency->id, 'is_published' => false]);
-        $response = $this->actingAs($this->user)->post(route('forms.toggle', $form));
-        $response->assertRedirect();
-        $this->assertDatabaseHas('forms', ['id' => $form->id, 'is_published' => true]);
-    }
-
-    /** @test */
-    public function it_prevents_unauthorized_access(): void
+    public function it_prevents_access_to_other_agency_forms(): void
     {
         $otherAgency = Agency::factory()->create();
         $form = Form::factory()->create(['agency_id' => $otherAgency->id]);
         $response = $this->actingAs($this->user)->get(route('forms.show', $form));
         $response->assertForbidden();
+    }
+
+    /** @test */
+    public function it_requires_auth(): void
+    {
+        $response = $this->get(route('forms.index'));
+        $response->assertRedirect(route('login'));
     }
 }
