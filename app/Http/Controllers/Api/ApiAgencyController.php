@@ -26,7 +26,7 @@ class ApiAgencyController extends Controller
 
     public function updateSettings(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'website' => 'nullable|url',
             'timezone' => 'nullable|string|max:50',
@@ -34,7 +34,7 @@ class ApiAgencyController extends Controller
         ]);
 
         $agency = $request->user()->agency;
-        $agency->update($request->validated());
+        $agency->update($data);
 
         return (new AgencyResource($agency))->response();
     }

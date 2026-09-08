@@ -26,16 +26,17 @@ class ApiWorkflowController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'trigger_type' => 'required|string',
-            'actions' => 'required|array',
+            'actions' => 'present|array',
         ]);
 
         $agency = $request->user()->agency;
         $workflow = Workflow::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            ...$data,
         ]);
 
         return response()->json($workflow, 201);
@@ -52,14 +53,14 @@ class ApiWorkflowController extends Controller
     {
         $this->authorizeAccess($request, $workflow);
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'trigger_type' => 'sometimes|string',
             'actions' => 'sometimes|array',
             'status' => 'sometimes|in:active,paused',
         ]);
 
-        $workflow->update($request->validated());
+        $workflow->update($data);
 
         return response()->json($workflow);
     }
