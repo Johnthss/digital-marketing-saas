@@ -17,13 +17,10 @@ class EmailTemplateFactory extends Factory
             'name' => fake()->words(3, true),
             'slug' => fake()->slug(),
             'subject' => fake()->sentence(),
-            'html_content' => '<h1>Hello {{ name }}</h1>',
-            'plain_text_content' => 'Hello {{ name }}',
-            'category' => fake()->randomElement(['welcome', 'notification', 'marketing']),
-            'variables' => ['name', 'email', 'agency_name'],
-            'is_default' => false,
-            'is_public' => false,
-            'usage_count' => 0,
+            'category' => fake()->randomElement(['welcome', 'notification', 'marketing', 'general']),
+            'html_content' => '<h1>' . fake()->sentence() . '</h1>',
+            'plain_text_content' => fake()->paragraph(),
+            'is_active' => true,
         ];
     }
 }

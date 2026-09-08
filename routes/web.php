@@ -15,6 +15,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContentLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Email\EmailCampaignController;
+use App\Http\Controllers\Email\EmailTemplateController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\GdprController;
 use App\Http\Controllers\InboxController;
@@ -132,6 +133,19 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::delete('/campaigns/{campaign}', [EmailCampaignController::class, 'destroy'])->name('campaigns.destroy');
         Route::post('/campaigns/{campaign}/send', [EmailCampaignController::class, 'send'])->name('campaigns.send');
         Route::post('/campaigns/{campaign}/add-clients', [EmailCampaignController::class, 'addClients'])->name('campaigns.add-clients');
+    });
+
+    // Email Templates
+    Route::prefix('templates')->name('email.templates.')->group(function () {
+        Route::get('/', [EmailTemplateController::class, 'index'])->name('index');
+        Route::get('/create', [EmailTemplateController::class, 'create'])->name('create');
+        Route::post('/', [EmailTemplateController::class, 'store'])->name('store');
+        Route::get('/{template}', [EmailTemplateController::class, 'show'])->name('show');
+        Route::get('/{template}/edit', [EmailTemplateController::class, 'edit'])->name('edit');
+        Route::put('/{template}', [EmailTemplateController::class, 'update'])->name('update');
+        Route::delete('/{template}', [EmailTemplateController::class, 'destroy'])->name('destroy');
+        Route::get('/{template}/preview', [EmailTemplateController::class, 'preview'])->name('preview');
+        Route::get('/{template}/duplicate', [EmailTemplateController::class, 'duplicate'])->name('duplicate');
     });
 
     // White-Label

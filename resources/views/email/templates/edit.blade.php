@@ -32,9 +32,6 @@
                                     <label>Folder</label>
                                     <select name="folder_id" class="form-control">
                                         <option value="">None</option>
-                                        @foreach($folders as $folder)
-                                        <option value="{{ $folder->id }}" {{ $template->folder_id == $folder->id ? 'selected' : '' }}>{{ $folder->name }}</option>
-                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="form-group">

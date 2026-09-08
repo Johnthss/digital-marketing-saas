@@ -30,7 +30,7 @@ class EmailTemplateController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
             'category' => 'required|string|max:255',
@@ -41,7 +41,8 @@ class EmailTemplateController extends Controller
         $agency = $request->user()->agency;
         $template = EmailTemplate::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            ...$data,
         ]);
 
         return redirect()->route('email.templates.show', $template)
@@ -75,7 +76,7 @@ class EmailTemplateController extends Controller
             abort(403);
         }
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'subject' => 'required|string|max:255',
             'category' => 'required|string|max:255',
@@ -83,7 +84,7 @@ class EmailTemplateController extends Controller
             'plain_text_content' => 'nullable|string',
         ]);
 
-        $template->update($request->validated());
+        $template->update($data);
 
         return redirect()->route('email.templates.show', $template)
             ->with('success', 'Template updated successfully.');
