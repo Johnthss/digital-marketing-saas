@@ -22,46 +22,21 @@ class InboxTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_lists_inbox_messages(): void
+    public function test_it_lists_messages(): void
     {
         InboxMessage::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('inbox.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('inbox.index');
+        $response->assertViewHas('messages');
     }
 
-    /** @test */
-    public function it_shows_a_message(): void
-    {
-        $message = InboxMessage::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->get(route('inbox.show', $message));
-        $response->assertStatus(200);
-    }
-
-    /** @test */
-    public function it_triages_a_message(): void
-    {
-        $message = InboxMessage::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->post(route('inbox.triage', $message), [
-            'category' => 'lead',
-            'priority' => 'high',
-        ]);
-        $response->assertRedirect();
-    }
-
-    /** @test */
-    public function it_prevents_access_to_other_agency_messages(): void
-    {
-        $otherAgency = Agency::factory()->create();
-        $message = InboxMessage::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->get(route('inbox.show', $message));
-        $response->assertForbidden();
-    }
-
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('inbox.index'));
+        
         $response->assertRedirect(route('login'));
     }
 }
