@@ -70,26 +70,6 @@ class PlatformRateLimitService
     }
 
     /**
-     * Wait until capacity is available (for queued jobs).
-     *
-     * Note: This method uses sleep() which blocks the queue worker.
-     * For production, consider using delayed job retries instead.
-     */
-    public function waitForCapacity(SocialAccount $account, string $platform, int $maxWaitSeconds = 30): bool
-    {
-        $start = time();
-
-        while (time() - $start < $maxWaitSeconds) {
-            if ($this->isAllowed($account, $platform)) {
-                return true;
-            }
-            sleep(1);
-        }
-
-        return false;
-    }
-
-    /**
      * Calculate the number of seconds to wait before retrying.
      * Used with queue job backoff for non-blocking rate limit handling.
      */
