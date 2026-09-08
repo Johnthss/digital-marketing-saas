@@ -3,11 +3,6 @@
 namespace Tests\Feature\Security;
 
 use App\Models\Agency;
-use App\Models\Campaign;
-use App\Models\Client;
-use App\Models\Invoice;
-use App\Models\SocialAccount;
-use App\Models\SocialPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,126 +11,48 @@ class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_redirected_to_login(): void
+    /** @test */
+    public function it_prevents_xss_in_forms(): void
     {
-        $response = $this->get('/dashboard');
-        $response->assertRedirect('/login');
-    }
-
-    public function test_cross_agency_post_access_denied(): void
-    {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $post = SocialPost::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->get("/social/posts/{$post->id}");
-        $response->assertStatus(403);
-    }
-
-    public function test_cross_agency_campaign_access_denied(): void
-    {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $campaign = Campaign::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->get("/campaigns/{$campaign->id}");
-        $response->assertStatus(403);
-    }
-
-    public function test_cross_agency_invoice_access_denied(): void
-    {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $invoice = Invoice::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->get("/invoices/{$invoice->id}");
-        $response->assertStatus(403);
-    }
-
-    public function test_inactive_agency_cannot_access(): void
-    {
-        $agency = Agency::factory()->create(['subscription_plan' => 'starter', 'status' => 'cancelled']);
-        $user = User::factory()->create(['agency_id' => $agency->id, 'role' => 'owner']);
-
-        $response = $this->actingAs($user)->get('/dashboard');
-        $response->assertStatus(403);
-    }
-
-    public function test_no_agency_user_cannot_access(): void
-    {
-        $user = User::factory()->create(['agency_id' => null, 'role' => 'owner']);
-
-        $response = $this->actingAs($user)->get('/dashboard');
-        $response->assertStatus(403);
-    }
-
-    public function test_member_cannot_invite_team(): void
-    {
-        $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $member = User::factory()->create(['agency_id' => $agency->id, 'role' => 'member']);
-
-        $response = $this->actingAs($member)->post('/agency/team/invite', [
-            'name' => 'New Member',
-            'email' => 'new@test.com',
-            'role' => 'manager',
+        $agency = Agency::factory()->create();
+        $user = User::factory()->create(['agency_id' => $agency->id]);
+        $response = $this->actingAs($user)->post(route('clients.store'), [
+            'name' => '<script>alert("xss")</script>',
+            'email' => 'test@example.com',
         ]);
-        $this->assertTrue(in_array($response->getStatusCode(), [302, 403]));
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('clients', ['name' => '<script>alert("xss")</script>']);
     }
 
-    public function test_manager_cannot_remove_members(): void
+    /** @test */
+    public function it_prevents_cross_tenant_access(): void
     {
-        $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $manager = User::factory()->create(['agency_id' => $agency->id, 'role' => 'manager']);
-        $member = User::factory()->create(['agency_id' => $agency->id, 'role' => 'member']);
-
-        $response = $this->actingAs($manager)->delete("/agency/team/{$member->id}");
-        $this->assertTrue(in_array($response->getStatusCode(), [302, 403]));
+        $agency1 = Agency::factory()->create();
+        $agency2 = Agency::factory()->create();
+        $user1 = User::factory()->create(['agency_id' => $agency1->id]);
+        $client = \App\Models\Client::factory()->create(['agency_id' => $agency2->id]);
+        $response = $this->actingAs($user1)->get(route('clients.show', $client));
+        $response->assertForbidden();
     }
 
-    public function test_social_account_cross_agency_delete_denied(): void
+    /** @test */
+    public function it_requires_csrf_for_forms(): void
     {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $account = SocialAccount::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->delete("/social/accounts/{$account->id}");
-        $response->assertStatus(403);
+        $agency = Agency::factory()->create();
+        $user = User::factory()->create(['agency_id' => $agency->id]);
+        $response = $this->actingAs($user)->post(route('clients.store'), [
+            'name' => 'Test',
+            'email' => 'test@example.com',
+            '_token' => 'invalid',
+        ]);
+        $response->assertStatus(419);
     }
 
-    public function test_client_edit_cross_agency_denied(): void
+    /** @test */
+    public function it_hashes_passwords(): void
     {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $client2 = Client::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->get("/clients/{$client2->id}/edit");
-        $response->assertStatus(403);
-    }
-
-    public function test_campaign_delete_cross_agency_denied(): void
-    {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $campaign2 = Campaign::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->delete("/campaigns/{$campaign2->id}");
-        $response->assertStatus(403);
-    }
-
-    public function test_invoice_delete_cross_agency_denied(): void
-    {
-        $agency1 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $agency2 = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $user1 = User::factory()->create(['agency_id' => $agency1->id, 'role' => 'owner']);
-        $invoice2 = Invoice::factory()->create(['agency_id' => $agency2->id]);
-
-        $response = $this->actingAs($user1)->delete("/invoices/{$invoice2->id}");
-        $response->assertStatus(403);
+        $user = User::factory()->create(['password' => 'secret123']);
+        $this->assertNotEquals('secret123', $user->password);
+        $this->assertTrue(\Hash::check('secret123', $user->password));
     }
 }

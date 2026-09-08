@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\Agency;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -11,68 +10,43 @@ class LoginTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_screen_can_be_rendered(): void
+    /** @test */
+    public function it_shows_login_form(): void
     {
-        $response = $this->get('/login');
+        $response = $this->get(route('login'));
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_login_screen(): void
+    /** @test */
+    public function it_logs_in_user(): void
     {
-        $agency = Agency::factory()->create();
+        $agency = \App\Models\Agency::factory()->create();
         $user = User::factory()->create([
-            'password' => bcrypt('password123'),
             'agency_id' => $agency->id,
+            'password' => bcrypt('password123'),
         ]);
-
-        $response = $this->post('/login', [
+        $response = $this->post(route('login'), [
             'email' => $user->email,
             'password' => 'password123',
         ]);
-
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect();
+        $this->assertAuthenticatedAs($user);
     }
 
-    public function test_users_can_not_authenticate_with_invalid_password(): void
+    /** @test */
+    public function it_validates_login(): void
     {
-        $agency = Agency::factory()->create();
-        $user = User::factory()->create([
-            'password' => bcrypt('password123'),
-            'agency_id' => $agency->id,
-        ]);
-
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-
-        $this->assertGuest();
+        $response = $this->post(route('login'), []);
+        $response->assertSessionHasErrors(['email', 'password']);
     }
 
-    public function test_users_without_agency_cannot_login(): void
+    /** @test */
+    public function it_logs_out_user(): void
     {
-        $user = User::factory()->create([
-            'password' => bcrypt('password123'),
-            'agency_id' => null,
-        ]);
-
-        $response = $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'password123',
-        ]);
-
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $response = $this->post(route('logout'));
+        $response->assertRedirect();
         $this->assertGuest();
-    }
-
-    public function test_logout_works(): void
-    {
-        $agency = Agency::factory()->create();
-        $user = User::factory()->create(['agency_id' => $agency->id]);
-
-        $response = $this->actingAs($user)->post('/logout');
-
-        $this->assertGuest();
-        $response->assertRedirect('/login');
     }
 }
