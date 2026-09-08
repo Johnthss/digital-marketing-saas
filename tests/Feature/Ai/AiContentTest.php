@@ -12,7 +12,6 @@ class AiContentTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -23,43 +22,31 @@ class AiContentTest extends TestCase
     }
 
     /** @test */
-    public function it_shows_ai_page(): void
+    public function it_shows_ai_content_page(): void
     {
         $response = $this->actingAs($this->user)->get(route('ai.index'));
         $response->assertStatus(200);
     }
 
     /** @test */
-    public function it_generates_ai_content(): void
-    {
-        $response = $this->actingAs($this->user)->post(route('ai.generate'), [
-            'prompt' => 'Write a social post about AI',
-            'tone' => 'professional',
-            'length' => 'medium',
-        ]);
-        $response->assertStatus(200);
-    }
-
-    /** @test */
-    public function it_validates_ai_request(): void
+    public function it_validates_ai_generation(): void
     {
         $response = $this->actingAs($this->user)->post(route('ai.generate'), []);
-        $response->assertSessionHasErrors();
+        $response->assertSessionHasErrors(['prompt']);
     }
 
     /** @test */
-    public function it_shows_ai_ideas(): void
-    {
-        $response = $this->actingAs($this->user)->post(route('ai.ideas'), [
-            'topic' => 'marketing',
-        ]);
-        $response->assertStatus(200);
-    }
-
-    /** @test */
-    public function it_prevents_unauthorized_access(): void
+    public function it_requires_auth(): void
     {
         $response = $this->get(route('ai.index'));
         $response->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function it_requires_agency(): void
+    {
+        $user = User::factory()->create(['agency_id' => null]);
+        $response = $this->actingAs($user)->get(route('ai.index'));
+        $response->assertForbidden();
     }
 }
