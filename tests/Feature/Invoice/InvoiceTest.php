@@ -22,61 +22,130 @@ class InvoiceTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_lists_invoices(): void
+    public function test_it_lists_invoices(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('invoices.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('invoices.index');
+        $response->assertViewHas('invoices');
+        $response->assertViewHas('stats');
     }
 
-    /** @test */
-    public function it_creates_an_invoice(): void
+    public function test_it_creates_an_invoice(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), [
-            'total' => 100.00,
+            'issue_date' => now()->format('Y-m-d'),
+            'due_date' => now()->addDays(30)->format('Y-m-d'),
+            'notes' => 'Test invoice',
+            'items' => [
+                [
+                    'description' => 'Service 1',
+                    'quantity' => 2,
+                    'unit_price' => 100.00,
+                ],
+                [
+                    'description' => 'Service 2',
+                    'quantity' => 1,
+                    'unit_price' => 50.00,
+                ],
+            ],
         ]);
+        
         $response->assertRedirect();
-        $this->assertDatabaseHas('invoices', ['total' => 100.00]);
+        $this->assertDatabaseHas('invoices', [
+            'agency_id' => $this->agency->id,
+            'total' => 250.00,
+        ]);
     }
 
-    /** @test */
-    public function it_validates_invoice_creation(): void
+    public function test_it_validates_invoice_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), []);
-        $response->assertSessionHasErrors(['total']);
+        
+        $response->assertSessionHasErrors(['issue_date', 'due_date', 'items']);
     }
 
-    /** @test */
-    public function it_shows_an_invoice(): void
+    public function test_it_shows_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('invoices.show', $invoice));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('invoices.show');
+        $response->assertViewHas('invoice');
     }
 
-    /** @test */
-    public function it_marks_invoice_paid(): void
-    {
-        $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);
-        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice));
-        $response->assertRedirect();
-        $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'status' => 'paid']);
-    }
-
-    /** @test */
-    public function it_prevents_access_to_other_agency_invoices(): void
+    public function test_it_prevents_showing_other_agency_invoices(): void
     {
         $otherAgency = Agency::factory()->create();
         $invoice = Invoice::factory()->create(['agency_id' => $otherAgency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('invoices.show', $invoice));
+        
         $response->assertForbidden();
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_edits_an_invoice(): void
+    {
+        $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->get(route('invoices.edit', $invoice));
+        
+        $response->assertOk();
+        $response->assertViewIs('invoices.edit');
+    }
+
+    public function test_it_updates_an_invoice(): void
+    {
+        $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->put(route('invoices.update', $invoice), [
+            'issue_date' => now()->format('Y-m-d'),
+            'due_date' => now()->addDays(30)->format('Y-m-d'),
+            'notes' => 'Updated notes',
+        ]);
+        
+        $response->assertRedirect();
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'notes' => 'Updated notes',
+        ]);
+    }
+
+    public function test_it_deletes_an_invoice(): void
+    {
+        $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->delete(route('invoices.destroy', $invoice));
+        
+        $response->assertRedirect(route('invoices.index'));
+        $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
+    }
+
+    public function test_it_marks_invoice_as_paid(): void
+    {
+        $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice), [
+            'payment_method' => 'stripe',
+            'transaction_id' => 'txn_123',
+        ]);
+        
+        $response->assertRedirect();
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'status' => 'paid',
+        ]);
+    }
+
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('invoices.index'));
+        
         $response->assertRedirect(route('login'));
     }
 }
