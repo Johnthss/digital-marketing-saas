@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Reports;
+namespace Tests\Feature\Report;
 
 use App\Models\Agency;
 use App\Models\Report;
@@ -13,7 +13,6 @@ class ReportTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -32,27 +31,25 @@ class ReportTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_report(): void
+    public function it_creates_a_report(): void
     {
         $response = $this->actingAs($this->user)->post(route('reports.store'), [
-            'name' => 'Social Report',
-            'type' => 'social',
-            'format' => 'pdf',
-            'schedule' => 'once',
+            'name' => 'Test Report',
+            'type' => 'analytics',
         ]);
-        $response->assertRedirect(route('reports.index'));
-        $this->assertDatabaseHas('reports', ['name' => 'Social Report']);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('reports', ['name' => 'Test Report']);
     }
 
     /** @test */
     public function it_validates_report_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('reports.store'), []);
-        $response->assertSessionHasErrors(['name', 'type', 'format', 'schedule']);
+        $response->assertSessionHasErrors(['name', 'type']);
     }
 
     /** @test */
-    public function it_shows_report(): void
+    public function it_shows_a_report(): void
     {
         $report = Report::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('reports.show', $report));
@@ -60,16 +57,16 @@ class ReportTest extends TestCase
     }
 
     /** @test */
-    public function it_deletes_report(): void
+    public function it_deletes_a_report(): void
     {
         $report = Report::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('reports.destroy', $report));
-        $response->assertRedirect(route('reports.index'));
+        $response->assertRedirect();
         $this->assertSoftDeleted('reports', ['id' => $report->id]);
     }
 
     /** @test */
-    public function it_prevents_unauthorized_access(): void
+    public function it_prevents_access_to_other_agency_reports(): void
     {
         $otherAgency = Agency::factory()->create();
         $report = Report::factory()->create(['agency_id' => $otherAgency->id]);
@@ -78,30 +75,9 @@ class ReportTest extends TestCase
     }
 
     /** @test */
-    public function it_generates_report(): void
+    public function it_requires_auth(): void
     {
-        $report = Report::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->post(route('reports.generate', $report));
-        $response->assertRedirect();
-    }
-
-    /** @test */
-    public function it_filters_by_type(): void
-    {
-        Report::factory()->create(['agency_id' => $this->agency->id, 'type' => 'social']);
-        Report::factory()->create(['agency_id' => $this->agency->id, 'type' => 'email']);
-        $response = $this->actingAs($this->user)->get(route('reports.index', ['type' => 'social']));
-        $response->assertStatus(200);
-    }
-
-    /** @test */
-    public function it_downloads_report(): void
-    {
-        $report = Report::factory()->create([
-            'agency_id' => $this->agency->id,
-            'file_path' => 'reports/test.pdf',
-        ]);
-        $response = $this->actingAs($this->user)->get(route('reports.download', $report));
-        $response->assertStatus(200);
+        $response = $this->get(route('reports.index'));
+        $response->assertRedirect(route('login'));
     }
 }

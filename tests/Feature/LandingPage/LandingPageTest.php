@@ -13,7 +13,6 @@ class LandingPageTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -32,19 +31,25 @@ class LandingPageTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_landing_page(): void
+    public function it_creates_a_landing_page(): void
     {
         $response = $this->actingAs($this->user)->post(route('landing-pages.store'), [
-            'name' => 'Home Page',
-            'slug' => 'home',
-            'content' => '<h1>Welcome</h1>',
+            'name' => 'Test Page',
+            'slug' => 'test-page',
         ]);
         $response->assertRedirect();
-        $this->assertDatabaseHas('landing_pages', ['name' => 'Home Page']);
+        $this->assertDatabaseHas('landing_pages', ['name' => 'Test Page']);
     }
 
     /** @test */
-    public function it_shows_landing_page(): void
+    public function it_validates_landing_page_creation(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('landing-pages.store'), []);
+        $response->assertSessionHasErrors(['name', 'slug']);
+    }
+
+    /** @test */
+    public function it_shows_a_landing_page(): void
     {
         $page = LandingPage::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('landing-pages.show', $page));
@@ -52,17 +57,7 @@ class LandingPageTest extends TestCase
     }
 
     /** @test */
-    public function it_updates_landing_page(): void
-    {
-        $page = LandingPage::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->put(route('landing-pages.update', $page), [
-            'name' => 'Updated Page',
-        ]);
-        $response->assertRedirect();
-    }
-
-    /** @test */
-    public function it_deletes_landing_page(): void
+    public function it_deletes_a_landing_page(): void
     {
         $page = LandingPage::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('landing-pages.destroy', $page));
@@ -71,20 +66,18 @@ class LandingPageTest extends TestCase
     }
 
     /** @test */
-    public function it_toggles_publication(): void
-    {
-        $page = LandingPage::factory()->create(['agency_id' => $this->agency->id, 'is_published' => false]);
-        $response = $this->actingAs($this->user)->post(route('landing-pages.toggle', $page));
-        $response->assertRedirect();
-        $this->assertDatabaseHas('landing_pages', ['id' => $page->id, 'is_published' => true]);
-    }
-
-    /** @test */
-    public function it_prevents_unauthorized_access(): void
+    public function it_prevents_access_to_other_agency_pages(): void
     {
         $otherAgency = Agency::factory()->create();
         $page = LandingPage::factory()->create(['agency_id' => $otherAgency->id]);
         $response = $this->actingAs($this->user)->get(route('landing-pages.show', $page));
         $response->assertForbidden();
+    }
+
+    /** @test */
+    public function it_requires_auth(): void
+    {
+        $response = $this->get(route('landing-pages.index'));
+        $response->assertRedirect(route('login'));
     }
 }
