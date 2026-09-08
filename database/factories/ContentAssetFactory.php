@@ -13,7 +13,7 @@ class ContentAssetFactory extends Factory
 
     public function definition(): array
     {
-        $types = ['document', 'image', 'video', 'audio', 'presentation', ''];
+        $types = ['text', 'image', 'video', 'audio', 'document', 'link'];
         $type = fake()->randomElement($types);
         $name = fake()->words(3, true);
 
@@ -22,15 +22,11 @@ class ContentAssetFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.uniqid(),
             'type' => $type,
-            'description' => fake()->sentence(),
             'content' => fake()->paragraphs(2, true),
-            'file_path' => null,
-            'file_url' => null,
-            'file_size' => null,
-            'file_mime' => null,
-            'thumbnail_url' => null,
-            'tags' => implode(', ', fake()->words(3)),
-            'is_active' => true,
+            'media_url' => null,
+            'tags' => fake()->words(3),
+            'is_public' => false,
+            'status' => 'active',
         ];
     }
 }

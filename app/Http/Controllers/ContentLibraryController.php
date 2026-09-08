@@ -70,35 +70,38 @@ class ContentLibraryController extends Controller
             ->with('success', 'Content asset created successfully.');
     }
 
-    public function show(Request $request, ContentAsset $asset)
+    public function show(Request $request, ContentAsset $content)
     {
         $agency = $request->user()->agency;
 
-        if ($asset->agency_id !== $agency->id) {
+        if ($content->agency_id !== $agency->id) {
             abort(403);
         }
+
+        $asset = $content;
 
         return view('content.show', compact('agency', 'asset'));
     }
 
-    public function edit(Request $request, ContentAsset $asset)
+    public function edit(Request $request, ContentAsset $content)
     {
         $agency = $request->user()->agency;
 
-        if ($asset->agency_id !== $agency->id) {
+        if ($content->agency_id !== $agency->id) {
             abort(403);
         }
 
         $types = ContentAsset::ASSET_TYPES;
+        $asset = $content;
 
         return view('content.edit', compact('agency', 'asset', 'types'));
     }
 
-    public function update(Request $request, ContentAsset $asset)
+    public function update(Request $request, ContentAsset $content)
     {
         $agency = $request->user()->agency;
 
-        if ($asset->agency_id !== $agency->id) {
+        if ($content->agency_id !== $agency->id) {
             abort(403);
         }
 
@@ -110,21 +113,21 @@ class ContentLibraryController extends Controller
             'is_public' => 'boolean',
         ]);
 
-        $asset->update($validated);
+        $content->update($validated);
 
-        return redirect()->route('content.show', $asset)
+        return redirect()->route('content.show', $content)
             ->with('success', 'Content asset updated successfully.');
     }
 
-    public function destroy(Request $request, ContentAsset $asset)
+    public function destroy(Request $request, ContentAsset $content)
     {
         $agency = $request->user()->agency;
 
-        if ($asset->agency_id !== $agency->id) {
+        if ($content->agency_id !== $agency->id) {
             abort(403);
         }
 
-        $asset->delete();
+        $content->delete();
 
         return redirect()->route('content.index')
             ->with('success', 'Content asset deleted.');
