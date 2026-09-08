@@ -13,7 +13,6 @@ class SocialAccountTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
-
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +23,7 @@ class SocialAccountTest extends TestCase
     }
 
     /** @test */
-    public function it_lists_social_accounts(): void
+    public function it_lists_accounts(): void
     {
         SocialAccount::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->get(route('social.accounts.index'));
@@ -32,57 +31,55 @@ class SocialAccountTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_social_account(): void
+    public function it_creates_an_account(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), [
-            'platform' => 'facebook',
-            'account_name' => 'Test Account',
+            'platform' => 'twitter',
+            'platform_display_name' => 'Test Account',
             'access_token' => 'test_token',
         ]);
         $response->assertRedirect();
-        $this->assertDatabaseHas('social_accounts', ['account_name' => 'Test Account']);
+        $this->assertDatabaseHas('social_accounts', ['platform_display_name' => 'Test Account']);
     }
 
     /** @test */
-    public function it_validates_social_account_creation(): void
+    public function it_validates_account_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), []);
-        $response->assertSessionHasErrors(['platform', 'account_name']);
+        $response->assertSessionHasErrors(['platform', 'access_token']);
     }
 
     /** @test */
-    public function it_shows_social_account(): void
+    public function it_toggles_account(): void
     {
-        $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->get(route('social.accounts.show', $account));
-        $response->assertStatus(200);
-    }
-
-    /** @test */
-    public function it_updates_social_account(): void
-    {
-        $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->put(route('social.accounts.update', $account), [
-            'account_name' => 'Updated Account',
-        ]);
+        $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id, 'is_active' => true]);
+        $response = $this->actingAs($this->user)->post(route('social.accounts.toggle', $account));
         $response->assertRedirect();
+        $this->assertDatabaseHas('social_accounts', ['id' => $account->id, 'is_active' => false]);
     }
 
     /** @test */
-    public function it_deletes_social_account(): void
+    public function it_deletes_an_account(): void
     {
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('social.accounts.destroy', $account));
         $response->assertRedirect();
-        $this->assertSoftDeleted('social_accounts', ['id' => $account->id]);
+        $this->assertDatabaseMissing('social_accounts', ['id' => $account->id]);
     }
 
     /** @test */
-    public function it_prevents_unauthorized_access(): void
+    public function it_prevents_access_to_other_agency_accounts(): void
     {
         $otherAgency = Agency::factory()->create();
         $account = SocialAccount::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->get(route('social.accounts.show', $account));
+        $response = $this->actingAs($this->user)->get(route('social.accounts.edit', $account));
         $response->assertForbidden();
+    }
+
+    /** @test */
+    public function it_requires_auth(): void
+    {
+        $response = $this->get(route('social.accounts.index'));
+        $response->assertRedirect(route('login'));
     }
 }
