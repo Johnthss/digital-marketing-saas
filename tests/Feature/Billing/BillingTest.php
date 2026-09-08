@@ -1,14 +1,13 @@
 <?php
 
-namespace Tests\Feature\Analytics;
+namespace Tests\Feature\Billing;
 
 use App\Models\Agency;
-use App\Models\SocialPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class AnalyticsTest extends TestCase
+class BillingTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -23,20 +22,16 @@ class AnalyticsTest extends TestCase
     }
 
     /** @test */
-    public function it_shows_analytics(): void
+    public function it_shows_billing_page(): void
     {
-        SocialPost::factory()->count(3)->create([
-            'agency_id' => $this->agency->id,
-            'status' => 'published',
-        ]);
-        $response = $this->actingAs($this->user)->get(route('analytics.index'));
+        $response = $this->actingAs($this->user)->get(route('agency.billing'));
         $response->assertStatus(200);
     }
 
     /** @test */
     public function it_requires_auth(): void
     {
-        $response = $this->get(route('analytics.index'));
+        $response = $this->get(route('agency.billing'));
         $response->assertRedirect(route('login'));
     }
 
@@ -44,7 +39,7 @@ class AnalyticsTest extends TestCase
     public function it_requires_agency(): void
     {
         $user = User::factory()->create(['agency_id' => null]);
-        $response = $this->actingAs($user)->get(route('analytics.index'));
+        $response = $this->actingAs($user)->get(route('agency.billing'));
         $response->assertForbidden();
     }
 }

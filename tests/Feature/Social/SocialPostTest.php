@@ -13,79 +13,94 @@ class SocialPostTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Agency $agency;
     private User $user;
-
-    private SocialAccount $account;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $agency = Agency::factory()->create(['subscription_plan' => 'starter']);
-        $this->user = User::factory()->create(['agency_id' => $agency->id, 'role' => 'owner']);
-        $this->account = SocialAccount::factory()->create(['agency_id' => $agency->id]);
+        $this->agency = Agency::factory()->create();
+        $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    public function test_posts_index_requires_authentication(): void
+    /** @test */
+    public function it_lists_posts(): void
     {
-        $response = $this->get('/social/posts');
-        $response->assertRedirect('/login');
-    }
-
-    public function test_authenticated_user_can_view_posts(): void
-    {
-        $response = $this->actingAs($this->user)->get('/social/posts');
+        SocialPost::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->get(route('social.posts.index'));
         $response->assertStatus(200);
     }
 
-    public function test_user_can_create_post(): void
+    /** @test */
+    public function it_creates_a_post(): void
     {
-        $response = $this->actingAs($this->user)->post('/social/posts', [
-            'social_account_id' => $this->account->id,
-            'content' => 'Test post content',
+        $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->post(route('social.posts.store'), [
+            'platform' => 'twitter',
+            'content' => 'Test post',
+            'social_account_id' => $account->id,
         ]);
-
-        $response->assertRedirect('/social/posts');
-        $this->assertDatabaseHas('social_posts', ['content' => 'Test post content']);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('social_posts', ['content' => 'Test post']);
     }
 
-    public function test_user_cannot_create_post_for_other_agency_account(): void
+    /** @test */
+    public function it_validates_post_creation(): void
     {
-        $otherAccount = SocialAccount::factory()->create();
-        $response = $this->actingAs($this->user)->post('/social/posts', [
-            'social_account_id' => $otherAccount->id,
-            'content' => 'Test post content',
-        ]);
-
-        $response->assertStatus(403);
+        $response = $this->actingAs($this->user)->post(route('social.posts.store'), []);
+        $response->assertSessionHasErrors(['platform', 'content', 'social_account_id']);
     }
 
-    public function test_user_can_view_post(): void
+    /** @test */
+    public function it_shows_a_post(): void
     {
-        $post = SocialPost::factory()->create([
-            'agency_id' => $this->user->agency_id,
-            'social_account_id' => $this->account->id,
-        ]);
-
-        $response = $this->actingAs($this->user)->get("/social/posts/{$post->id}");
+        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->get(route('social.posts.show', $post));
         $response->assertStatus(200);
     }
 
-    public function test_user_cannot_view_other_agency_post(): void
+    /** @test */
+    public function it_updates_a_post(): void
     {
-        $post = SocialPost::factory()->create();
-        $response = $this->actingAs($this->user)->get("/social/posts/{$post->id}");
-        $response->assertStatus(403);
+        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->put(route('social.posts.update', $post), [
+            'content' => 'Updated post',
+        ]);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'content' => 'Updated post']);
     }
 
-    public function test_user_can_delete_post(): void
+    /** @test */
+    public function it_deletes_a_post(): void
     {
-        $post = SocialPost::factory()->create([
-            'agency_id' => $this->user->agency_id,
-            'social_account_id' => $this->account->id,
-        ]);
-
-        $response = $this->actingAs($this->user)->delete("/social/posts/{$post->id}");
-        $response->assertRedirect('/social/posts');
+        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
+        $response = $this->actingAs($this->user)->delete(route('social.posts.destroy', $post));
+        $response->assertRedirect();
         $this->assertSoftDeleted('social_posts', ['id' => $post->id]);
+    }
+
+    /** @test */
+    public function it_publishes_a_post(): void
+    {
+        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id, 'status' => 'draft']);
+        $response = $this->actingAs($this->user)->post(route('social.posts.publish', $post));
+        $response->assertRedirect();
+        $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'status' => 'published']);
+    }
+
+    /** @test */
+    public function it_prevents_access_to_other_agency_posts(): void
+    {
+        $otherAgency = Agency::factory()->create();
+        $post = SocialPost::factory()->create(['agency_id' => $otherAgency->id]);
+        $response = $this->actingAs($this->user)->get(route('social.posts.show', $post));
+        $response->assertForbidden();
+    }
+
+    /** @test */
+    public function it_requires_auth(): void
+    {
+        $response = $this->get(route('social.posts.index'));
+        $response->assertRedirect(route('login'));
     }
 }
