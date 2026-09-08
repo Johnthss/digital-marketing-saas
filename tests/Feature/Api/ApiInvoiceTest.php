@@ -23,7 +23,7 @@ class ApiInvoiceTest extends TestCase
     }
 
     /** @test */
-    public function it_lists_invoices(): void
+    public function test_it_lists_invoices(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson('/api/v1/invoices');
@@ -32,7 +32,7 @@ class ApiInvoiceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_an_invoice(): void
+    public function test_it_creates_an_invoice(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/invoices', [
             'total' => 100.00,
@@ -42,14 +42,14 @@ class ApiInvoiceTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_invoice_creation(): void
+    public function test_it_validates_invoice_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/invoices', []);
         $response->assertUnprocessable();
     }
 
     /** @test */
-    public function it_shows_an_invoice(): void
+    public function test_it_shows_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson("/api/v1/invoices/{$invoice->id}");
@@ -58,7 +58,7 @@ class ApiInvoiceTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_access_to_other_agency_invoices(): void
+    public function test_it_prevents_access_to_other_agency_invoices(): void
     {
         $otherAgency = Agency::factory()->create();
         $invoice = Invoice::factory()->create(['agency_id' => $otherAgency->id]);

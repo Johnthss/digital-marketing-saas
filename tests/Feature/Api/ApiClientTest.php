@@ -23,7 +23,7 @@ class ApiClientTest extends TestCase
     }
 
     /** @test */
-    public function it_lists_clients(): void
+    public function test_it_lists_clients(): void
     {
         Client::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson('/api/v1/clients');
@@ -32,7 +32,7 @@ class ApiClientTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_a_client(): void
+    public function test_it_creates_a_client(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/clients', [
             'name' => 'Test Client',
@@ -43,14 +43,14 @@ class ApiClientTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_client_creation(): void
+    public function test_it_validates_client_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/clients', []);
         $response->assertUnprocessable();
     }
 
     /** @test */
-    public function it_shows_a_client(): void
+    public function test_it_shows_a_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson("/api/v1/clients/{$client->id}");
@@ -59,7 +59,7 @@ class ApiClientTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_access_to_other_agency_clients(): void
+    public function test_it_prevents_access_to_other_agency_clients(): void
     {
         $otherAgency = Agency::factory()->create();
         $client = Client::factory()->create(['agency_id' => $otherAgency->id]);

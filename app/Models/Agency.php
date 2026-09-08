@@ -74,6 +74,11 @@ class Agency extends Model
         return $this->users()->where('role', $role);
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function hasFeature(string $featureCode): bool
     {
         $agency = $this;

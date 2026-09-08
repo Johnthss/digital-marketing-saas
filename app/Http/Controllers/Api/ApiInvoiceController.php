@@ -32,7 +32,7 @@ class ApiInvoiceController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'client_id' => 'nullable|exists:clients,id',
             'total' => 'required|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -45,7 +45,9 @@ class ApiInvoiceController extends Controller
             'agency_id' => $agency->id,
             'invoice_number' => Invoice::generateNumber(),
             'status' => 'pending',
-            ...$request->validated(),
+            'issue_date' => now(),
+            'due_date' => $data['due_date'] ?? now()->addDays(30),
+            ...$data,
         ]);
 
         return (new InvoiceResource($invoice))

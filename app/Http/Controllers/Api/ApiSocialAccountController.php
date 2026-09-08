@@ -26,17 +26,17 @@ class ApiSocialAccountController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'platform' => 'required|string|in:facebook,instagram,twitter,linkedin,tiktok,pinterest',
-            'account_name' => 'required|string|max:255',
-            'account_handle' => 'nullable|string|max:255',
+            'platform_display_name' => 'nullable|string|max:255',
+            'platform_username' => 'nullable|string|max:255',
             'access_token' => 'required|string',
         ]);
 
         $agency = $request->user()->agency;
         $account = SocialAccount::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            ...$data,
         ]);
 
         return response()->json($account, 201);
@@ -53,13 +53,13 @@ class ApiSocialAccountController extends Controller
     {
         $this->authorizeAccess($request, $account);
 
-        $request->validate([
+        $data = $request->validate([
             'account_name' => 'sometimes|string|max:255',
             'account_handle' => 'nullable|string|max:255',
             'is_active' => 'sometimes|boolean',
         ]);
 
-        $account->update($request->validated());
+        $account->update($data);
 
         return response()->json($account);
     }

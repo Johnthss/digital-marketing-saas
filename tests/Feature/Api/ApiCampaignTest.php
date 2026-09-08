@@ -23,7 +23,7 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_lists_campaigns(): void
+    public function test_it_lists_campaigns(): void
     {
         Campaign::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson('/api/v1/campaigns');
@@ -32,7 +32,7 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_a_campaign(): void
+    public function test_it_creates_a_campaign(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/campaigns', [
             'name' => 'Test Campaign',
@@ -43,14 +43,14 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_validates_campaign_creation(): void
+    public function test_it_validates_campaign_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/campaigns', []);
         $response->assertUnprocessable();
     }
 
     /** @test */
-    public function it_shows_a_campaign(): void
+    public function test_it_shows_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->getJson("/api/v1/campaigns/{$campaign->id}");
@@ -59,7 +59,7 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_updates_a_campaign(): void
+    public function test_it_updates_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->putJson("/api/v1/campaigns/{$campaign->id}", [
@@ -70,7 +70,7 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_deletes_a_campaign(): void
+    public function test_it_deletes_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->deleteJson("/api/v1/campaigns/{$campaign->id}");
@@ -79,7 +79,7 @@ class ApiCampaignTest extends TestCase
     }
 
     /** @test */
-    public function it_prevents_access_to_other_agency_campaigns(): void
+    public function test_it_prevents_access_to_other_agency_campaigns(): void
     {
         $otherAgency = Agency::factory()->create();
         $campaign = Campaign::factory()->create(['agency_id' => $otherAgency->id]);

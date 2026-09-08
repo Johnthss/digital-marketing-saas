@@ -32,7 +32,7 @@ class ApiClientController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'phone' => 'nullable|string|max:20',
@@ -44,7 +44,7 @@ class ApiClientController extends Controller
         $agency = $request->user()->agency;
         $client = Client::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            ...$data,
         ]);
 
         return (new ClientResource($client))
@@ -56,7 +56,7 @@ class ApiClientController extends Controller
     {
         $this->authorizeAccess($request, $client);
 
-        return (new ClientResource($client->load('campaigns', 'invoices')))->response();
+        return (new ClientResource($client->load('campaigns')))->response();
     }
 
     public function update(Request $request, Client $client): JsonResponse

@@ -32,7 +32,7 @@ class ApiCampaignController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'nullable|string|in:general,social,email,mixed',
             'description' => 'nullable|string',
@@ -43,7 +43,8 @@ class ApiCampaignController extends Controller
         $agency = $request->user()->agency;
         $campaign = Campaign::create([
             'agency_id' => $agency->id,
-            ...$request->validated(),
+            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            ...$data,
         ]);
 
         return (new CampaignResource($campaign))
@@ -55,14 +56,14 @@ class ApiCampaignController extends Controller
     {
         $this->authorizeAccess($request, $campaign);
 
-        return (new CampaignResource($campaign->load('posts', 'clients')))->response();
+        return (new CampaignResource($campaign->load('posts')))->response();
     }
 
     public function update(Request $request, Campaign $campaign): JsonResponse
     {
         $this->authorizeAccess($request, $campaign);
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'type' => 'nullable|string|in:general,social,email,mixed',
             'description' => 'nullable|string',
@@ -70,7 +71,7 @@ class ApiCampaignController extends Controller
             'end_date' => 'nullable|date',
         ]);
 
-        $campaign->update($request->validated());
+        $campaign->update($data);
 
         return (new CampaignResource($campaign))->response();
     }

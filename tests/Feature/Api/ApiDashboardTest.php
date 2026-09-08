@@ -27,7 +27,7 @@ class ApiDashboardTest extends TestCase
     }
 
     /** @test */
-    public function it_returns_dashboard_stats(): void
+    public function test_it_returns_dashboard_stats(): void
     {
         Client::factory()->count(3)->create(['agency_id' => $this->agency->id]);
         SocialPost::factory()->count(5)->create(['agency_id' => $this->agency->id]);
@@ -43,7 +43,7 @@ class ApiDashboardTest extends TestCase
     }
 
     /** @test */
-    public function it_returns_ai_stats(): void
+    public function test_it_returns_ai_stats(): void
     {
         AiContentLog::factory()->count(3)->create([
             'agency_id' => $this->agency->id,
@@ -57,7 +57,7 @@ class ApiDashboardTest extends TestCase
     }
 
     /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/dashboard');
         $response->assertUnauthorized();
