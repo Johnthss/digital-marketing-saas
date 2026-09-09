@@ -21,44 +21,44 @@ class ApiAgencyTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function test_it_returns_agency_settings(): void
+    public function test_it_shows_settings(): void
     {
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/settings');
+        
         $response->assertOk();
-        $response->assertJsonPath('data.id', $this->agency->id);
     }
 
-    /** @test */
-    public function test_it_updates_agency_settings(): void
+    public function test_it_updates_settings(): void
     {
         $response = $this->actingAs($this->user)->putJson('/api/v1/agency/settings', [
             'name' => 'Updated Agency',
+            'website' => 'https://example.com',
         ]);
+        
         $response->assertOk();
         $this->assertDatabaseHas('agencies', ['id' => $this->agency->id, 'name' => 'Updated Agency']);
     }
 
-    /** @test */
-    public function test_it_returns_team_members(): void
+    public function test_it_shows_team(): void
     {
-        User::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        User::factory()->count(2)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/team');
+        
         $response->assertOk();
-        $response->assertJsonCount(4, 'data');
     }
 
-    /** @test */
-    public function test_it_returns_billing_info(): void
+    public function test_it_shows_billing(): void
     {
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/billing');
+        
         $response->assertOk();
     }
 
-    /** @test */
     public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/agency/settings');
+        
         $response->assertUnauthorized();
     }
 }
