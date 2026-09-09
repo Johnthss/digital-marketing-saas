@@ -47,6 +47,23 @@ class ContentTemplate extends Model
         return $query->where('platform', $platform);
     }
 
+    public const PLATFORMS = [
+        'twitter' => 'Twitter',
+        'facebook' => 'Facebook',
+        'instagram' => 'Instagram',
+        'linkedin' => 'LinkedIn',
+        'tiktok' => 'TikTok',
+        'pinterest' => 'Pinterest',
+    ];
+
+    public const TYPES = [
+        'post' => 'Post',
+        'story' => 'Story',
+        'reel' => 'Reel',
+        'pin' => 'Pin',
+        'article' => 'Article',
+    ];
+
     public function render(array $variables = []): string
     {
         $content = $this->template_content ?? '';

@@ -117,6 +117,24 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
     Route::resource('webhooks', WebhookController::class);
 
+    // Content Templates
+    Route::resource('content-templates', ContentTemplateController::class);
+
+    // Custom Fields
+    Route::resource('custom-fields', CustomFieldController::class);
+
+    // Feature Flags
+    Route::resource('features', FeatureController::class);
+    Route::prefix('feature-flags')->name('feature-flags.')->group(function () {
+        Route::get('/', [FeatureFlagController::class, 'index'])->name('index');
+        Route::get('/create', [FeatureFlagController::class, 'create'])->name('create');
+        Route::post('/', [FeatureFlagController::class, 'store'])->name('store');
+        Route::get('/{flag}', [FeatureFlagController::class, 'show'])->name('show');
+        Route::get('/{flag}/edit', [FeatureFlagController::class, 'edit'])->name('edit');
+        Route::put('/{flag}', [FeatureFlagController::class, 'update'])->name('update');
+        Route::delete('/{flag}', [FeatureFlagController::class, 'destroy'])->name('destroy');
+    });
+
     // Reports
     Route::resource('reports', ReportController::class);
     Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
