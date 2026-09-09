@@ -11,15 +11,15 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_shows_registration_form(): void
+    public function test_it_shows_registration_page(): void
     {
         $response = $this->get(route('register'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('auth.register');
     }
 
-    /** @test */
-    public function it_registers_a_user(): void
+    public function test_it_registers_new_user(): void
     {
         $response = $this->post(route('register'), [
             'name' => 'Test User',
@@ -28,22 +28,31 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password123',
             'agency_name' => 'Test Agency',
         ]);
-        $response->assertRedirect();
+        
+        $response->assertRedirect(route('dashboard'));
         $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
         $this->assertDatabaseHas('agencies', ['name' => 'Test Agency']);
     }
 
-    /** @test */
-    public function it_validates_registration(): void
+    public function test_it_validates_registration(): void
     {
         $response = $this->post(route('register'), []);
+        
         $response->assertSessionHasErrors(['name', 'email', 'password', 'agency_name']);
     }
 
-    /** @test */
-    public function it_requires_auth_to_access_dashboard(): void
+    public function test_it_requires_unique_email(): void
     {
-        $response = $this->get(route('dashboard'));
-        $response->assertRedirect(route('login'));
+        User::factory()->create(['email' => 'test@example.com']);
+        
+        $response = $this->post(route('register'), [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'agency_name' => 'Test Agency',
+        ]);
+        
+        $response->assertSessionHasErrors(['email']);
     }
 }
