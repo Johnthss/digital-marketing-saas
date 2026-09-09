@@ -22,63 +22,102 @@ class WebhookTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_lists_webhooks(): void
+    public function test_it_lists_webhooks(): void
     {
         Webhook::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('webhooks.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('webhooks.index');
+        $response->assertViewHas('webhooks');
     }
 
-    /** @test */
-    public function it_creates_a_webhook(): void
+    public function test_it_creates_a_webhook(): void
     {
         $response = $this->actingAs($this->user)->post(route('webhooks.store'), [
             'name' => 'Test Webhook',
             'url' => 'https://example.com/webhook',
             'events' => ['post.published'],
+            'is_active' => true,
         ]);
+        
         $response->assertRedirect();
-        $this->assertDatabaseHas('webhooks', ['name' => 'Test Webhook']);
+        $this->assertDatabaseHas('webhooks', [
+            'name' => 'Test Webhook',
+            'agency_id' => $this->agency->id,
+        ]);
     }
 
-    /** @test */
-    public function it_validates_webhook_creation(): void
+    public function test_it_validates_webhook_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('webhooks.store'), []);
+        
         $response->assertSessionHasErrors(['name', 'url', 'events']);
     }
 
-    /** @test */
-    public function it_shows_a_webhook(): void
+    public function test_it_shows_a_webhook(): void
     {
         $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('webhooks.show', $webhook));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('webhooks.show');
+        $response->assertViewHas('webhook');
     }
 
-    /** @test */
-    public function it_deletes_a_webhook(): void
-    {
-        $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->delete(route('webhooks.destroy', $webhook));
-        $response->assertRedirect();
-        $this->assertSoftDeleted('webhooks', ['id' => $webhook->id]);
-    }
-
-    /** @test */
-    public function it_prevents_access_to_other_agency_webhooks(): void
+    public function test_it_prevents_showing_other_agency_webhooks(): void
     {
         $otherAgency = Agency::factory()->create();
         $webhook = Webhook::factory()->create(['agency_id' => $otherAgency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('webhooks.show', $webhook));
+        
         $response->assertForbidden();
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_edits_a_webhook(): void
+    {
+        $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->get(route('webhooks.edit', $webhook));
+        
+        $response->assertOk();
+        $response->assertViewIs('webhooks.edit');
+    }
+
+    public function test_it_updates_a_webhook(): void
+    {
+        $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->put(route('webhooks.update', $webhook), [
+            'name' => 'Updated Webhook',
+            'url' => 'https://example.com/updated',
+            'events' => ['post.published'],
+        ]);
+        
+        $response->assertRedirect();
+        $this->assertDatabaseHas('webhooks', [
+            'id' => $webhook->id,
+            'name' => 'Updated Webhook',
+        ]);
+    }
+
+    public function test_it_deletes_a_webhook(): void
+    {
+        $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
+        
+        $response = $this->actingAs($this->user)->delete(route('webhooks.destroy', $webhook));
+        
+        $response->assertRedirect(route('webhooks.index'));
+        $this->assertSoftDeleted('webhooks', ['id' => $webhook->id]);
+    }
+
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('webhooks.index'));
+        
         $response->assertRedirect(route('login'));
     }
 }
