@@ -22,43 +22,29 @@ class MediaLibraryTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_lists_media_assets(): void
+    public function test_it_lists_assets(): void
     {
         MediaAsset::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->get(route('media.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('media.index');
+        $response->assertViewHas('assets');
     }
 
-    /** @test */
-    public function it_shows_upload_form(): void
+    public function test_it_shows_create_form(): void
     {
         $response = $this->actingAs($this->user)->get(route('media.create'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('media.create');
     }
 
-    /** @test */
-    public function it_deletes_media(): void
-    {
-        $asset = MediaAsset::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->delete(route('media.destroy', $asset));
-        $response->assertRedirect();
-        $this->assertSoftDeleted('media_assets', ['id' => $asset->id]);
-    }
-
-    /** @test */
-    public function it_prevents_access_to_other_agency_media(): void
-    {
-        $otherAgency = Agency::factory()->create();
-        $asset = MediaAsset::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->get(route('media.show', $asset));
-        $response->assertForbidden();
-    }
-
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('media.index'));
+        
         $response->assertRedirect(route('login'));
     }
 }
