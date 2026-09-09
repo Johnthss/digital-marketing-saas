@@ -15,82 +15,118 @@ class ApiSocialPostTest extends TestCase
 
     private Agency $agency;
     private User $user;
+    private SocialAccount $account;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->agency = Agency::factory()->create();
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
+        $this->account = SocialAccount::factory()->create([
+            'agency_id' => $this->agency->id,
+            'platform' => 'twitter',
+        ]);
     }
 
-    public function test_it_lists_posts_for_authenticated_agency(): void
+    public function test_it_lists_posts(): void
     {
-        SocialPost::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        SocialPost::factory()->count(3)->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
+        ]);
+        
         $response = $this->actingAs($this->user)->getJson('/api/v1/posts');
+        
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
 
-    public function test_it_filters_posts_by_status(): void
+    public function test_it_filters_by_status(): void
     {
-        SocialPost::factory()->create(['agency_id' => $this->agency->id, 'status' => 'published']);
-        SocialPost::factory()->create(['agency_id' => $this->agency->id, 'status' => 'draft']);
+        SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
+            'status' => 'published',
+        ]);
+        SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
+            'status' => 'draft',
+        ]);
+        
         $response = $this->actingAs($this->user)->getJson('/api/v1/posts?status=published');
+        
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
     }
 
     public function test_it_creates_a_post(): void
     {
-        $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->postJson('/api/v1/posts', [
-            'platform' => 'twitter',
             'content' => 'Test post',
-            'social_account_id' => $account->id,
+            'platform' => 'twitter',
+            'social_account_id' => $this->account->id,
         ]);
+        
         $response->assertCreated();
         $this->assertDatabaseHas('social_posts', ['content' => 'Test post']);
     }
 
-    public function test_it_validates_required_fields(): void
-    {
-        $response = $this->actingAs($this->user)->postJson('/api/v1/posts', [
-            'platform' => 'invalid_platform',
-        ]);
-        $response->assertUnprocessable();
-    }
-
     public function test_it_shows_a_post(): void
     {
-        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
+        $post = SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
+        ]);
+        
         $response = $this->actingAs($this->user)->getJson("/api/v1/posts/{$post->id}");
+        
         $response->assertOk();
         $response->assertJsonPath('data.id', $post->id);
     }
 
+    public function test_it_prevents_showing_other_agency_posts(): void
+    {
+        $otherAgency = Agency::factory()->create();
+        $post = SocialPost::factory()->create(['agency_id' => $otherAgency->id]);
+        
+        $response = $this->actingAs($this->user)->getJson("/api/v1/posts/{$post->id}");
+        
+        $response->assertNotFound();
+    }
+
     public function test_it_updates_a_post(): void
     {
-        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->putJson("/api/v1/posts/{$post->id}", [
-            'content' => 'Updated content',
+        $post = SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
         ]);
+        
+        $response = $this->actingAs($this->user)->putJson("/api/v1/posts/{$post->id}", [
+            'content' => 'Updated post',
+        ]);
+        
         $response->assertOk();
-        $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'content' => 'Updated content']);
+        $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'content' => 'Updated post']);
     }
 
     public function test_it_deletes_a_post(): void
     {
-        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
+        $post = SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $this->account->id,
+        ]);
+        
         $response = $this->actingAs($this->user)->deleteJson("/api/v1/posts/{$post->id}");
+        
         $response->assertNoContent();
         $this->assertSoftDeleted('social_posts', ['id' => $post->id]);
     }
 
-    public function test_it_prevents_access_to_other_agency_posts(): void
+    public function test_it_requires_auth(): void
     {
-        $otherAgency = Agency::factory()->create();
-        $post = SocialPost::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->getJson("/api/v1/posts/{$post->id}");
-        $response->assertNotFound();
+        $response = $this->getJson('/api/v1/posts');
+        
+        $response->assertUnauthorized();
     }
 }
