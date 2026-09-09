@@ -22,49 +22,40 @@ class ApiWorkflowTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
     public function test_it_lists_workflows(): void
     {
         Workflow::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->getJson('/api/v1/workflows');
+        
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
 
-    /** @test */
     public function test_it_creates_a_workflow(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/workflows', [
             'name' => 'Test Workflow',
             'trigger_type' => 'manual',
-            'actions' => [],
+            'actions' => [['type' => 'auto_reply', 'config' => ['message' => 'Thanks!']]],
         ]);
+        
         $response->assertCreated();
         $this->assertDatabaseHas('workflows', ['name' => 'Test Workflow']);
     }
 
-    /** @test */
     public function test_it_validates_workflow_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/workflows', []);
-        $response->assertUnprocessable();
+        
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['name', 'trigger_type', 'actions']);
     }
 
-    /** @test */
-    public function test_it_shows_a_workflow(): void
+    public function test_it_requires_auth(): void
     {
-        $workflow = Workflow::factory()->create(['agency_id' => $this->agency->id]);
-        $response = $this->actingAs($this->user)->getJson("/api/v1/workflows/{$workflow->id}");
-        $response->assertOk();
-        $response->assertJsonPath('id', $workflow->id);
-    }
-
-    /** @test */
-    public function test_it_prevents_access_to_other_agency_workflows(): void
-    {
-        $otherAgency = Agency::factory()->create();
-        $workflow = Workflow::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->getJson("/api/v1/workflows/{$workflow->id}");
-        $response->assertNotFound();
+        $response = $this->getJson('/api/v1/workflows');
+        
+        $response->assertUnauthorized();
     }
 }

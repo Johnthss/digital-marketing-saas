@@ -21,20 +21,21 @@ class ApiAiTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function test_it_validates_ai_generation_request(): void
+    public function test_it_validates_generate_request(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/ai/generate', []);
-        $response->assertUnprocessable();
+        
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['action', 'prompt']);
     }
 
-    /** @test */
-    public function test_it_requires_auth_for_ai_generation(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->postJson('/api/v1/ai/generate', [
             'action' => 'generate',
             'prompt' => 'Test prompt',
         ]);
+        
         $response->assertUnauthorized();
     }
 }
