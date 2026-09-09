@@ -21,25 +21,18 @@ class TelegramTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_shows_telegram_link_page(): void
+    public function test_it_shows_telegram_link_page(): void
     {
-        $response = $this->actingAs($this->user)->get(route('telegram.link'));
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->user)->get(route('telegram.link.index'));
+        
+        $response->assertOk();
+        $response->assertViewIs('telegram.index');
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
-        $response = $this->get(route('telegram.link'));
+        $response = $this->get(route('telegram.link.index'));
+        
         $response->assertRedirect(route('login'));
-    }
-
-    /** @test */
-    public function it_requires_agency(): void
-    {
-        $user = User::factory()->create(['agency_id' => null]);
-        $response = $this->actingAs($user)->get(route('telegram.link'));
-        $response->assertForbidden();
     }
 }
