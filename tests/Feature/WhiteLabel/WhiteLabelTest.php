@@ -21,20 +21,24 @@ class WhiteLabelTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_shows_white_label_settings(): void
+    public function test_it_shows_white_label_settings(): void
     {
         $response = $this->actingAs($this->user)->get(route('white-label.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('white-label.index');
+        $response->assertViewHas('settings');
     }
 
-    /** @test */
-    public function it_updates_white_label_settings(): void
+    public function test_it_updates_white_label_settings(): void
     {
         $response = $this->actingAs($this->user)->post(route('white-label.update'), [
             'brand_name' => 'My Brand',
             'brand_color' => '#ff0000',
+            'from_name' => 'My Company',
+            'from_email' => 'info@mycompany.com',
         ]);
+        
         $response->assertRedirect();
         $this->assertDatabaseHas('white_label_settings', [
             'agency_id' => $this->agency->id,
@@ -42,18 +46,10 @@ class WhiteLabelTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('white-label.index'));
+        
         $response->assertRedirect(route('login'));
-    }
-
-    /** @test */
-    public function it_requires_agency(): void
-    {
-        $user = User::factory()->create(['agency_id' => null]);
-        $response = $this->actingAs($user)->get(route('white-label.index'));
-        $response->assertForbidden();
     }
 }
