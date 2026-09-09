@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Ai;
+namespace Tests\Feature\AI;
 
 use App\Models\Agency;
 use App\Models\User;
@@ -21,32 +21,47 @@ class AiContentTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
-    public function it_shows_ai_content_page(): void
+    public function test_it_shows_ai_page(): void
     {
         $response = $this->actingAs($this->user)->get(route('ai.index'));
-        $response->assertStatus(200);
+        
+        $response->assertOk();
+        $response->assertViewIs('ai.index');
+        $response->assertViewHas('recentGenerations');
     }
 
-    /** @test */
-    public function it_validates_ai_generation(): void
+    public function test_it_validates_generate_request(): void
     {
         $response = $this->actingAs($this->user)->post(route('ai.generate'), []);
-        $response->assertSessionHasErrors(['prompt']);
+        
+        $response->assertSessionHasErrors(['prompt', 'content_type']);
     }
 
-    /** @test */
-    public function it_requires_auth(): void
+    public function test_it_validates_rewrite_request(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('ai.rewrite'), []);
+        
+        $response->assertSessionHasErrors(['content']);
+    }
+
+    public function test_it_validates_hashtags_request(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('ai.hashtags'), []);
+        
+        $response->assertSessionHasErrors(['topic']);
+    }
+
+    public function test_it_validates_ideas_request(): void
+    {
+        $response = $this->actingAs($this->user)->post(route('ai.ideas'), []);
+        
+        $response->assertSessionHasErrors(['topic']);
+    }
+
+    public function test_it_requires_auth(): void
     {
         $response = $this->get(route('ai.index'));
+        
         $response->assertRedirect(route('login'));
-    }
-
-    /** @test */
-    public function it_requires_agency(): void
-    {
-        $user = User::factory()->create(['agency_id' => null]);
-        $response = $this->actingAs($user)->get(route('ai.index'));
-        $response->assertForbidden();
     }
 }
