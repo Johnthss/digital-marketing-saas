@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Email;
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class EmailTemplateController extends Controller
 {
@@ -124,6 +125,7 @@ class EmailTemplateController extends Controller
 
         $newTemplate = $template->replicate();
         $newTemplate->name = $template->name . ' (Copy)';
+        $newTemplate->slug = \Illuminate\Support\Str::slug($newTemplate->name) . '-' . uniqid();
         $newTemplate->save();
 
         return redirect()->route('email.templates.edit', $newTemplate)
