@@ -22,68 +22,93 @@ class ApiCampaignTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
     public function test_it_lists_campaigns(): void
     {
         Campaign::factory()->count(3)->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->getJson('/api/v1/campaigns');
+        
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
 
-    /** @test */
+    public function test_it_filters_by_status(): void
+    {
+        Campaign::factory()->create(['agency_id' => $this->agency->id, 'status' => 'active']);
+        Campaign::factory()->create(['agency_id' => $this->agency->id, 'status' => 'completed']);
+        
+        $response = $this->actingAs($this->user)->getJson('/api/v1/campaigns?status=active');
+        
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+    }
+
     public function test_it_creates_a_campaign(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/campaigns', [
             'name' => 'Test Campaign',
             'type' => 'general',
+            'description' => 'Test description',
         ]);
+        
         $response->assertCreated();
         $this->assertDatabaseHas('campaigns', ['name' => 'Test Campaign']);
     }
 
-    /** @test */
     public function test_it_validates_campaign_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/campaigns', []);
-        $response->assertUnprocessable();
+        
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['name']);
     }
 
-    /** @test */
     public function test_it_shows_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->getJson("/api/v1/campaigns/{$campaign->id}");
+        
         $response->assertOk();
         $response->assertJsonPath('data.id', $campaign->id);
     }
 
-    /** @test */
+    public function test_it_prevents_showing_other_agency_campaigns(): void
+    {
+        $otherAgency = Agency::factory()->create();
+        $campaign = Campaign::factory()->create(['agency_id' => $otherAgency->id]);
+        
+        $response = $this->actingAs($this->user)->getJson("/api/v1/campaigns/{$campaign->id}");
+        
+        $response->assertNotFound();
+    }
+
     public function test_it_updates_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->putJson("/api/v1/campaigns/{$campaign->id}", [
             'name' => 'Updated Campaign',
         ]);
+        
         $response->assertOk();
         $this->assertDatabaseHas('campaigns', ['id' => $campaign->id, 'name' => 'Updated Campaign']);
     }
 
-    /** @test */
     public function test_it_deletes_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
+        
         $response = $this->actingAs($this->user)->deleteJson("/api/v1/campaigns/{$campaign->id}");
+        
         $response->assertNoContent();
         $this->assertSoftDeleted('campaigns', ['id' => $campaign->id]);
     }
 
-    /** @test */
-    public function test_it_prevents_access_to_other_agency_campaigns(): void
+    public function test_it_requires_auth(): void
     {
-        $otherAgency = Agency::factory()->create();
-        $campaign = Campaign::factory()->create(['agency_id' => $otherAgency->id]);
-        $response = $this->actingAs($this->user)->getJson("/api/v1/campaigns/{$campaign->id}");
-        $response->assertNotFound();
+        $response = $this->getJson('/api/v1/campaigns');
+        
+        $response->assertUnauthorized();
     }
 }
