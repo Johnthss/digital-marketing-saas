@@ -63,7 +63,7 @@ class ApiClientController extends Controller
     {
         $this->authorizeAccess($request, $client);
 
-        $request->validate([
+        $data = $request->validate([
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|max:255',
             'phone' => 'nullable|string|max:20',
@@ -72,7 +72,7 @@ class ApiClientController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $client->update($request->validated());
+        $client->update($data);
 
         return (new ClientResource($client))->response();
     }
