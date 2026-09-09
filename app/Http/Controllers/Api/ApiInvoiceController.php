@@ -66,7 +66,7 @@ class ApiInvoiceController extends Controller
     {
         $this->authorizeAccess($request, $invoice);
 
-        $request->validate([
+        $data = $request->validate([
             'client_id' => 'nullable|exists:clients,id',
             'total' => 'sometimes|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -74,7 +74,7 @@ class ApiInvoiceController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $invoice->update($request->validated());
+        $invoice->update($data);
 
         return (new InvoiceResource($invoice))->response();
     }
