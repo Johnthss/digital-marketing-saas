@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\InboxMessageStatus;
 use App\Models\InboxMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class InboxController extends Controller
 {
@@ -29,9 +30,11 @@ class InboxController extends Controller
             $query->where('message_type', $request->type);
         }
 
-        $messages = $query->orderBy('received_at', 'desc')->paginate(20);
+        $messages = $query->with('socialAccount')->orderBy('received_at', 'desc')->paginate(20);
 
-        $unreadCount = InboxMessage::where('agency_id', $agency->id)->unread()->count();
+        $unreadCount = Cache::remember("inbox:{$agency->id}:unread_count", 60, function () use ($agency) {
+            return InboxMessage::where('agency_id', $agency->id)->unread()->count();
+        });
 
         return view('inbox.index', compact('agency', 'messages', 'unreadCount'));
     }

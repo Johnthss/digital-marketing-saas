@@ -2,16 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\StructuredLogger;
 use App\Models\Webhook;
 use App\Models\WebhookLog;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class WebhookController extends Controller
 {
+    use StructuredLogger;
+
     public function __construct()
     {
         $this->middleware(['auth', 'agency']);
@@ -19,45 +25,79 @@ class WebhookController extends Controller
 
     public function index(Request $request)
     {
-        $agencyId = $request->user()->agency_id;
-        $webhooks = Webhook::where('agency_id', $agencyId)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        try {
+            $agencyId = $request->user()->agency_id;
+            $webhooks = Webhook::where('agency_id', $agencyId)
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
 
-        return view('webhooks.index', compact('agencyId', 'webhooks'));
+            return view('webhooks.index', compact('agencyId', 'webhooks'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load webhooks', [
+                'agency_id' => $request->user()->agency_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load webhooks. Please try again.');
+        }
     }
 
     public function create(Request $request)
     {
-        $agencyId = $request->user()->agency_id;
-        $events = Webhook::$availableEvents;
+        try {
+            $agencyId = $request->user()->agency_id;
+            $events = Webhook::$availableEvents;
 
-        return view('webhooks.create', compact('agencyId', 'events'));
+            return view('webhooks.create', compact('agencyId', 'events'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load webhook create form', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'An error occurred. Please try again.');
+        }
     }
 
     public function store(Request $request)
     {
-        $agencyId = $request->user()->agency_id;
+        try {
+            $agencyId = $request->user()->agency_id;
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'url' => 'required|url',
-            'events' => 'required|array|min:1',
-            'events.*' => 'in:'.implode(',', array_keys(Webhook::$availableEvents)),
-            'is_active' => 'boolean',
-        ]);
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'url' => 'required|url',
+                'events' => 'required|array|min:1',
+                'events.*' => 'in:'.implode(',', array_keys(Webhook::$availableEvents)),
+                'is_active' => 'boolean',
+            ]);
 
-        $webhook = Webhook::create([
-            'agency_id' => $agencyId,
-            'name' => $validated['name'],
-            'url' => $validated['url'],
-            'events' => $validated['events'],
-            'secret' => Str::random(40),
-            'is_active' => $validated['is_active'] ?? true,
-        ]);
+            $webhook = Webhook::create([
+                'agency_id' => $agencyId,
+                'name' => $validated['name'],
+                'url' => $validated['url'],
+                'events' => $validated['events'],
+                'secret' => Str::random(40),
+                'is_active' => $validated['is_active'] ?? true,
+            ]);
 
-        return redirect()->route('webhooks.show', $webhook)
-            ->with('success', 'Webhook created successfully.');
+            Log::info('Webhook created', [
+                'webhook_id' => $webhook->id,
+                'agency_id' => $agencyId,
+            ]);
+
+            return redirect()->route('webhooks.show', $webhook)
+                ->with('success', 'Webhook created successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Failed to create webhook', [
+                'agency_id' => $request->user()->agency_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Failed to create webhook. Please try again.');
+        }
     }
 
     public function show(Request $request, $webhookId)
@@ -67,12 +107,27 @@ class WebhookController extends Controller
         $webhook = Webhook::findOrFail($webhookId);
 
         if ($webhook->agency_id !== $agencyId) {
+            $this->logSecurity('unauthorized_webhook_access', [
+                'agency_id' => $agencyId,
+                'webhook_id' => $webhookId,
+                'webhook_agency_id' => $webhook->agency_id,
+            ]);
+
             abort(403);
         }
 
-        $logs = $webhook->logs()->orderBy('created_at', 'desc')->paginate(25);
+        try {
+            $logs = $webhook->logs()->orderBy('created_at', 'desc')->paginate(25);
 
-        return view('webhooks.show', compact('agencyId', 'webhook', 'logs'));
+            return view('webhooks.show', compact('agencyId', 'webhook', 'logs'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load webhook details', [
+                'webhook_id' => $webhookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load webhook details.');
+        }
     }
 
     public function edit(Request $request, $webhookId)
@@ -82,12 +137,26 @@ class WebhookController extends Controller
         $webhook = Webhook::findOrFail($webhookId);
 
         if ($webhook->agency_id !== $agencyId) {
+            $this->logSecurity('unauthorized_webhook_edit', [
+                'agency_id' => $agencyId,
+                'webhook_id' => $webhookId,
+            ]);
+
             abort(403);
         }
 
-        $events = Webhook::$availableEvents;
+        try {
+            $events = Webhook::$availableEvents;
 
-        return view('webhooks.edit', compact('agencyId', 'webhook', 'events'));
+            return view('webhooks.edit', compact('agencyId', 'webhook', 'events'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load webhook edit form', [
+                'webhook_id' => $webhookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load webhook details.');
+        }
     }
 
     public function update(Request $request, $webhookId)
@@ -97,20 +166,36 @@ class WebhookController extends Controller
         $webhook = Webhook::findOrFail($webhookId);
 
         if ($webhook->agency_id !== $agencyId) {
+            $this->logSecurity('unauthorized_webhook_update', [
+                'agency_id' => $agencyId,
+                'webhook_id' => $webhookId,
+            ]);
+
             abort(403);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'url' => 'required|url',
-            'events' => 'required|array|min:1',
-            'is_active' => 'boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'url' => 'required|url',
+                'events' => 'required|array|min:1',
+                'is_active' => 'boolean',
+            ]);
 
-        $webhook->update($validated);
+            $webhook->update($validated);
 
-        return redirect()->route('webhooks.show', $webhook)
-            ->with('success', 'Webhook updated successfully.');
+            return redirect()->route('webhooks.show', $webhook)
+                ->with('success', 'Webhook updated successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Failed to update webhook', [
+                'webhook_id' => $webhookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to update webhook.');
+        }
     }
 
     public function destroy(Request $request, $webhookId)
@@ -120,13 +205,27 @@ class WebhookController extends Controller
         $webhook = Webhook::findOrFail($webhookId);
 
         if ($webhook->agency_id !== $agencyId) {
+            $this->logSecurity('unauthorized_webhook_delete', [
+                'agency_id' => $agencyId,
+                'webhook_id' => $webhookId,
+            ]);
+
             abort(403);
         }
 
-        $webhook->delete();
+        try {
+            $webhook->delete();
 
-        return redirect()->route('webhooks.index')
-            ->with('success', 'Webhook deleted.');
+            return redirect()->route('webhooks.index')
+                ->with('success', 'Webhook deleted.');
+        } catch (\Exception $e) {
+            Log::error('Failed to delete webhook', [
+                'webhook_id' => $webhookId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to delete webhook.');
+        }
     }
 
     /**
@@ -134,12 +233,19 @@ class WebhookController extends Controller
      */
     public function trigger(string $event, array $payload = []): void
     {
-        $webhooks = Webhook::whereJsonContains('events', $event)
-            ->where('is_active', true)
-            ->get();
+        try {
+            $webhooks = Webhook::whereJsonContains('events', $event)
+                ->where('is_active', true)
+                ->get();
 
-        foreach ($webhooks as $webhook) {
-            $this->dispatchWebhook($webhook, $event, $payload);
+            foreach ($webhooks as $webhook) {
+                $this->dispatchWebhook($webhook, $event, $payload);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to trigger webhooks', [
+                'event' => $event,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -177,6 +283,12 @@ class WebhookController extends Controller
 
             if (! $response->successful()) {
                 DB::table('webhooks')->where('id', $webhook->id)->increment('failed_calls');
+
+                Log::warning('Webhook delivery failed', [
+                    'webhook_id' => $webhook->id,
+                    'event' => $event,
+                    'status_code' => $response->status(),
+                ]);
             }
         } catch (\Exception $e) {
             WebhookLog::create([
@@ -190,7 +302,12 @@ class WebhookController extends Controller
 
             DB::table('webhooks')->where('id', $webhook->id)->increment('total_calls');
             DB::table('webhooks')->where('id', $webhook->id)->increment('failed_calls');
-            Log::error("Webhook #{$webhook->id} failed: {$e->getMessage()}");
+
+            Log::error("Webhook #{$webhook->id} failed", [
+                'event' => $event,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
 
         DB::table('webhooks')->where('id', $webhook->id)->update(['last_triggered_at' => now()]);

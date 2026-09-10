@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Concerns\StructuredLogger;
 use App\Http\Controllers\Controller;
 use App\Jobs\RunAgentWorkflowJob;
 use App\Models\AgentWorkflowExecution;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 
 class ApiAgentWorkflowController extends Controller
 {
+    use StructuredLogger;
+
     public function __construct(
         private readonly AgentOrchestrator $orchestrator,
     ) {
@@ -25,14 +28,25 @@ class ApiAgentWorkflowController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $workflows = $this->getWorkflowTemplates();
+        try {
+            $workflows = $this->getWorkflowTemplates();
 
-        return response()->json([
-            'data' => $workflows,
-            'meta' => [
-                'total' => count($workflows),
-            ],
-        ]);
+            return response()->json([
+                'data' => $workflows,
+                'meta' => [
+                    'total' => count($workflows),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            $this->logAgentError('api_list_workflows_failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve workflows.',
+            ], 500);
+        }
     }
 
     /**
@@ -40,94 +54,150 @@ class ApiAgentWorkflowController extends Controller
      */
     public function run(Request $request, string $name): JsonResponse
     {
-        $validated = $request->validate([
-            'input' => 'sometimes|array',
-            'async' => 'sometimes|boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'input' => 'sometimes|array',
+                'async' => 'sometimes|boolean',
+            ]);
 
-        $workflows = $this->getWorkflowTemplates();
-        $workflow = collect($workflows)->firstWhere('name', $name);
+            $workflows = $this->getWorkflowTemplates();
+            $workflow = collect($workflows)->firstWhere('name', $name);
 
-        if ($workflow === null) {
-            return response()->json([
-                'error' => "Workflow [{$name}] not found.",
-                'available' => array_column($workflows, 'name'),
-            ], 404);
-        }
+            if ($workflow === null) {
+                return response()->json([
+                    'error' => "Workflow [{$name}] not found.",
+                    'available' => array_column($workflows, 'name'),
+                ], 404);
+            }
 
-        // Check if required features are enabled
-        $missingFeatures = $this->checkRequiredFeatures($workflow['required_features'], $request->user()->agency_id);
-        if (!empty($missingFeatures)) {
-            return response()->json([
-                'error' => 'Missing required features.',
-                'missing_features' => $missingFeatures,
-            ], 403);
-        }
+            // Check if required features are enabled
+            $missingFeatures = $this->checkRequiredFeatures($workflow['required_features'], $request->user()->agency_id);
+            if (!empty($missingFeatures)) {
+                return response()->json([
+                    'error' => 'Missing required features.',
+                    'missing_features' => $missingFeatures,
+                ], 403);
+            }
 
-        $executionId = 'wf_' . uniqid();
-        $agencyId = $request->user()->agency_id;
-        $userId = $request->user()->id;
-        $input = $validated['input'] ?? [];
-        $async = $validated['async'] ?? true;
+            $executionId = 'wf_' . uniqid();
+            $agencyId = $request->user()->agency_id;
+            $userId = $request->user()->id;
+            $input = $validated['input'] ?? [];
+            $async = $validated['async'] ?? true;
 
-        // Create execution record
-        $execution = AgentWorkflowExecution::create([
-            'execution_id' => $executionId,
-            'workflow_name' => $name,
-            'agency_id' => $agencyId,
-            'user_id' => $userId,
-            'status' => 'pending',
-            'input_data' => $input,
-            'steps_total' => count($workflow['steps']),
-            'steps_completed' => 0,
-            'started_at' => now(),
-        ]);
-
-        if ($async) {
-            // Dispatch async job
-            RunAgentWorkflowJob::dispatch(
-                workflowName: $name,
-                executionId: $executionId,
-                agencyId: $agencyId,
-                userId: $userId,
-                input: $input,
-            );
-
-            return response()->json([
-                'data' => [
-                    'execution_id' => $executionId,
-                    'workflow_name' => $name,
-                    'status' => 'pending',
-                    'message' => 'Workflow dispatched for async execution.',
-                ],
-            ], 202);
-        }
-
-        // Synchronous execution
-        $context = AgentContext::fromUser($request->user());
-        $tasks = $this->buildTasksFromWorkflow($workflow, $input, $executionId);
-
-        $results = $this->orchestrator->dispatchWorkflow($tasks, $context);
-
-        // Update execution record
-        $allSuccess = collect($results)->every(fn ($r) => $r->success);
-        $execution->update([
-            'status' => $allSuccess ? 'success' : 'failed',
-            'steps_completed' => count($results),
-            'output_data' => [
-                'results' => array_map(fn ($r) => $r->toArray(), $results),
-            ],
-            'completed_at' => now(),
-        ]);
-
-        return response()->json([
-            'data' => [
+            // Create execution record
+            $execution = AgentWorkflowExecution::create([
                 'execution_id' => $executionId,
                 'workflow_name' => $name,
-                'status' => $allSuccess ? 'success' : 'failed',
-                'results' => array_map(fn ($r) => $r->toArray(), $results),
-            ],
-        ]);
+                'agency_id' => $agencyId,
+                'user_id' => $userId,
+                'status' => 'pending',
+                'input_data' => $input,
+                'steps_total' => count($workflow['steps']),
+                'steps_completed' => 0,
+                'started_at' => now(),
+            ]);
+
+            if ($async) {
+                // Dispatch async job
+                RunAgentWorkflowJob::dispatch(
+                    workflowName: $name,
+                    executionId: $executionId,
+                    agencyId: $agencyId,
+                    userId: $userId,
+                    input: $input,
+                );
+
+                $this->logAgentExecution('workflow_dispatched_async', [
+                    'agency_id' => $agencyId,
+                    'workflow_name' => $name,
+                    'execution_id' => $executionId,
+                    'user_id' => $userId,
+                ]);
+
+                return response()->json([
+                    'data' => [
+                        'execution_id' => $executionId,
+                        'workflow_name' => $name,
+                        'status' => 'pending',
+                        'message' => 'Workflow dispatched for async execution.',
+                    ],
+                ], 202);
+            }
+
+            // Synchronous execution
+            try {
+                $context = AgentContext::fromUser($request->user());
+                $tasks = $this->buildTasksFromWorkflow($workflow, $input, $executionId);
+
+                $results = $this->orchestrator->dispatchWorkflow($tasks, $context);
+
+                // Update execution record
+                $allSuccess = collect($results)->every(fn ($r) => $r->success);
+                $execution->update([
+                    'status' => $allSuccess ? 'success' : 'failed',
+                    'steps_completed' => count($results),
+                    'output_data' => [
+                        'results' => array_map(fn ($r) => $r->toArray(), $results),
+                    ],
+                    'completed_at' => now(),
+                ]);
+
+                $this->logAgentExecution('workflow_completed', [
+                    'agency_id' => $agencyId,
+                    'workflow_name' => $name,
+                    'execution_id' => $executionId,
+                    'success' => $allSuccess,
+                    'steps_completed' => count($results),
+                ]);
+
+                return response()->json([
+                    'data' => [
+                        'execution_id' => $executionId,
+                        'workflow_name' => $name,
+                        'status' => $allSuccess ? 'success' : 'failed',
+                        'results' => array_map(fn ($r) => $r->toArray(), $results),
+                    ],
+                ]);
+            } catch (\Exception $e) {
+                $execution->update([
+                    'status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                    'completed_at' => now(),
+                ]);
+
+                $this->logAgentError('workflow_sync_execution_failed', [
+                    'agency_id' => $agencyId,
+                    'workflow_name' => $name,
+                    'execution_id' => $executionId,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Workflow execution failed.',
+                ], 500);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            $this->logAgentError('api_run_workflow_failed', [
+                'workflow_name' => $name,
+                'agency_id' => $request->user()->agency_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to execute workflow.',
+            ], 500);
+        }
     }
 
     /**
@@ -135,35 +205,48 @@ class ApiAgentWorkflowController extends Controller
      */
     public function status(Request $request, string $name, string $executionId): JsonResponse
     {
-        $execution = AgentWorkflowExecution::where('execution_id', $executionId)
-            ->where('workflow_name', $name)
-            ->where('agency_id', $request->user()->agency_id)
-            ->first();
+        try {
+            $execution = AgentWorkflowExecution::where('execution_id', $executionId)
+                ->where('workflow_name', $name)
+                ->where('agency_id', $request->user()->agency_id)
+                ->first();
 
-        if ($execution === null) {
+            if ($execution === null) {
+                return response()->json([
+                    'error' => "Execution [{$executionId}] not found for workflow [{$name}].",
+                ], 404);
+            }
+
             return response()->json([
-                'error' => "Execution [{$executionId}] not found for workflow [{$name}].",
-            ], 404);
-        }
+                'data' => [
+                    'execution_id' => $execution->execution_id,
+                    'workflow_name' => $execution->workflow_name,
+                    'status' => $execution->status,
+                    'steps_total' => $execution->steps_total,
+                    'steps_completed' => $execution->steps_completed,
+                    'progress_percentage' => $execution->steps_total > 0
+                        ? round(($execution->steps_completed / $execution->steps_total) * 100, 1)
+                        : 0,
+                    'input_data' => $execution->input_data,
+                    'output_data' => $execution->output_data,
+                    'error_message' => $execution->error_message,
+                    'started_at' => $execution->started_at?->toIso8601String(),
+                    'completed_at' => $execution->completed_at?->toIso8601String(),
+                    'duration_ms' => $execution->duration_ms,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            $this->logAgentError('api_workflow_status_failed', [
+                'workflow_name' => $name,
+                'execution_id' => $executionId,
+                'error' => $e->getMessage(),
+            ]);
 
-        return response()->json([
-            'data' => [
-                'execution_id' => $execution->execution_id,
-                'workflow_name' => $execution->workflow_name,
-                'status' => $execution->status,
-                'steps_total' => $execution->steps_total,
-                'steps_completed' => $execution->steps_completed,
-                'progress_percentage' => $execution->steps_total > 0
-                    ? round(($execution->steps_completed / $execution->steps_total) * 100, 1)
-                    : 0,
-                'input_data' => $execution->input_data,
-                'output_data' => $execution->output_data,
-                'error_message' => $execution->error_message,
-                'started_at' => $execution->started_at?->toIso8601String(),
-                'completed_at' => $execution->completed_at?->toIso8601String(),
-                'duration_ms' => $execution->duration_ms,
-            ],
-        ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve workflow status.',
+            ], 500);
+        }
     }
 
     /**
@@ -171,39 +254,58 @@ class ApiAgentWorkflowController extends Controller
      */
     public function cancel(Request $request, string $name, string $executionId): JsonResponse
     {
-        $execution = AgentWorkflowExecution::where('execution_id', $executionId)
-            ->where('workflow_name', $name)
-            ->where('agency_id', $request->user()->agency_id)
-            ->first();
+        try {
+            $execution = AgentWorkflowExecution::where('execution_id', $executionId)
+                ->where('workflow_name', $name)
+                ->where('agency_id', $request->user()->agency_id)
+                ->first();
 
-        if ($execution === null) {
-            return response()->json([
-                'error' => "Execution [{$executionId}] not found for workflow [{$name}].",
-            ], 404);
-        }
+            if ($execution === null) {
+                return response()->json([
+                    'error' => "Execution [{$executionId}] not found for workflow [{$name}].",
+                ], 404);
+            }
 
-        if (in_array($execution->status, ['success', 'failed', 'cancelled'])) {
-            return response()->json([
-                'error' => "Cannot cancel workflow with status [{$execution->status}].",
-                'execution_id' => $executionId,
-                'current_status' => $execution->status,
-            ], 409);
-        }
+            if (in_array($execution->status, ['success', 'failed', 'cancelled'])) {
+                return response()->json([
+                    'error' => "Cannot cancel workflow with status [{$execution->status}].",
+                    'execution_id' => $executionId,
+                    'current_status' => $execution->status,
+                ], 409);
+            }
 
-        $execution->update([
-            'status' => 'cancelled',
-            'completed_at' => now(),
-            'error_message' => 'Cancelled by user',
-        ]);
-
-        return response()->json([
-            'data' => [
-                'execution_id' => $executionId,
-                'workflow_name' => $name,
+            $execution->update([
                 'status' => 'cancelled',
-                'message' => 'Workflow cancelled successfully.',
-            ],
-        ]);
+                'completed_at' => now(),
+                'error_message' => 'Cancelled by user',
+            ]);
+
+            $this->logAgentExecution('workflow_cancelled', [
+                'agency_id' => $request->user()->agency_id,
+                'workflow_name' => $name,
+                'execution_id' => $executionId,
+            ]);
+
+            return response()->json([
+                'data' => [
+                    'execution_id' => $executionId,
+                    'workflow_name' => $name,
+                    'status' => 'cancelled',
+                    'message' => 'Workflow cancelled successfully.',
+                ],
+            ]);
+        } catch (\Exception $e) {
+            $this->logAgentError('api_cancel_workflow_failed', [
+                'workflow_name' => $name,
+                'execution_id' => $executionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel workflow.',
+            ], 500);
+        }
     }
 
     /**

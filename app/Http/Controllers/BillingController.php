@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\StructuredLogger;
 use App\Models\Invoice;
 use App\Services\Billing\StripeGateway;
 use Illuminate\Http\Request;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 class BillingController extends Controller
 {
+    use StructuredLogger;
+
     public function __construct()
     {
         $this->middleware(['auth', 'agency']);
@@ -17,23 +20,42 @@ class BillingController extends Controller
     public function index(Request $request)
     {
         $agency = $request->user()->agency;
-        $invoices = Invoice::where('agency_id', $agency->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
 
-        $plans = config('stripe.plans');
-        $currentPlan = $agency->subscription_plan ?? 'free';
+        try {
+            $invoices = Invoice::where('agency_id', $agency->id)
+                ->with('client')
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
 
-        return view('billing.index', compact('agency', 'invoices', 'plans', 'currentPlan'));
+            $plans = config('stripe.plans');
+            $currentPlan = $agency->subscription_plan ?? 'free';
+
+            return view('billing.index', compact('agency', 'invoices', 'plans', 'currentPlan'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load billing page', [
+                'agency_id' => $agency->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load billing information. Please try again.');
+        }
     }
 
     public function upgrade(Request $request)
     {
-        $agency = $request->user()->agency;
-        $plans = config('stripe.plans');
-        $currentPlan = $agency->subscription_plan ?? 'free';
+        try {
+            $agency = $request->user()->agency;
+            $plans = config('stripe.plans');
+            $currentPlan = $agency->subscription_plan ?? 'free';
 
-        return view('billing.upgrade', compact('agency', 'plans', 'currentPlan'));
+            return view('billing.upgrade', compact('agency', 'plans', 'currentPlan'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load upgrade page', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load upgrade options. Please try again.');
+        }
     }
 
     public function checkout(Request $request, string $plan)
@@ -52,9 +74,20 @@ class BillingController extends Controller
             $gateway = new StripeGateway;
             $session = $gateway->createCheckoutSession($agency, $plan);
 
+            $this->logBilling('checkout_created', [
+                'agency_id' => $agency->id,
+                'plan' => $plan,
+                'session_id' => $session->id ?? null,
+            ]);
+
             return redirect($session->url);
         } catch (\Exception $e) {
-            Log::error('Checkout failed: '.$e->getMessage());
+            $this->logBillingError('checkout_failed', [
+                'agency_id' => $agency->id,
+                'plan' => $plan,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return back()->with('error', 'Could not create checkout session. Please try again.');
         }
@@ -62,9 +95,17 @@ class BillingController extends Controller
 
     public function success(Request $request)
     {
-        $agency = $request->user()->agency;
+        try {
+            $agency = $request->user()->agency;
 
-        return view('billing.success', compact('agency'));
+            return view('billing.success', compact('agency'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load success page', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('dashboard')->with('error', 'An error occurred.');
+        }
     }
 
     public function cancel(Request $request)
@@ -75,23 +116,48 @@ class BillingController extends Controller
 
     public function invoices(Request $request)
     {
-        $agency = $request->user()->agency;
-        $invoices = Invoice::where('agency_id', $agency->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        try {
+            $agency = $request->user()->agency;
+            $invoices = Invoice::where('agency_id', $agency->id)
+                ->with('client')
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
 
-        return view('billing.invoices', compact('agency', 'invoices'));
+            return view('billing.invoices', compact('agency', 'invoices'));
+        } catch (\Exception $e) {
+            Log::error('Failed to load invoices', [
+                'agency_id' => $request->user()->agency_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to load invoices. Please try again.');
+        }
     }
 
     public function downloadInvoice(Request $request, Invoice $invoice)
     {
-        $agency = $request->user()->agency;
-        if ($invoice->agency_id !== $agency->id) {
-            abort(403);
-        }
+        try {
+            $agency = $request->user()->agency;
+            if ($invoice->agency_id !== $agency->id) {
+                $this->logSecurity('unauthorized_invoice_access', [
+                    'agency_id' => $agency->id,
+                    'invoice_id' => $invoice->id,
+                    'invoice_agency_id' => $invoice->agency_id,
+                ]);
 
-        return redirect()->route('agency.invoices')
-            ->with('info', 'Invoice download coming soon.');
+                abort(403);
+            }
+
+            return redirect()->route('agency.invoices')
+                ->with('info', 'Invoice download coming soon.');
+        } catch (\Exception $e) {
+            Log::error('Failed to download invoice', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Failed to download invoice. Please try again.');
+        }
     }
 
     public function webhook(Request $request)
@@ -103,9 +169,14 @@ class BillingController extends Controller
             $gateway = new StripeGateway;
             $gateway->handleWebhook($payload, $sigHeader);
 
+            Log::info('Stripe webhook processed successfully');
+
             return response()->json(['status' => 'ok']);
         } catch (\Exception $e) {
-            Log::error('Webhook error: '.$e->getMessage());
+            $this->logBillingError('webhook_failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -119,9 +190,19 @@ class BillingController extends Controller
             $gateway = new StripeGateway;
             $gateway->cancelSubscription($agency);
 
+            $this->logBilling('subscription_cancelled', [
+                'agency_id' => $agency->id,
+            ]);
+
             return back()->with('success', 'Subscription canceled.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Could not cancel subscription.');
+            $this->logBillingError('cancel_failed', [
+                'agency_id' => $agency->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Could not cancel subscription. Please contact support.');
         }
     }
 }

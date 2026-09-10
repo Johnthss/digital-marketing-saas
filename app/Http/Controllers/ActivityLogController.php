@@ -30,7 +30,7 @@ class ActivityLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->orderBy('created_at', 'desc')->paginate(25);
+        $logs = $query->with('user')->orderBy('created_at', 'desc')->paginate(25);
 
         $actions = ActivityLog::where('agency_id', $agencyId)
             ->select('action')

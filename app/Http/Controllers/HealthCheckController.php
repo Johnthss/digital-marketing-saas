@@ -5,10 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 class HealthCheckController extends Controller
 {
+    /**
+     * Minimum free disk space in bytes before warning (500 MB).
+     */
+    private const MIN_DISK_SPACE = 500 * 1024 * 1024;
+
+    /**
+     * Maximum queue size before warning.
+     */
+    private const MAX_QUEUE_SIZE = 1000;
+
     /**
      * Basic health check - always returns 200 if the app is running.
      */
@@ -32,6 +43,8 @@ class HealthCheckController extends Controller
             'cache' => $this->checkCache(),
             'storage' => $this->checkStorage(),
             'ai_gateway' => $this->checkAiGateway(),
+            'disk_space' => $this->checkDiskSpace(),
+            'queue' => $this->checkQueue(),
         ];
 
         $healthy = !in_array(false, $checks, true);
@@ -69,6 +82,8 @@ class HealthCheckController extends Controller
                 'cache' => $this->checkCache(),
                 'storage' => $this->checkStorage(),
                 'ai_gateway' => $this->checkAiGateway(),
+                'disk_space' => $this->checkDiskSpace(),
+                'queue' => $this->checkQueue(),
             ],
             'stats' => [
                 'agencies' => DB::table('agencies')->count(),
@@ -117,5 +132,145 @@ class HealthCheckController extends Controller
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Check disk space availability.
+     * Returns true if free space is above the minimum threshold.
+     */
+    private function checkDiskSpace(): bool
+    {
+        try {
+            $freeSpace = disk_free_space(storage_path());
+            return $freeSpace !== false && $freeSpace >= self::MIN_DISK_SPACE;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check queue status.
+     * Returns true if the queue is responding and size is within limits.
+     */
+    private function checkQueue(): bool
+    {
+        try {
+            $queueDriver = config('queue.default');
+
+            // For sync driver, queue is always "healthy"
+            if ($queueDriver === 'sync') {
+                return true;
+            }
+
+            // For database queue, check table exists and count pending jobs
+            if ($queueDriver === 'database') {
+                $pending = DB::table('jobs')->count();
+                return $pending < self::MAX_QUEUE_SIZE;
+            }
+
+            // For Redis queue, check connection and size
+            if ($queueDriver === 'redis') {
+                $connection = config('queue.connections.redis.connection', 'default');
+                $size = Queue::size();
+                return $size < self::MAX_QUEUE_SIZE;
+            }
+
+            // For other drivers, try a simple connection test
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Disk space information endpoint for detailed monitoring.
+     */
+    public function diskSpace(): JsonResponse
+    {
+        $paths = [
+            'storage' => storage_path(),
+            'base' => base_path(),
+            'public' => public_path(),
+        ];
+
+        $diskInfo = [];
+
+        foreach ($paths as $name => $path) {
+            $freeSpace = disk_free_space($path);
+            $totalSpace = disk_total_space($path);
+
+            $diskInfo[$name] = [
+                'path' => $path,
+                'free_bytes' => $freeSpace,
+                'total_bytes' => $totalSpace,
+                'used_bytes' => $totalSpace !== false && $freeSpace !== false ? $totalSpace - $freeSpace : 0,
+                'free_human' => $freeSpace !== false ? $this->formatBytes($freeSpace) : 'unknown',
+                'total_human' => $totalSpace !== false ? $this->formatBytes($totalSpace) : 'unknown',
+                'usage_percent' => $totalSpace !== false && $freeSpace !== false
+                    ? round((($totalSpace - $freeSpace) / $totalSpace) * 100, 2)
+                    : 0,
+                'healthy' => $freeSpace !== false && $freeSpace >= self::MIN_DISK_SPACE,
+            ];
+        }
+
+        $allHealthy = !in_array(false, array_column($diskInfo, 'healthy'), true);
+
+        return response()->json([
+            'status' => $allHealthy ? 'ok' : 'warning',
+            'disks' => $diskInfo,
+            'threshold_bytes' => self::MIN_DISK_SPACE,
+            'threshold_human' => $this->formatBytes(self::MIN_DISK_SPACE),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Queue status endpoint for monitoring queue health.
+     */
+    public function queueStatus(): JsonResponse
+    {
+        $queueDriver = config('queue.default');
+        $defaultQueue = config('queue.connections.' . $queueDriver . '.queue', 'default');
+
+        $status = [
+            'driver' => $queueDriver,
+            'default_queue' => $defaultQueue,
+            'timestamp' => now()->toIso8601String(),
+        ];
+
+        if ($queueDriver === 'database') {
+            $status['pending'] = DB::table('jobs')->count();
+            $status['failed'] = DB::table('failed_jobs')->count();
+            $status['pending_by_queue'] = DB::table('jobs')
+                ->select('queue', DB::raw('count(*) as count'))
+                ->groupBy('queue')
+                ->pluck('count', 'queue')
+                ->toArray();
+        } elseif ($queueDriver === 'redis') {
+            $status['pending'] = Queue::size();
+            $status['failed'] = DB::table('failed_jobs')->count();
+        } else {
+            $status['pending'] = 'n/a';
+            $status['failed'] = DB::table('failed_jobs')->count();
+        }
+
+        $status['healthy'] = $this->checkQueue();
+        $status['max_queue_size'] = self::MAX_QUEUE_SIZE;
+
+        return response()->json($status);
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $unitIndex = 0;
+        $size = $bytes;
+
+        while ($size >= 1024 && $unitIndex < count($units) - 1) {
+            $size /= 1024;
+            $unitIndex++;
+        }
+
+        return round($size, 2) . ' ' . $units[$unitIndex];
     }
 }

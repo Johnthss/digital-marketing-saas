@@ -24,7 +24,7 @@ class AgencyController extends Controller
 
         $team = User::where('agency_id', $agencyId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(15);
 
         $stats = [
             'total_members' => User::where('agency_id', $agencyId)->count(),
@@ -156,7 +156,7 @@ class AgencyController extends Controller
         $agency = Agency::findOrFail($agencyId);
         $members = User::where('agency_id', $agencyId)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(15);
 
         return view('agency.team', compact('agency', 'members', 'user'));
     }

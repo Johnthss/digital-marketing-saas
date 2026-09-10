@@ -114,11 +114,18 @@ class MediaLibraryController extends Controller
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
         $agency = $request->user()->agency;
-        $assets = MediaAsset::where('agency_id', $agency->id)->whereIn('id', $request->ids)->get();
-        foreach ($assets as $asset) {
-            app(MediaUploadService::class)->delete($asset);
-        }
 
-        return response()->json(['success' => true, 'count' => $assets->count()]);
+        // Use chunk() for efficient bulk processing
+        $deletedCount = 0;
+        MediaAsset::where('agency_id', $agency->id)
+            ->whereIn('id', $request->ids)
+            ->chunk(100, function ($assets) use (&$deletedCount) {
+                foreach ($assets as $asset) {
+                    app(MediaUploadService::class)->delete($asset);
+                    $deletedCount++;
+                }
+            });
+
+        return response()->json(['success' => true, 'count' => $deletedCount]);
     }
 }

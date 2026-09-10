@@ -1,0 +1,86 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  APP_ENV: staging
+  PHP_VERSION: '8.3'
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, json, bcmath, curl, intl, pdo, pdo_mysql, pdo_sqlite, sqlite3, redis, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Generate application key
+        run: php artisan key:generate --force
+
+      - name: Run tests before deploy
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          php artisan test --parallel
+
+      - name: Build frontend assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Optimize application
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan event:cache
+
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd ${{ secrets.STAGING_PATH }}
+            git pull origin develop
+            composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan storage:link
+            php artisan queue:restart
+            echo "Staging deployment completed successfully"
+
+      - name: Smoke test deployment
+        run: |
+          sleep 10
+          curl -sf "${{ secrets.STAGING_URL }}/health" || exit 1
+          echo "Smoke test passed"
+
+      - name: Notify on success
+        if: success()
+        run: echo "✅ Staging deployment completed successfully"
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "❌ Staging deployment failed"

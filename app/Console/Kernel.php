@@ -52,6 +52,18 @@ class Kernel extends ConsoleKernel
             ->everySixHours()
             ->withoutOverlapping()
             ->runInBackground();
+
+        // Run system backup daily at 2:00 AM
+        $schedule->command('system:backup --compress')
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Run system cleanup daily at 3:00 AM
+        $schedule->command('system:cleanup --all')
+            ->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**

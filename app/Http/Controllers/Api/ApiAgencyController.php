@@ -44,7 +44,7 @@ class ApiAgencyController extends Controller
     public function team(Request $request): JsonResponse
     {
         $agencyId = $request->user()->agency_id;
-        $users = User::where('agency_id', $agencyId)->orderBy('created_at', 'desc')->get();
+        $users = User::where('agency_id', $agencyId)->orderBy('created_at', 'desc')->paginate(20);
 
         return UserResource::collection($users)->response();
     }
@@ -53,6 +53,7 @@ class ApiAgencyController extends Controller
     {
         $agencyId = $request->user()->agency_id;
         $invoices = Invoice::where('agency_id', $agencyId)
+            ->with('client')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 

@@ -102,7 +102,7 @@ class WorkflowController extends Controller
             abort(403);
         }
 
-        $executions = $workflow->executions()->orderBy('started_at', 'desc')->paginate(10);
+        $executions = $workflow->executions()->with('logs')->orderBy('started_at', 'desc')->paginate(10);
         $versions = $workflow->versions()->orderBy('version_number', 'desc')->paginate(10);
         $webhookLogs = $workflow->webhookLogs()->orderBy('created_at', 'desc')->paginate(10);
 

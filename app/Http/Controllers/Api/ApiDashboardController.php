@@ -11,6 +11,7 @@ use App\Models\SocialAccount;
 use App\Models\SocialPost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ApiDashboardController extends Controller
 {
@@ -24,25 +25,31 @@ class ApiDashboardController extends Controller
         $agencyId = $request->user()->agency_id;
 
         return response()->json([
-            'overview' => [
-                'total_clients' => Client::where('agency_id', $agencyId)->count(),
-                'total_posts' => SocialPost::where('agency_id', $agencyId)->count(),
-                'total_campaigns' => Campaign::where('agency_id', $agencyId)->count(),
-                'total_revenue' => Invoice::where('agency_id', $agencyId)->paid()->sum('total'),
-                'pending_invoices' => Invoice::where('agency_id', $agencyId)->pending()->count(),
-                'active_social_accounts' => SocialAccount::where('agency_id', $agencyId)->count(),
-            ],
-            'social' => [
-                'total_posts' => SocialPost::where('agency_id', $agencyId)->count(),
-                'published' => SocialPost::where('agency_id', $agencyId)->published()->count(),
-                'scheduled' => SocialPost::where('agency_id', $agencyId)->scheduled()->count(),
-                'failed' => SocialPost::where('agency_id', $agencyId)->where('status', 'failed')->count(),
-            ],
-            'ai' => [
-                'total_generations' => AiContentLog::where('agency_id', $agencyId)->count(),
-                'successful' => AiContentLog::where('agency_id', $agencyId)->where('status', 'success')->count(),
-                'total_cost' => AiContentLog::where('agency_id', $agencyId)->sum('cost_usd'),
-            ],
+            'overview' => Cache::remember("api:dashboard:{$agencyId}:overview", 300, function () use ($agencyId) {
+                return [
+                    'total_clients' => Client::where('agency_id', $agencyId)->count(),
+                    'total_posts' => SocialPost::where('agency_id', $agencyId)->count(),
+                    'total_campaigns' => Campaign::where('agency_id', $agencyId)->count(),
+                    'total_revenue' => Invoice::where('agency_id', $agencyId)->paid()->sum('total'),
+                    'pending_invoices' => Invoice::where('agency_id', $agencyId)->pending()->count(),
+                    'active_social_accounts' => SocialAccount::where('agency_id', $agencyId)->count(),
+                ];
+            }),
+            'social' => Cache::remember("api:dashboard:{$agencyId}:social", 300, function () use ($agencyId) {
+                return [
+                    'total_posts' => SocialPost::where('agency_id', $agencyId)->count(),
+                    'published' => SocialPost::where('agency_id', $agencyId)->published()->count(),
+                    'scheduled' => SocialPost::where('agency_id', $agencyId)->scheduled()->count(),
+                    'failed' => SocialPost::where('agency_id', $agencyId)->where('status', 'failed')->count(),
+                ];
+            }),
+            'ai' => Cache::remember("api:dashboard:{$agencyId}:ai", 300, function () use ($agencyId) {
+                return [
+                    'total_generations' => AiContentLog::where('agency_id', $agencyId)->count(),
+                    'successful' => AiContentLog::where('agency_id', $agencyId)->where('status', 'success')->count(),
+                    'total_cost' => AiContentLog::where('agency_id', $agencyId)->sum('cost_usd'),
+                ];
+            }),
         ]);
     }
 }

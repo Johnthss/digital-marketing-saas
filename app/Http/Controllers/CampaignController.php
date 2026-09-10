@@ -91,7 +91,7 @@ class CampaignController extends Controller
 
         $agency = DB::table('agencies')->where('id', $agencyId)->first();
 
-        $campaign = Campaign::findOrFail($campaignId);
+        $campaign = Campaign::with('client')->findOrFail($campaignId);
 
         if ($campaign->agency_id !== $agencyId) {
             abort(403);

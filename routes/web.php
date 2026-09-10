@@ -49,15 +49,15 @@ Route::get('/contact', [PublicController::class, 'contact'])->name('public.conta
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
+    Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:10,1');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 Route::get('/password/reset', [ResetPasswordController::class, 'showLinkRequestForm'])->name('password.request');
-Route::post('/password/email', [ResetPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::post('/password/email', [ResetPasswordController::class, 'sendResetLinkEmail'])->name('password.email')->middleware('throttle:5,1');
 Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
 
@@ -278,8 +278,23 @@ require __DIR__.'/telegram.php';
 // API Documentation (public)
 require __DIR__.'/docs.php';
 
+// security.txt (RFC 9116)
+Route::get('/.well-known/security.txt', function () {
+    $expiry = now()->addYear()->toIso8601String();
+    $content = "Contact: mailto:security@digitalmarketingsaas.com\n";
+    $content .= "Expires: {$expiry}\n";
+    $content .= "Preferred-Languages: en\n";
+    $content .= "Canonical: https://digitalmarketingsaas.com/.well-known/security.txt\n";
+    
+    return response($content, 200, [
+        'Content-Type' => 'text/plain; charset=utf-8',
+    ]);
+})->name('security.txt');
+
 // Health Checks (public)
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
 Route::get('/ready', [HealthCheckController::class, 'readiness'])->name('ready');
 Route::get('/live', [HealthCheckController::class, 'liveness'])->name('live');
 Route::get('/status', [HealthCheckController::class, 'status'])->name('status');
+Route::get('/disk-space', [HealthCheckController::class, 'diskSpace'])->name('disk-space');
+Route::get('/queue-status', [HealthCheckController::class, 'queueStatus'])->name('queue-status');

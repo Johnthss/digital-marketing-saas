@@ -25,6 +25,7 @@ class ApiClientController extends Controller
         }
 
         $clients = $query->orderBy('created_at', 'desc')
+            ->with('subscriptions')
             ->paginate($request->get('per_page', 20));
 
         return ClientResource::collection($clients)->response();

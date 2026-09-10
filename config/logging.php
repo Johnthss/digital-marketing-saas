@@ -143,6 +143,38 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'debug',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'billing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/billing.log'),
+            'level' => 'debug',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'agent' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/agent.log'),
+            'level' => 'debug',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'security' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/security.log'),
+            'level' => 'info',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];
