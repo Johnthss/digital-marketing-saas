@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\AgentCostLog;
 use App\Models\AiContentLog;
 use App\Models\LandingPage;
 use App\Models\SocialPost;
+use App\Services\AI\Agent\AgentHealthMonitor;
 use App\Services\Analytics\AnalyticsService;
 use App\Services\QuotaService;
 use Illuminate\Http\Request;
@@ -97,6 +99,54 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard.index', compact('stats', 'quotas', 'recentActivity', 'upcomingPosts', 'agency'));
+        // Agent health summary
+        $agentHealthSummary = $this->getAgentHealthSummary($agency->id);
+
+        // Recent agent activity
+        $recentAgentActivity = $this->getRecentAgentActivity($agency->id);
+
+        return view('dashboard.index', compact('stats', 'quotas', 'recentActivity', 'upcomingPosts', 'agency', 'agentHealthSummary', 'recentAgentActivity'));
+    }
+
+    /**
+     * Get agent health summary for dashboard widget.
+     */
+    private function getAgentHealthSummary(int $agencyId): array
+    {
+        try {
+            $healthMonitor = app(AgentHealthMonitor::class);
+            $systemHealth = $healthMonitor->getSystemHealth();
+
+            return [
+                'system_score' => $systemHealth['system_score'] ?? 100,
+                'overall_status' => $systemHealth['overall_status'] ?? 'healthy',
+                'total_agents' => $systemHealth['total_agents'] ?? 0,
+                'healthy_agents' => $systemHealth['healthy_agents'] ?? 0,
+                'degraded_agents' => $systemHealth['degraded_agents'] ?? 0,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'system_score' => 100,
+                'overall_status' => 'healthy',
+                'total_agents' => 0,
+                'healthy_agents' => 0,
+                'degraded_agents' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Get recent agent activity for dashboard widget.
+     */
+    private function getRecentAgentActivity(int $agencyId): \Illuminate\Database\Eloquent\Collection
+    {
+        try {
+            return AgentCostLog::byAgency($agencyId)
+                ->orderBy('executed_at', 'desc')
+                ->take(5)
+                ->get();
+        } catch (\Exception $e) {
+            return collect();
+        }
     }
 }

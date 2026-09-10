@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\AI\AiContentService;
+use App\Models\Agency;
+use App\Services\AI\Agent\AgentContext;
+use App\Services\AI\Agent\AgentOrchestrator;
+use App\Services\AI\Agent\AgentTask;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ApiAiController extends Controller
 {
-    public function __construct(private AiContentService $aiService)
+    public function __construct(private AgentOrchestrator $orchestrator)
     {
         $this->middleware(['auth', 'agency']);
     }
@@ -24,18 +27,68 @@ class ApiAiController extends Controller
             'length' => 'nullable|in:short,medium,long',
         ]);
 
-        $agency = $request->user()->agency;
-        $result = $this->aiService->generate(
-            agency: $agency,
-            prompt: $request->prompt,
-            contentType: $request->get('content_type', 'post'),
-            tone: $request->get('tone'),
-            length: $request->get('length'),
+        $agency = Agency::find($request->user()->agency_id);
+        $action = $request->get('action', 'generate');
+
+        // Map action to task type
+        $taskType = match ($action) {
+            'generate' => 'content_generate',
+            'rewrite' => 'content_rewrite',
+            'hashtags' => 'hashtag_generate',
+            'ideas' => 'content_generate',
+            default => 'content_generate',
+        };
+
+        // Build data array based on action
+        $data = [
+            'content_type' => $request->get('content_type', 'post'),
+            'tone' => $request->get('tone', 'professional'),
+            'platform' => 'instagram',
+        ];
+
+        if ($action === 'rewrite') {
+            $data['content'] = $request->prompt;
+            $data['instructions'] = 'Improve and rewrite this content';
+            $data['target_tone'] = $request->get('tone', 'professional');
+        }
+
+        if ($action === 'hashtags') {
+            $data['count'] = 10;
+            $data['platform'] = 'instagram';
+        }
+
+        if ($action === 'ideas') {
+            $prompt = "Generate 5 creative content ideas about: {$request->prompt}."
+                ."\n\nFor each idea, provide:\n- Title (catchy headline)\n- Format (post, video, carousel, story, reel)\n- Brief description (2-3 sentences)\n- Target emotion/call-to-action"
+                ."\n\nReturn as a JSON array of objects with keys: title, format, description, cta";
+        }
+
+        $task = new AgentTask(
+            id: uniqid('task_', true),
+            type: $taskType,
+            prompt: $prompt ?? $request->prompt,
+            data: $data,
         );
+
+        $context = AgentContext::fromUser($request->user());
+        $result = $this->orchestrator->dispatch($task, $context);
+
+        if (! $result->success) {
+            return response()->json([
+                'success' => false,
+                'message' => $result->error ?? 'Agent failed to process request',
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $result,
+            'data' => [
+                'output' => $result->output,
+                'agent' => $result->agentName,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+                'execution_time_ms' => $result->executionTimeMs,
+            ],
         ]);
     }
 }

@@ -17,8 +17,8 @@ class ApiInvoiceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $query = Invoice::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = Invoice::where('agency_id', $agencyId);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -40,9 +40,9 @@ class ApiInvoiceController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $invoice = Invoice::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $agencyId,
             'invoice_number' => Invoice::generateNumber(),
             'status' => 'pending',
             'issue_date' => now(),
@@ -89,8 +89,8 @@ class ApiInvoiceController extends Controller
 
     private function authorizeAccess(Request $request, Invoice $invoice): void
     {
-        $agency = $request->user()->agency;
-        if ($invoice->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($invoice->agency_id !== $agencyId) {
             abort(404);
         }
     }

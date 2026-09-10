@@ -12,6 +12,7 @@ class DashboardTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class DashboardTest extends TestCase
     public function test_it_shows_dashboard(): void
     {
         $response = $this->actingAs($this->user)->get(route('dashboard'));
-        
+
         $response->assertOk();
         $response->assertViewIs('dashboard.index');
         $response->assertViewHas('stats');
@@ -34,16 +35,16 @@ class DashboardTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('dashboard'));
-        
+
         $response->assertRedirect(route('login'));
     }
 
     public function test_it_requires_agency(): void
     {
         $user = User::factory()->create(['agency_id' => null]);
-        
+
         $response = $this->actingAs($user)->get(route('dashboard'));
-        
+
         $response->assertForbidden();
     }
 }

@@ -13,6 +13,7 @@ class WorkflowTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class WorkflowTest extends TestCase
     public function test_it_lists_workflows(): void
     {
         Workflow::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('workflows.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('workflows.index');
         $response->assertViewHas('workflows');
@@ -36,9 +37,9 @@ class WorkflowTest extends TestCase
     public function test_it_shows_a_workflow(): void
     {
         $workflow = Workflow::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('workflows.show', $workflow));
-        
+
         $response->assertOk();
         $response->assertViewIs('workflows.show');
         $response->assertViewHas('workflow');
@@ -48,18 +49,18 @@ class WorkflowTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $workflow = Workflow::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('workflows.show', $workflow));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_a_workflow(): void
     {
         $workflow = Workflow::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('workflows.edit', $workflow));
-        
+
         $response->assertOk();
         $response->assertViewIs('workflows.edit');
     }
@@ -67,7 +68,7 @@ class WorkflowTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('workflows.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

@@ -13,6 +13,7 @@ class EmailTemplateTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class EmailTemplateTest extends TestCase
     public function test_it_lists_templates(): void
     {
         EmailTemplate::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('email.templates.index');
         $response->assertViewHas('templates');
@@ -41,7 +42,7 @@ class EmailTemplateTest extends TestCase
             'category' => 'general',
             'html_content' => '<p>Test content</p>',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('email_templates', [
             'name' => 'Test Template',
@@ -52,16 +53,16 @@ class EmailTemplateTest extends TestCase
     public function test_it_validates_template_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('email.templates.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'subject', 'category', 'html_content']);
     }
 
     public function test_it_shows_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.show', $template));
-        
+
         $response->assertOk();
         $response->assertViewIs('email.templates.show');
     }
@@ -70,18 +71,18 @@ class EmailTemplateTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $template = EmailTemplate::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.show', $template));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.edit', $template));
-        
+
         $response->assertOk();
         $response->assertViewIs('email.templates.edit');
     }
@@ -89,14 +90,14 @@ class EmailTemplateTest extends TestCase
     public function test_it_updates_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('email.templates.update', $template), [
             'name' => 'Updated Template',
             'subject' => 'Updated Subject',
             'category' => 'general',
             'html_content' => '<p>Updated content</p>',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('email_templates', [
             'id' => $template->id,
@@ -107,9 +108,9 @@ class EmailTemplateTest extends TestCase
     public function test_it_deletes_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('email.templates.destroy', $template));
-        
+
         $response->assertRedirect(route('email.templates.index'));
         $this->assertSoftDeleted('email_templates', ['id' => $template->id]);
     }
@@ -117,9 +118,9 @@ class EmailTemplateTest extends TestCase
     public function test_it_previews_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.preview', $template));
-        
+
         $response->assertOk();
         $response->assertJson(['html' => $template->html_content]);
     }
@@ -127,19 +128,19 @@ class EmailTemplateTest extends TestCase
     public function test_it_duplicates_a_template(): void
     {
         $template = EmailTemplate::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('email.templates.duplicate', $template));
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('email_templates', [
-            'name' => $template->name . ' (Copy)',
+            'name' => $template->name.' (Copy)',
         ]);
     }
 
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('email.templates.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

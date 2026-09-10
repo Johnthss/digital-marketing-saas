@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CustomField;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CustomFieldController extends Controller
@@ -13,10 +15,17 @@ class CustomFieldController extends Controller
         $this->middleware(['auth', 'agency']);
     }
 
+    public function getAgencyId(Request $request): int
+    {
+        $userId = Auth::id() ?? $request->user()?->id ?? 0;
+
+        return (int) (DB::table('users')->where('id', $userId)->value('agency_id') ?? 0);
+    }
+
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
-        $fields = CustomField::where('agency_id', $agency->id)
+        $agencyId = $this->getAgencyId($request);
+        $fields = CustomField::where('agency_id', $agencyId)
             ->orderBy('sort_order')
             ->paginate(20);
 
@@ -26,6 +35,7 @@ class CustomFieldController extends Controller
     public function create()
     {
         $types = CustomField::FIELD_TYPES;
+
         return view('custom-fields.create', compact('types'));
     }
 
@@ -41,9 +51,8 @@ class CustomFieldController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
 
-        $agency = $request->user()->agency;
         $field = CustomField::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $this->getAgencyId($request),
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             ...$validated,
         ]);
@@ -52,31 +61,41 @@ class CustomFieldController extends Controller
             ->with('success', 'Custom field created.');
     }
 
-    public function show(Request $request, CustomField $field)
+    public function show(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($field->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbField = DB::table('custom_fields')->where('id', $id)->first();
+
+        if (! $dbField || (int) $dbField->agency_id !== $agencyId) {
             abort(403);
         }
+
+        $field = CustomField::find($id);
 
         return view('custom-fields.show', compact('field'));
     }
 
-    public function edit(Request $request, CustomField $field)
+    public function edit(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($field->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbField = DB::table('custom_fields')->where('id', $id)->first();
+
+        if (! $dbField || (int) $dbField->agency_id !== $agencyId) {
             abort(403);
         }
 
+        $field = CustomField::find($id);
         $types = CustomField::FIELD_TYPES;
+
         return view('custom-fields.edit', compact('field', 'types'));
     }
 
-    public function update(Request $request, CustomField $field)
+    public function update(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($field->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbField = DB::table('custom_fields')->where('id', $id)->first();
+
+        if (! $dbField || (int) $dbField->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -90,20 +109,23 @@ class CustomFieldController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
 
-        $field->update($validated);
+        CustomField::where('id', $id)->update($validated);
 
-        return redirect()->route('custom-fields.show', $field)
+        return redirect()->route('custom-fields.show', $id)
             ->with('success', 'Custom field updated.');
     }
 
-    public function destroy(Request $request, CustomField $field)
+    public function destroy(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($field->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbField = DB::table('custom_fields')->where('id', $id)->first();
+
+        if (! $dbField || (int) $dbField->agency_id !== $agencyId) {
             abort(403);
         }
 
-        $field->delete();
+        $field = CustomField::findOrFail($id);
+        $field->forceDelete();
 
         return redirect()->route('custom-fields.index')
             ->with('success', 'Custom field deleted.');

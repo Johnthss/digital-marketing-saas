@@ -135,6 +135,14 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'agent_alerts' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/agent_alerts.log'),
+            'level' => 'warning',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

@@ -1,18 +1,22 @@
 <?php
 
 use App\Http\Controllers\Api\ApiAgencyController;
+use App\Http\Controllers\Api\ApiAgentController;
+use App\Http\Controllers\Api\ApiAgentWorkflowController;
 use App\Http\Controllers\Api\ApiAiController;
+use App\Http\Controllers\Api\ApiRoleController;
 use App\Http\Controllers\Api\ApiCampaignController;
 use App\Http\Controllers\Api\ApiClientController;
 use App\Http\Controllers\Api\ApiDashboardController;
 use App\Http\Controllers\Api\ApiInvoiceController;
 use App\Http\Controllers\Api\ApiSocialAccountController;
 use App\Http\Controllers\Api\ApiSocialPostController;
+use App\Http\Controllers\Api\ApiReportController;
 use App\Http\Controllers\Api\ApiWorkflowController;
 use App\Http\Controllers\WorkflowWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->middleware('auth')->as('api.')->group(function () {
+Route::prefix('v1')->middleware(['auth', 'agency'])->as('api.')->group(function () {
     Route::get('/status', fn () => ['status' => 'ok']);
 
     // Dashboard
@@ -26,14 +30,70 @@ Route::prefix('v1')->middleware('auth')->as('api.')->group(function () {
     Route::apiResource('invoices', ApiInvoiceController::class);
     Route::apiResource('workflows', ApiWorkflowController::class);
 
+    // Enterprise Reports
+    Route::get('/reports/types', [ApiReportController::class, 'types']);
+    Route::get('/reports/scheduled', [ApiReportController::class, 'scheduled']);
+    Route::post('/reports/export', [ApiReportController::class, 'export']);
+    Route::post('/reports/schedule', [ApiReportController::class, 'schedule']);
+    Route::apiResource('reports', ApiReportController::class);
+
+    // Agent-powered Report routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::post('/agent-generate', [\App\Http\Controllers\ReportController::class, 'generateWithAgent']);
+        Route::get('/{report}/agent-recommendations', [\App\Http\Controllers\ReportController::class, 'getAgentRecommendations']);
+        Route::post('/agent-schedule', [\App\Http\Controllers\ReportController::class, 'scheduleAgentReport']);
+    });
+
+    // Agent-powered Campaign routes
+    Route::prefix('campaigns')->name('campaigns.')->group(function () {
+        Route::post('/{campaign}/agent-optimize', [\App\Http\Controllers\CampaignController::class, 'optimizeWithAgent']);
+        Route::post('/{campaign}/agent-ab-test', [\App\Http\Controllers\CampaignController::class, 'abTestWithAgent']);
+        Route::get('/{campaign}/agent-insights', [\App\Http\Controllers\CampaignController::class, 'getAgentInsights']);
+    });
+
+    // Agent-powered Social Post routes
+    Route::prefix('posts')->name('posts.')->group(function () {
+        Route::post('/{post}/agent-schedule', [\App\Http\Controllers\SocialPostController::class, 'scheduleWithAgent']);
+        Route::get('/{post}/agent-analyze', [\App\Http\Controllers\SocialPostController::class, 'analyzeWithAgent']);
+        Route::post('/{post}/agent-reply-suggestions', [\App\Http\Controllers\SocialPostController::class, 'replySuggestionsWithAgent']);
+    });
+
     // AI
     Route::post('/ai/generate', [ApiAiController::class, 'generate']);
+
+    // Agent Management
+    Route::prefix('agents')->name('agents.')->group(function () {
+        Route::get('/', [ApiAgentController::class, 'index']);
+        Route::get('/stats', [ApiAgentController::class, 'stats']);
+        Route::get('/health', [ApiAgentController::class, 'health']);
+        Route::get('/{name}', [ApiAgentController::class, 'show']);
+        Route::post('/{name}/dispatch', [ApiAgentController::class, 'dispatch'])->middleware('agent.rate_limit');
+        Route::get('/{name}/history', [ApiAgentController::class, 'history']);
+    });
+
+    // Agent Workflows
+    Route::prefix('agent-workflows')->name('agent-workflows.')->group(function () {
+        Route::get('/', [ApiAgentWorkflowController::class, 'index']);
+        Route::post('/{name}/run', [ApiAgentWorkflowController::class, 'run'])->middleware('agent.rate_limit');
+        Route::get('/{name}/status/{executionId}', [ApiAgentWorkflowController::class, 'status']);
+        Route::delete('/{name}/status/{executionId}', [ApiAgentWorkflowController::class, 'cancel']);
+    });
 
     // Agency
     Route::get('/agency/settings', [ApiAgencyController::class, 'settings']);
     Route::put('/agency/settings', [ApiAgencyController::class, 'updateSettings']);
     Route::get('/agency/team', [ApiAgencyController::class, 'team']);
     Route::get('/agency/billing', [ApiAgencyController::class, 'billing']);
+
+    // Enterprise RBAC
+    Route::prefix('rbac')->name('rbac.')->group(function () {
+        Route::apiResource('roles', ApiRoleController::class);
+        Route::post('/roles/assign', [ApiRoleController::class, 'assign'])->name('roles.assign');
+        Route::post('/roles/remove', [ApiRoleController::class, 'remove'])->name('roles.remove');
+        Route::get('/roles/{roleId}/permissions', [ApiRoleController::class, 'show'])->name('roles.permissions');
+        Route::get('/users/{userId}/permissions', [ApiRoleController::class, 'userPermissions'])->name('users.permissions');
+        Route::get('/audit-trail', [ApiRoleController::class, 'auditTrail'])->name('audit');
+    });
 });
 
 // Public webhook endpoint (no auth)

@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\ConsentRecord;
 use App\Models\DataDeletionRequest;
 use App\Models\DataExportRequest;
+use App\Services\GDPR\GDPRComplianceService;
 use Illuminate\Http\Request;
 
 class GdprController extends Controller
 {
-    public function __construct()
+    private GDPRComplianceService $gdprService;
+
+    public function __construct(GDPRComplianceService $gdprService)
     {
         $this->middleware(['auth']);
+        $this->gdprService = $gdprService;
     }
 
     public function index(Request $request)
@@ -33,7 +37,7 @@ class GdprController extends Controller
 
         $user = $request->user();
 
-        $exportRequest = DataExportRequest::create([
+        DataExportRequest::create([
             'user_id' => $user->id,
             'export_types' => $request->export_types,
             'status' => 'pending',
@@ -50,7 +54,7 @@ class GdprController extends Controller
 
         $user = $request->user();
 
-        $deletionRequest = DataDeletionRequest::create([
+        DataDeletionRequest::create([
             'user_id' => $user->id,
             'reason' => $request->reason,
             'status' => 'pending',
@@ -69,13 +73,11 @@ class GdprController extends Controller
 
         $user = $request->user();
 
-        ConsentRecord::create([
-            'user_id' => $user->id,
-            'consent_type' => $request->consent_type,
-            'granted' => $request->granted,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
+        if ($request->granted) {
+            $this->gdprService->recordConsent($user->agency_id, $user->id, $request->consent_type);
+        } else {
+            $this->gdprService->withdrawConsent($user->agency_id, $user->id, $request->consent_type);
+        }
 
         return response()->json(['success' => true]);
     }

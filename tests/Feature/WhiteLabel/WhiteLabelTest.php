@@ -4,6 +4,8 @@ namespace Tests\Feature\WhiteLabel;
 
 use App\Models\Agency;
 use App\Models\User;
+use App\Models\WhiteLabelSetting;
+use App\Services\WhiteLabel\WhiteLabelService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,7 +26,7 @@ class WhiteLabelTest extends TestCase
     public function test_it_shows_white_label_settings(): void
     {
         $response = $this->actingAs($this->user)->get(route('white-label.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('white-label.index');
         $response->assertViewHas('settings');
@@ -38,7 +40,7 @@ class WhiteLabelTest extends TestCase
             'from_name' => 'My Company',
             'from_email' => 'info@mycompany.com',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('white_label_settings', [
             'agency_id' => $this->agency->id,
@@ -49,7 +51,7 @@ class WhiteLabelTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('white-label.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

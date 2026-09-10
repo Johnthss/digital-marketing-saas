@@ -122,10 +122,11 @@ class DemoSeeder extends Seeder
         $this->command->info('  - 10 Inbox Messages');
         $this->command->info('');
         $this->command->info('🔑 Login credentials:');
-        $this->command->info('  - owner@agency.com / password123 (Owner)');
-        $this->command->info('  - admin@agency.com / password123 (Admin)');
-        $this->command->info('  - manager@agency.com / password123 (Manager)');
-        $this->command->info('  - member@agency.com / password123 (Member)');
+        $this->command->info('  - owner@agency.com (Owner)');
+        $this->command->info('  - admin@agency.com (Admin)');
+        $this->command->info('  - manager@agency.com (Manager)');
+        $this->command->info('  - member@agency.com (Member)');
+        $this->command->info('  - Default password: [see .env or reset]');
     }
 
     protected function seedFeatures(): void
@@ -304,7 +305,7 @@ class DemoSeeder extends Seeder
             SocialAccount::create(array_merge($account, [
                 'agency_id' => $agency->id,
                 'platform_account_id' => Str::uuid(),
-                'access_token' => 'demo_'.Str::random(64),
+                'access_token' => encrypt('demo_'.Str::random(64)),
                 'is_active' => true,
                 'is_verified' => true,
             ]));

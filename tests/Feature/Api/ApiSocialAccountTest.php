@@ -13,6 +13,7 @@ class ApiSocialAccountTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class ApiSocialAccountTest extends TestCase
     public function test_it_lists_accounts(): void
     {
         SocialAccount::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->getJson('/api/v1/accounts');
-        
+
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
@@ -38,7 +39,7 @@ class ApiSocialAccountTest extends TestCase
             'platform' => 'twitter',
             'access_token' => 'test_token',
         ]);
-        
+
         $response->assertCreated();
         $this->assertDatabaseHas('social_accounts', ['platform' => 'twitter']);
     }
@@ -46,7 +47,7 @@ class ApiSocialAccountTest extends TestCase
     public function test_it_validates_account_creation(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/accounts', []);
-        
+
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['platform', 'access_token']);
     }
@@ -54,7 +55,7 @@ class ApiSocialAccountTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/accounts');
-        
+
         $response->assertUnauthorized();
     }
 }

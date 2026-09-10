@@ -13,6 +13,7 @@ class FormTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class FormTest extends TestCase
     public function test_it_lists_forms(): void
     {
         Form::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('forms.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('forms.index');
         $response->assertViewHas('forms');
@@ -43,7 +44,7 @@ class FormTest extends TestCase
             ],
             'success_message' => 'Thank you!',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('forms', [
             'name' => 'Test Form',
@@ -54,16 +55,16 @@ class FormTest extends TestCase
     public function test_it_validates_form_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('forms.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'fields']);
     }
 
     public function test_it_shows_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('forms.show', $form));
-        
+
         $response->assertOk();
         $response->assertViewIs('forms.show');
         $response->assertViewHas('form');
@@ -73,18 +74,18 @@ class FormTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $form = Form::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('forms.show', $form));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('forms.edit', $form));
-        
+
         $response->assertOk();
         $response->assertViewIs('forms.edit');
     }
@@ -92,14 +93,14 @@ class FormTest extends TestCase
     public function test_it_updates_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('forms.update', $form), [
             'name' => 'Updated Form',
             'fields' => [
                 ['name' => 'name', 'type' => 'text', 'required' => true],
             ],
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('forms', [
             'id' => $form->id,
@@ -110,9 +111,9 @@ class FormTest extends TestCase
     public function test_it_deletes_a_form(): void
     {
         $form = Form::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('forms.destroy', $form));
-        
+
         $response->assertRedirect(route('forms.index'));
         $this->assertSoftDeleted('forms', ['id' => $form->id]);
     }
@@ -123,9 +124,9 @@ class FormTest extends TestCase
             'agency_id' => $this->agency->id,
             'is_published' => false,
         ]);
-        
+
         $response = $this->actingAs($this->user)->post(route('forms.toggle', $form));
-        
+
         $response->assertRedirect(route('forms.index'));
         $this->assertDatabaseHas('forms', [
             'id' => $form->id,
@@ -136,7 +137,7 @@ class FormTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('forms.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

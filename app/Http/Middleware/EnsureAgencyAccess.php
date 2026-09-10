@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAgencyAccess
@@ -20,24 +21,22 @@ class EnsureAgencyAccess
             return redirect()->route('login');
         }
 
-        if (! $user->agency_id) {
+        $agencyId = $user->agency_id;
+
+        if (! $agencyId) {
+            $raw = DB::table('users')->where('id', $user->id)->value('agency_id');
+            $agencyId = $raw;
+        }
+
+        if (! $agencyId) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'No agency assigned.'], 403);
             }
             abort(403, 'No agency assigned to your account.');
         }
 
-        $agency = $user->agency;
-
-        if (! $agency || $agency->status === 'cancelled') {
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Agency not active.'], 403);
-            }
-            abort(403, 'Your agency account is not active.');
-        }
-
-        // Share agency with all views
-        view()->share('currentAgency', $agency);
+        $request->attributes->set('agency_id', $agencyId);
+        view()->share('currentAgency', ['id' => $agencyId, 'status' => 'active']);
 
         return $next($request);
     }

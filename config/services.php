@@ -40,4 +40,12 @@ return [
         'bot_username' => env('TELEGRAM_BOT_USERNAME', ''),
     ],
 
+    'twitter' => [
+        'api_key' => env('TWITTER_API_KEY', ''),
+        'api_secret' => env('TWITTER_API_SECRET', ''),
+        'access_token' => env('TWITTER_ACCESS_TOKEN', ''),
+        'access_secret' => env('TWITTER_ACCESS_SECRET', ''),
+        'bearer_token' => env('TWITTER_BEARER_TOKEN', ''),
+    ],
+
 ];

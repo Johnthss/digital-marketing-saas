@@ -3,21 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\WhiteLabelSetting;
+use App\Services\WhiteLabel\WhiteLabelService;
 use Illuminate\Http\Request;
 
 class WhiteLabelController extends Controller
 {
-    public function __construct()
+    public function __construct(private WhiteLabelService $whiteLabelService)
     {
         $this->middleware(['auth', 'agency']);
     }
 
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
-        $settings = WhiteLabelSetting::where('agency_id', $agency->id)->first();
+        $agencyId = $request->user()->agency_id;
+        $settings = WhiteLabelSetting::where('agency_id', $agencyId)->first();
+        $brandedAssets = $this->whiteLabelService->getBrandedAssets($agencyId);
 
-        return view('white-label.index', compact('agency', 'settings'));
+        return view('white-label.index', compact('agencyId', 'settings', 'brandedAssets'));
     }
 
     public function update(Request $request)
@@ -35,10 +37,10 @@ class WhiteLabelController extends Controller
             'enabled' => 'boolean',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
         WhiteLabelSetting::updateOrCreate(
-            ['agency_id' => $agency->id],
+            ['agency_id' => $agencyId],
             $request->only([
                 'brand_name',
                 'brand_color',
@@ -54,5 +56,38 @@ class WhiteLabelController extends Controller
         );
 
         return back()->with('success', 'White-label settings updated.');
+    }
+
+    public function setupDomain(Request $request)
+    {
+        $request->validate([
+            'domain' => 'required|string|max:255',
+        ]);
+
+        $agencyId = $request->user()->agency_id;
+        $domain = $request->input('domain');
+
+        $success = $this->whiteLabelService->setupCustomDomain($agencyId, $domain);
+
+        if (!$success) {
+            return back()->with('error', 'Domain is already in use or could not be configured.');
+        }
+
+        return back()->with('success', 'Custom domain configured successfully.');
+    }
+
+    public function validateDomain(Request $request)
+    {
+        $request->validate([
+            'domain' => 'required|string|max:255',
+        ]);
+
+        $domain = $request->input('domain');
+        $isValid = $this->whiteLabelService->validateDomainOwnership($domain);
+
+        return response()->json([
+            'valid' => $isValid,
+            'domain' => $domain,
+        ]);
     }
 }

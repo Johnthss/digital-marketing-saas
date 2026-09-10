@@ -12,6 +12,7 @@ class AnalyticsTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class AnalyticsTest extends TestCase
     public function test_it_shows_analytics_page(): void
     {
         $response = $this->actingAs($this->user)->get(route('analytics.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('analytics.index');
         $response->assertViewHas('postStats');
@@ -35,7 +36,7 @@ class AnalyticsTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('analytics.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

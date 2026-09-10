@@ -21,7 +21,11 @@ class TelegramWebhookController extends Controller
     {
         $update = $request->all();
 
-        Log::debug('Telegram webhook received', $update);
+        Log::debug('Telegram webhook received', [
+            'update_id' => $update['update_id'] ?? null,
+            'message_id' => $update['message']['message_id'] ?? null,
+            'chat_id' => $update['message']['chat']['id'] ?? null,
+        ]);
 
         $this->telegram->handleWebhook($update);
 
@@ -33,13 +37,11 @@ class TelegramWebhookController extends Controller
      */
     public function setupWebhook(Request $request): JsonResponse
     {
-        $url = $request->input('url');
+        $validated = $request->validate([
+            'url' => 'required|url|max:500',
+        ]);
 
-        if (! $url) {
-            return response()->json(['error' => 'URL required'], 400);
-        }
-
-        $result = $this->telegram->setWebhook($url);
+        $result = $this->telegram->setWebhook($validated['url']);
 
         return response()->json($result);
     }

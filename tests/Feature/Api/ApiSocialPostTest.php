@@ -14,7 +14,9 @@ class ApiSocialPostTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
+
     private SocialAccount $account;
 
     protected function setUp(): void
@@ -34,9 +36,9 @@ class ApiSocialPostTest extends TestCase
             'agency_id' => $this->agency->id,
             'social_account_id' => $this->account->id,
         ]);
-        
+
         $response = $this->actingAs($this->user)->getJson('/api/v1/posts');
-        
+
         $response->assertOk();
         $response->assertJsonCount(3, 'data');
     }
@@ -53,9 +55,9 @@ class ApiSocialPostTest extends TestCase
             'social_account_id' => $this->account->id,
             'status' => 'draft',
         ]);
-        
+
         $response = $this->actingAs($this->user)->getJson('/api/v1/posts?status=published');
-        
+
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
     }
@@ -67,7 +69,7 @@ class ApiSocialPostTest extends TestCase
             'platform' => 'twitter',
             'social_account_id' => $this->account->id,
         ]);
-        
+
         $response->assertCreated();
         $this->assertDatabaseHas('social_posts', ['content' => 'Test post']);
     }
@@ -78,9 +80,9 @@ class ApiSocialPostTest extends TestCase
             'agency_id' => $this->agency->id,
             'social_account_id' => $this->account->id,
         ]);
-        
+
         $response = $this->actingAs($this->user)->getJson("/api/v1/posts/{$post->id}");
-        
+
         $response->assertOk();
         $response->assertJsonPath('data.id', $post->id);
     }
@@ -89,9 +91,9 @@ class ApiSocialPostTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $post = SocialPost::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->getJson("/api/v1/posts/{$post->id}");
-        
+
         $response->assertNotFound();
     }
 
@@ -101,11 +103,11 @@ class ApiSocialPostTest extends TestCase
             'agency_id' => $this->agency->id,
             'social_account_id' => $this->account->id,
         ]);
-        
+
         $response = $this->actingAs($this->user)->putJson("/api/v1/posts/{$post->id}", [
             'content' => 'Updated post',
         ]);
-        
+
         $response->assertOk();
         $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'content' => 'Updated post']);
     }
@@ -116,9 +118,9 @@ class ApiSocialPostTest extends TestCase
             'agency_id' => $this->agency->id,
             'social_account_id' => $this->account->id,
         ]);
-        
+
         $response = $this->actingAs($this->user)->deleteJson("/api/v1/posts/{$post->id}");
-        
+
         $response->assertNoContent();
         $this->assertSoftDeleted('social_posts', ['id' => $post->id]);
     }
@@ -126,7 +128,7 @@ class ApiSocialPostTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/posts');
-        
+
         $response->assertUnauthorized();
     }
 }

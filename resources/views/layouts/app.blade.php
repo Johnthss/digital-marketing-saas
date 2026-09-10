@@ -325,8 +325,15 @@
                     <li class="nav-header">AI & AUTOMATION</li>
 
                     <li class="nav-item">
-                        <a href="{{ route('ai.index') }}" class="nav-link {{ request()->routeIs('ai.*') ? 'active' : '' }}">
+                        <a href="{{ route('agents.dashboard') }}" class="nav-link {{ request()->routeIs('agents.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-robot"></i>
+                            <p>AI Agents</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('ai.index') }}" class="nav-link {{ request()->routeIs('ai.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-sparkles"></i>
                             <p>AI Content</p>
                         </a>
                     </li>

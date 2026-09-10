@@ -13,6 +13,7 @@ class ReportTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class ReportTest extends TestCase
     public function test_it_lists_reports(): void
     {
         Report::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('reports.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('reports.index');
         $response->assertViewHas('reports');
@@ -41,7 +42,7 @@ class ReportTest extends TestCase
             'format' => 'pdf',
             'schedule' => 'once',
         ]);
-        
+
         $response->assertRedirect(route('reports.index'));
         $this->assertDatabaseHas('reports', [
             'name' => 'Test Report',
@@ -52,16 +53,16 @@ class ReportTest extends TestCase
     public function test_it_validates_report_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('reports.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'type', 'format', 'schedule']);
     }
 
     public function test_it_shows_a_report(): void
     {
         $report = Report::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('reports.show', $report));
-        
+
         $response->assertOk();
         $response->assertViewIs('reports.show');
         $response->assertViewHas('report');
@@ -71,18 +72,18 @@ class ReportTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $report = Report::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('reports.show', $report));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_deletes_a_report(): void
     {
         $report = Report::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('reports.destroy', $report));
-        
+
         $response->assertRedirect(route('reports.index'));
         $this->assertDatabaseMissing('reports', ['id' => $report->id]);
     }
@@ -90,9 +91,9 @@ class ReportTest extends TestCase
     public function test_it_generates_a_report(): void
     {
         $report = Report::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->post(route('reports.generate', $report));
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('reports', [
             'id' => $report->id,
@@ -103,7 +104,7 @@ class ReportTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('reports.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

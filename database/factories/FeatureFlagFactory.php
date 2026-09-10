@@ -18,7 +18,7 @@ class FeatureFlagFactory extends Factory
             'feature_name' => fake()->words(2, true),
             'description' => fake()->sentence(),
             'enabled' => true,
-            'required_plan' => null,
+            'required_plan' => 0,
             'minimum_version' => null,
             'allowed_roles' => null,
             'settings' => null,

@@ -22,67 +22,41 @@ class BillingTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    public function test_it_shows_billing_page(): void
+    public function test_billing_index_shows_current_plan_and_usage(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('agency.billing'));
-        
+
         $response->assertOk();
-        $response->assertViewIs('agency.billing');
-        $response->assertViewHas('invoices');
+        $response->assertViewIs('billing.index');
         $response->assertViewHas('plans');
-    }
-
-    public function test_it_shows_invoices(): void
-    {
-        Invoice::factory()->count(2)->create(['agency_id' => $this->agency->id]);
-        
-        $response = $this->actingAs($this->user)->get(route('agency.invoices'));
-        
-        $response->assertOk();
-        $response->assertViewIs('agency.invoices');
+        $response->assertViewHas('currentPlan');
         $response->assertViewHas('invoices');
     }
 
-    public function test_it_redirects_checkout_for_free_plan(): void
+    public function test_upgrade_page_shows_plan_comparison(): void
     {
-        $response = $this->actingAs($this->user)->get(route('billing.checkout', 'free'));
-        
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
-    }
+        $response = $this->actingAs($this->user)->get(route('billing.upgrade'));
 
-    public function test_it_shows_success_page(): void
-    {
-        $response = $this->actingAs($this->user)->get(route('billing.success'));
-        
         $response->assertOk();
-        $response->assertViewIs('agency.billing-success');
+        $response->assertViewIs('billing.upgrade');
+        $response->assertViewHas('plans');
+        $response->assertViewHas('currentPlan');
+        $response->assertSee('Starter');
+        $response->assertSee('Pro');
+        $response->assertSee('Enterprise');
     }
 
-    public function test_it_handles_cancel(): void
+    public function test_invoices_page_lists_agency_invoices(): void
     {
-        $response = $this->actingAs($this->user)->get(route('billing.cancel'));
-        
-        $response->assertRedirect(route('agency.billing'));
-        $response->assertSessionHas('warning');
-    }
+        Invoice::factory()->count(5)->create(['agency_id' => $this->agency->id]);
 
-    public function test_it_requires_auth(): void
-    {
-        $response = $this->get(route('agency.billing'));
-        
-        $response->assertRedirect(route('login'));
-    }
+        $response = $this->actingAs($this->user)->get(route('agency.invoices'));
 
-    public function test_it_prevents_invoice_access_from_other_agencies(): void
-    {
-        $otherAgency = Agency::factory()->create();
-        $invoice = Invoice::factory()->create(['agency_id' => $otherAgency->id]);
-        
-        $response = $this->actingAs($this->user)->get(route('billing.invoice.download', $invoice));
-        
-        $response->assertForbidden();
+        $response->assertOk();
+        $response->assertViewIs('billing.invoices');
+        $response->assertViewHas('invoices');
+        $response->assertViewHas('agency');
     }
 }

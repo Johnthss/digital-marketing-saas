@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Workflow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ApiWorkflowController extends Controller
 {
@@ -16,8 +17,8 @@ class ApiWorkflowController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $workflows = Workflow::where('agency_id', $agency->id)
+        $agencyId = $request->user()->agency_id;
+        $workflows = Workflow::where('agency_id', $agencyId)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -32,10 +33,10 @@ class ApiWorkflowController extends Controller
             'actions' => 'present|array',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $workflow = Workflow::create([
-            'agency_id' => $agency->id,
-            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            'agency_id' => $agencyId,
+            'slug' => Str::slug($data['name']).'-'.uniqid(),
             ...$data,
         ]);
 
@@ -75,8 +76,8 @@ class ApiWorkflowController extends Controller
 
     private function authorizeAccess(Request $request, Workflow $workflow): void
     {
-        $agency = $request->user()->agency;
-        if ($workflow->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($workflow->agency_id !== $agencyId) {
             abort(404);
         }
     }

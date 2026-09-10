@@ -19,9 +19,8 @@ class WorkflowController extends Controller
 
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
-
-        $query = Workflow::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = Workflow::where('agency_id', $agencyId);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -29,20 +28,17 @@ class WorkflowController extends Controller
 
         $workflows = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('workflows.index', compact('agency', 'workflows'));
+        return view('workflows.index', compact('workflows'));
     }
 
-    /**
-     * Visual workflow builder (new or edit existing).
-     */
     public function builder(Request $request, ?Workflow $workflow = null)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $templates = WorkflowTemplate::active()->public()->orderBy('category')->get();
 
         $existingWorkflow = null;
         if ($workflow) {
-            if ($workflow->agency_id !== $agency->id) {
+            if ((int) $workflow->agency_id !== (int) $agencyId) {
                 abort(403);
             }
             $existingWorkflow = [
@@ -63,17 +59,14 @@ class WorkflowController extends Controller
 
     public function create(Request $request)
     {
-        $agency = $request->user()->agency;
         $triggerTypes = Workflow::TRIGGER_TYPES;
         $actionTypes = Workflow::ACTION_TYPES;
 
-        return view('workflows.create', compact('agency', 'triggerTypes', 'actionTypes'));
+        return view('workflows.create', compact('triggerTypes', 'actionTypes'));
     }
 
     public function store(Request $request)
     {
-        $agency = $request->user()->agency;
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -84,7 +77,7 @@ class WorkflowController extends Controller
         ]);
 
         $workflow = Workflow::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $request->user()->agency_id,
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $validated['trigger_type'],
@@ -100,11 +93,12 @@ class WorkflowController extends Controller
             ->with('success', 'Workflow created successfully.');
     }
 
-    public function show(Request $request, Workflow $workflow)
+    public function show(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -112,28 +106,30 @@ class WorkflowController extends Controller
         $versions = $workflow->versions()->orderBy('version_number', 'desc')->paginate(10);
         $webhookLogs = $workflow->webhookLogs()->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('workflows.show', compact('agency', 'workflow', 'executions', 'versions', 'webhookLogs'));
+        return view('workflows.show', compact('workflow', 'executions', 'versions', 'webhookLogs'));
     }
 
-    public function edit(Request $request, Workflow $workflow)
+    public function edit(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
         $triggerTypes = Workflow::TRIGGER_TYPES;
         $actionTypes = Workflow::ACTION_TYPES;
 
-        return view('workflows.edit', compact('agency', 'workflow', 'triggerTypes', 'actionTypes'));
+        return view('workflows.edit', compact('workflow', 'triggerTypes', 'actionTypes'));
     }
 
-    public function update(Request $request, Workflow $workflow)
+    public function update(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -160,11 +156,12 @@ class WorkflowController extends Controller
             ->with('success', 'Workflow updated successfully.');
     }
 
-    public function destroy(Request $request, Workflow $workflow)
+    public function destroy(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -174,11 +171,12 @@ class WorkflowController extends Controller
             ->with('success', 'Workflow deleted.');
     }
 
-    public function toggleStatus(Request $request, Workflow $workflow)
+    public function toggleStatus(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -191,13 +189,8 @@ class WorkflowController extends Controller
         return back()->with('success', 'Workflow status updated.');
     }
 
-    /**
-     * Store workflow from visual builder.
-     */
     public function storeFromBuilder(Request $request)
     {
-        $agency = $request->user()->agency;
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -205,12 +198,11 @@ class WorkflowController extends Controller
             'connections' => 'nullable|array',
         ]);
 
-        // Extract trigger and actions from nodes
         $triggerNode = collect($validated['nodes'])->firstWhere('type', 'trigger');
         $actionNodes = collect($validated['nodes'])->where('type', 'action')->values()->all();
 
         $workflow = Workflow::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $request->user()->agency_id,
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $triggerNode['subtype'] ?? 'manual',
@@ -232,14 +224,12 @@ class WorkflowController extends Controller
         ]);
     }
 
-    /**
-     * Update workflow from visual builder.
-     */
-    public function updateFromBuilder(Request $request, Workflow $workflow)
+    public function updateFromBuilder(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
@@ -273,16 +263,12 @@ class WorkflowController extends Controller
         ]);
     }
 
-    /**
-     * Create workflow from template.
-     */
     public function createFromTemplate(Request $request, string $templateSlug)
     {
-        $agency = $request->user()->agency;
         $template = WorkflowTemplate::where('slug', $templateSlug)->firstOrFail();
 
         $workflow = Workflow::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $request->user()->agency_id,
             'name' => $template->name,
             'slug' => Str::slug($template->name).'-'.uniqid(),
             'trigger_type' => $template->nodes[0]['subtype'] ?? 'manual',
@@ -302,30 +288,26 @@ class WorkflowController extends Controller
             ->with('success', 'Workflow created from template: '.$template->name);
     }
 
-    /**
-     * Show workflow versions.
-     */
-    public function versions(Request $request, Workflow $workflow)
+    public function versions(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
         $versions = $workflow->versions()->orderBy('version_number', 'desc')->paginate(15);
 
-        return view('workflows.versions', compact('agency', 'workflow', 'versions'));
+        return view('workflows.versions', compact('workflow', 'versions'));
     }
 
-    /**
-     * Restore workflow to a specific version.
-     */
-    public function restoreVersion(Request $request, Workflow $workflow, int $versionId)
+    public function restoreVersion(Request $request, $id, int $versionId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -338,14 +320,12 @@ class WorkflowController extends Controller
             ->with('success', 'Workflow restored to version '.$version->version_number);
     }
 
-    /**
-     * Show webhook info for a workflow.
-     */
-    public function webhookInfo(Request $request, Workflow $workflow)
+    public function webhookInfo(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -355,17 +335,15 @@ class WorkflowController extends Controller
 
         $webhookLogs = $workflow->webhookLogs()->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('workflows.webhook', compact('agency', 'workflow', 'webhookLogs'));
+        return view('workflows.webhook', compact('workflow', 'webhookLogs'));
     }
 
-    /**
-     * Regenerate webhook secret.
-     */
-    public function regenerateWebhook(Request $request, Workflow $workflow)
+    public function regenerateWebhook(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
@@ -374,19 +352,21 @@ class WorkflowController extends Controller
         return back()->with('success', 'Webhook secret regenerated. Please update your external service.');
     }
 
-    /**
-     * Execute a workflow manually (for testing).
-     */
-    public function execute(Request $request, Workflow $workflow, WorkflowEngine $engine)
+    public function execute(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $workflow = Workflow::findOrFail($id);
 
-        if ($workflow->agency_id !== $agency->id) {
+        if ((int) $workflow->agency_id !== (int) $agencyId) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         try {
-            $execution = $engine->execute($workflow, $request->input('trigger_data', []));
+            $validated = $request->validate([
+                'trigger_data' => 'nullable|array|max:50',
+            ]);
+            $engine = app(WorkflowEngine::class);
+            $execution = $engine->execute($workflow, $validated['trigger_data'] ?? []);
 
             return response()->json([
                 'success' => true,

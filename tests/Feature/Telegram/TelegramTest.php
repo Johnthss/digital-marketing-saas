@@ -12,6 +12,7 @@ class TelegramTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class TelegramTest extends TestCase
     public function test_it_shows_telegram_link_page(): void
     {
         $response = $this->actingAs($this->user)->get(route('telegram.link.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('telegram.index');
     }
@@ -32,7 +33,7 @@ class TelegramTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('telegram.link.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

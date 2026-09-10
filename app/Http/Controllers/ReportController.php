@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Services\AI\Agent\AgentContext;
+use App\Services\AI\Agent\AgentOrchestrator;
+use App\Services\AI\Agent\AgentTask;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -95,5 +98,169 @@ class ReportController extends Controller
         $report->update(['status' => 'processing']);
 
         return back()->with('success', 'Report generation started.');
+    }
+
+    /**
+     * Generate a report using the ReportAgent.
+     */
+    public function generateWithAgent(Request $request, AgentOrchestrator $orchestrator)
+    {
+        $validated = $request->validate([
+            'report_type' => 'required|in:social,email,campaign,analytics,custom',
+            'date_range' => 'nullable|string|max:50',
+            'format' => 'nullable|in:pdf,csv,xlsx',
+        ]);
+
+        $user = $request->user();
+        $agency = $user->agency;
+
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'report_gen_' . uniqid(),
+            type: 'report_generate',
+            prompt: 'Generate a ' . $validated['report_type'] . ' report',
+            data: [
+                'report_type' => $validated['report_type'],
+                'date_range' => $validated['date_range'] ?? '30 days',
+                'format' => $validated['format'] ?? 'pdf',
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            $report = Report::create([
+                'agency_id' => $agency->id,
+                'user_id' => $user->id,
+                'name' => 'AI Generated ' . ucfirst($validated['report_type']) . ' Report',
+                'type' => $validated['report_type'],
+                'format' => $validated['format'] ?? 'pdf',
+                'schedule' => 'once',
+                'status' => 'completed',
+                'ai_generated' => true,
+                'ai_output' => $result->output,
+                'ai_cost_usd' => $result->costUsd,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'report' => $report,
+                'output' => $result->output,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to generate report',
+        ], 500);
+    }
+
+    /**
+     * Get AI recommendations for report improvements.
+     */
+    public function getAgentRecommendations(Request $request, Report $report, AgentOrchestrator $orchestrator)
+    {
+        if ($report->agency_id !== $request->user()->agency->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'goals' => 'nullable|array',
+            'goals.*' => 'string|in:engagement,reach,conversion,awareness,retention',
+        ]);
+
+        $user = $request->user();
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'report_rec_' . uniqid(),
+            type: 'report_recommend',
+            prompt: 'Provide recommendations for report improvement',
+            data: [
+                'report_id' => $report->id,
+                'report_type' => $report->type,
+                'current_metrics' => $report->metrics ?? [],
+                'goals' => $validated['goals'] ?? ['engagement', 'reach', 'conversion'],
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            return response()->json([
+                'success' => true,
+                'recommendations' => $result->output,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to provide recommendations',
+        ], 500);
+    }
+
+    /**
+     * Schedule a recurring agent-generated report.
+     */
+    public function scheduleAgentReport(Request $request, AgentOrchestrator $orchestrator)
+    {
+        $validated = $request->validate([
+            'report_type' => 'required|in:social,email,campaign,analytics,custom',
+            'frequency' => 'required|in:daily,weekly,monthly',
+            'recipients' => 'nullable|array',
+            'recipients.*' => 'email',
+            'format' => 'nullable|in:pdf,csv,xlsx',
+        ]);
+
+        $user = $request->user();
+        $agency = $user->agency;
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'report_sched_' . uniqid(),
+            type: 'report_schedule',
+            prompt: 'Create optimal report scheduling plan',
+            data: [
+                'frequency' => $validated['frequency'],
+                'report_type' => $validated['report_type'],
+                'recipients' => $validated['recipients'] ?? [],
+                'format' => $validated['format'] ?? 'pdf',
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            $report = Report::create([
+                'agency_id' => $agency->id,
+                'user_id' => $user->id,
+                'name' => 'Scheduled ' . ucfirst($validated['report_type']) . ' Report (' . $validated['frequency'] . ')',
+                'type' => $validated['report_type'],
+                'format' => $validated['format'] ?? 'pdf',
+                'schedule' => $validated['frequency'],
+                'status' => 'scheduled',
+                'ai_generated' => true,
+                'ai_schedule_config' => $result->output,
+                'ai_cost_usd' => $result->costUsd,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'report' => $report,
+                'schedule_config' => $result->output,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to schedule report',
+        ], 500);
     }
 }

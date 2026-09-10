@@ -6,9 +6,13 @@ use App\Enums\PostStatus;
 use App\Models\Campaign;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
+use App\Services\AI\Agent\AgentContext;
+use App\Services\AI\Agent\AgentOrchestrator;
+use App\Services\AI\Agent\AgentTask;
 use App\Services\ContentQualityScorer;
 use App\Services\Social\SocialPostService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SocialPostController extends Controller
 {
@@ -19,9 +23,9 @@ class SocialPostController extends Controller
 
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        $query = SocialPost::where('agency_id', $agency->id);
+        $query = SocialPost::where('agency_id', $agencyId);
 
         // Filters
         if ($request->filled('status')) {
@@ -44,21 +48,21 @@ class SocialPostController extends Controller
             'failed' => 'Failed',
         ];
 
-        return view('social.posts.index', compact('agency', 'posts', 'platforms', 'statuses'));
+        return view('social.posts.index', compact('agencyId', 'posts', 'platforms', 'statuses'));
     }
 
     public function create(Request $request)
     {
-        $agency = $request->user()->agency;
-        $accounts = SocialAccount::where('agency_id', $agency->id)->active()->get();
-        $campaigns = Campaign::where('agency_id', $agency->id)->active()->get();
+        $agencyId = $request->user()->agency_id;
+        $accounts = SocialAccount::where('agency_id', $agencyId)->active()->get();
+        $campaigns = Campaign::where('agency_id', $agencyId)->active()->get();
 
-        return view('social.posts.create', compact('agency', 'accounts', 'campaigns'));
+        return view('social.posts.create', compact('agencyId', 'accounts', 'campaigns'));
     }
 
     public function store(Request $request, SocialPostService $postService)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
         $validated = $request->validate([
             'social_account_id' => 'required|exists:social_accounts,id',
@@ -71,7 +75,7 @@ class SocialPostController extends Controller
 
         $account = SocialAccount::findOrFail($validated['social_account_id']);
 
-        if ($account->agency_id !== $agency->id) {
+        if ($account->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -84,7 +88,7 @@ class SocialPostController extends Controller
             'hashtags' => $validated['hashtags'] ?? [],
         ]));
 
-        $post = $postService->createPost($agency, [
+        $post = $postService->createPost($agencyId, [
             'social_account_id' => $validated['social_account_id'],
             'platform' => $account->platform,
             'content' => $validated['content'],
@@ -100,43 +104,50 @@ class SocialPostController extends Controller
             $post->campaigns()->attach($validated['campaign_id']);
         }
 
-        $agency->increment('posts_count');
+        DB::table('agencies')->where('id', $agencyId)->increment('posts_count');
 
         return redirect()->route('social.posts.index')
             ->with('success', 'Post created successfully.');
     }
 
-    public function show(Request $request, SocialPost $post)
+    public function show(Request $request, $postId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
         $post->load('campaigns', 'socialAccount');
-        return view('social.posts.show', compact('agency', 'post'));
+
+        return view('social.posts.show', compact('agencyId', 'post'));
     }
 
-    public function edit(Request $request, SocialPost $post)
+    public function edit(Request $request, $postId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
-        $accounts = SocialAccount::where('agency_id', $agency->id)->active()->get();
-        $campaigns = Campaign::where('agency_id', $agency->id)->active()->get();
+        $accounts = SocialAccount::where('agency_id', $agencyId)->active()->get();
+        $campaigns = Campaign::where('agency_id', $agencyId)->active()->get();
 
-        return view('social.posts.edit', compact('agency', 'post', 'accounts', 'campaigns'));
+        return view('social.posts.edit', compact('agencyId', 'post', 'accounts', 'campaigns'));
     }
 
-    public function update(Request $request, SocialPost $post)
+    public function update(Request $request, $postId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -158,26 +169,30 @@ class SocialPostController extends Controller
             ->with('success', 'Post updated successfully.');
     }
 
-    public function destroy(Request $request, SocialPost $post)
+    public function destroy(Request $request, $postId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
         $post->delete();
-        $agency->decrement('posts_count');
+        DB::table('agencies')->where('id', $agencyId)->decrement('posts_count');
 
         return redirect()->route('social.posts.index')
             ->with('success', 'Post deleted.');
     }
 
-    public function publish(Request $request, SocialPost $post, SocialPostService $postService)
+    public function publish(Request $request, $postId, SocialPostService $postService)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -190,11 +205,13 @@ class SocialPostController extends Controller
         return back()->with('error', 'Failed to publish: '.$result['message']);
     }
 
-    public function retry(Request $request, SocialPost $post, SocialPostService $postService)
+    public function retry(Request $request, $postId, SocialPostService $postService)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -207,11 +224,13 @@ class SocialPostController extends Controller
         return back()->with('error', $result['message']);
     }
 
-    public function score(Request $request, SocialPost $post, ContentQualityScorer $scorer)
+    public function score(Request $request, $postId, ContentQualityScorer $scorer)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($post->agency_id !== $agency->id) {
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -224,5 +243,162 @@ class SocialPostController extends Controller
             'score' => $score,
             'label' => $label,
         ]);
+    }
+
+    /**
+     * Schedule a post using the SocialMediaAgent for optimal timing.
+     */
+    public function scheduleWithAgent(Request $request, $postId, AgentOrchestrator $orchestrator)
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'preferred_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $user = $request->user();
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'post_schedule_' . uniqid(),
+            type: 'post_schedule',
+            prompt: 'Determine optimal posting time',
+            data: [
+                'platform' => $post->platform,
+                'content' => $post->content,
+                'preferred_date' => $validated['preferred_date'] ?? null,
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            // Parse recommended time from agent output
+            $recommendedTime = $result->metadata['recommended_time'] ?? null;
+
+            if ($recommendedTime) {
+                $post->update([
+                    'scheduled_at' => $recommendedTime,
+                    'status' => PostStatus::SCHEDULED->value,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'schedule_recommendation' => $result->output,
+                'recommended_time' => $recommendedTime,
+                'metadata' => $result->metadata,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to schedule post',
+        ], 500);
+    }
+
+    /**
+     * Analyze post performance using the AnalyticsAgent.
+     */
+    public function analyzeWithAgent(Request $request, $postId, AgentOrchestrator $orchestrator)
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
+            abort(403);
+        }
+
+        $user = $request->user();
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'post_analyze_' . uniqid(),
+            type: 'performance_analysis',
+            prompt: 'Analyze post performance and provide insights',
+            data: [
+                'platform' => $post->platform,
+                'post_id' => $post->id,
+                'date_range' => '30 days',
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            return response()->json([
+                'success' => true,
+                'analysis' => $result->output,
+                'metadata' => $result->metadata,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to analyze post',
+        ], 500);
+    }
+
+    /**
+     * Get reply suggestions using the SupportAgent.
+     */
+    public function replySuggestionsWithAgent(Request $request, $postId, AgentOrchestrator $orchestrator)
+    {
+        $agencyId = $request->user()->agency_id;
+
+        $post = SocialPost::findOrFail($postId);
+
+        if ($post->agency_id !== $agencyId) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'message' => 'required|string|max:2000',
+            'tone' => 'nullable|in:friendly,professional,casual,empathetic',
+        ]);
+
+        $user = $request->user();
+        $context = AgentContext::fromUser($user);
+
+        $task = new AgentTask(
+            id: 'reply_suggest_' . uniqid(),
+            type: 'response_suggest',
+            prompt: 'Suggest a reply to the message',
+            data: [
+                'message' => $validated['message'],
+                'subject' => 'Social media reply',
+                'category' => 'social_media',
+                'tone' => $validated['tone'] ?? 'friendly',
+                'platform' => $post->platform,
+            ],
+        );
+
+        $result = $orchestrator->dispatch($task, $context);
+
+        if ($result->success) {
+            return response()->json([
+                'success' => true,
+                'suggestions' => $result->output,
+                'metadata' => $result->metadata,
+                'cost_usd' => $result->costUsd,
+                'tokens_used' => $result->tokensUsed,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => $result->error ?? 'Agent failed to suggest replies',
+        ], 500);
     }
 }

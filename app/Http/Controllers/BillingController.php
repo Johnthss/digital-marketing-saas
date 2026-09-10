@@ -24,7 +24,16 @@ class BillingController extends Controller
         $plans = config('stripe.plans');
         $currentPlan = $agency->subscription_plan ?? 'free';
 
-        return view('agency.billing', compact('agency', 'invoices', 'plans', 'currentPlan'));
+        return view('billing.index', compact('agency', 'invoices', 'plans', 'currentPlan'));
+    }
+
+    public function upgrade(Request $request)
+    {
+        $agency = $request->user()->agency;
+        $plans = config('stripe.plans');
+        $currentPlan = $agency->subscription_plan ?? 'free';
+
+        return view('billing.upgrade', compact('agency', 'plans', 'currentPlan'));
     }
 
     public function checkout(Request $request, string $plan)
@@ -55,13 +64,34 @@ class BillingController extends Controller
     {
         $agency = $request->user()->agency;
 
-        return view('agency.billing-success', compact('agency'));
+        return view('billing.success', compact('agency'));
     }
 
     public function cancel(Request $request)
     {
         return redirect()->route('agency.billing')
             ->with('warning', 'Checkout was canceled.');
+    }
+
+    public function invoices(Request $request)
+    {
+        $agency = $request->user()->agency;
+        $invoices = Invoice::where('agency_id', $agency->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return view('billing.invoices', compact('agency', 'invoices'));
+    }
+
+    public function downloadInvoice(Request $request, Invoice $invoice)
+    {
+        $agency = $request->user()->agency;
+        if ($invoice->agency_id !== $agency->id) {
+            abort(403);
+        }
+
+        return redirect()->route('agency.invoices')
+            ->with('info', 'Invoice download coming soon.');
     }
 
     public function webhook(Request $request)
@@ -93,26 +123,5 @@ class BillingController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Could not cancel subscription.');
         }
-    }
-
-    public function invoices(Request $request)
-    {
-        $agency = $request->user()->agency;
-        $invoices = Invoice::where('agency_id', $agency->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
-        return view('agency.invoices', compact('agency', 'invoices'));
-    }
-
-    public function downloadInvoice(Request $request, Invoice $invoice)
-    {
-        $agency = $request->user()->agency;
-        if ($invoice->agency_id !== $agency->id) {
-            abort(403);
-        }
-
-        return redirect()->route('agency.invoices')
-            ->with('info', 'Invoice download coming soon.');
     }
 }

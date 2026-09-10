@@ -13,6 +13,7 @@ class InvoiceTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class InvoiceTest extends TestCase
     public function test_it_lists_invoices(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('invoices.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('invoices.index');
         $response->assertViewHas('invoices');
@@ -53,7 +54,7 @@ class InvoiceTest extends TestCase
                 ],
             ],
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('invoices', [
             'agency_id' => $this->agency->id,
@@ -64,16 +65,16 @@ class InvoiceTest extends TestCase
     public function test_it_validates_invoice_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), []);
-        
+
         $response->assertSessionHasErrors(['issue_date', 'due_date', 'items']);
     }
 
     public function test_it_shows_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('invoices.show', $invoice));
-        
+
         $response->assertOk();
         $response->assertViewIs('invoices.show');
         $response->assertViewHas('invoice');
@@ -83,18 +84,18 @@ class InvoiceTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $invoice = Invoice::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('invoices.show', $invoice));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('invoices.edit', $invoice));
-        
+
         $response->assertOk();
         $response->assertViewIs('invoices.edit');
     }
@@ -102,13 +103,13 @@ class InvoiceTest extends TestCase
     public function test_it_updates_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('invoices.update', $invoice), [
             'issue_date' => now()->format('Y-m-d'),
             'due_date' => now()->addDays(30)->format('Y-m-d'),
             'notes' => 'Updated notes',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('invoices', [
             'id' => $invoice->id,
@@ -119,9 +120,9 @@ class InvoiceTest extends TestCase
     public function test_it_deletes_an_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('invoices.destroy', $invoice));
-        
+
         $response->assertRedirect(route('invoices.index'));
         $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
     }
@@ -129,12 +130,12 @@ class InvoiceTest extends TestCase
     public function test_it_marks_invoice_as_paid(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice), [
             'payment_method' => 'stripe',
             'transaction_id' => 'txn_123',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('invoices', [
             'id' => $invoice->id,
@@ -145,7 +146,7 @@ class InvoiceTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('invoices.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Agency;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,7 +21,7 @@ class LoginTest extends TestCase
     /** @test */
     public function it_logs_in_user(): void
     {
-        $agency = \App\Models\Agency::factory()->create();
+        $agency = Agency::factory()->create();
         $user = User::factory()->create([
             'agency_id' => $agency->id,
             'password' => bcrypt('password123'),

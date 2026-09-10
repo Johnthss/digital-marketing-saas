@@ -40,6 +40,18 @@ class Kernel extends ConsoleKernel
         $schedule->command('scheduler:heartbeat')
             ->everyMinute()
             ->runInBackground();
+
+        // Run self-improvement analysis daily with auto-tuning
+        $schedule->command('agents:improve --auto-tune')
+            ->daily()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // Run security/audit agents every 6 hours with auto-fix
+        $schedule->command('agents:audit --auto-fix')
+            ->everySixHours()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**

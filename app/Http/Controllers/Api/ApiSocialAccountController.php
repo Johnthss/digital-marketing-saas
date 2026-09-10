@@ -16,8 +16,8 @@ class ApiSocialAccountController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $accounts = SocialAccount::where('agency_id', $agency->id)
+        $agencyId = $request->user()->agency_id;
+        $accounts = SocialAccount::where('agency_id', $agencyId)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -33,9 +33,9 @@ class ApiSocialAccountController extends Controller
             'access_token' => 'required|string',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $account = SocialAccount::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $agencyId,
             ...$data,
         ]);
 
@@ -74,8 +74,8 @@ class ApiSocialAccountController extends Controller
 
     private function authorizeAccess(Request $request, SocialAccount $account): void
     {
-        $agency = $request->user()->agency;
-        if ($account->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($account->agency_id !== $agencyId) {
             abort(404);
         }
     }

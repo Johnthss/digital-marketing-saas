@@ -13,6 +13,7 @@ class ContentLibraryTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class ContentLibraryTest extends TestCase
     public function test_it_lists_assets(): void
     {
         ContentAsset::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('content.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('content.index');
         $response->assertViewHas('assets');
@@ -41,7 +42,7 @@ class ContentLibraryTest extends TestCase
             'content' => 'Test content',
             'tags' => ['test'],
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('content_assets', [
             'name' => 'Test Asset',
@@ -52,16 +53,16 @@ class ContentLibraryTest extends TestCase
     public function test_it_validates_asset_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('content.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'type', 'content']);
     }
 
     public function test_it_shows_an_asset(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('content.show', $asset));
-        
+
         $response->assertOk();
         $response->assertViewIs('content.show');
     }
@@ -70,18 +71,18 @@ class ContentLibraryTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $asset = ContentAsset::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('content.show', $asset));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_an_asset(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('content.edit', $asset));
-        
+
         $response->assertOk();
         $response->assertViewIs('content.edit');
     }
@@ -89,12 +90,12 @@ class ContentLibraryTest extends TestCase
     public function test_it_updates_an_asset(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('content.update', $asset), [
             'name' => 'Updated Asset',
             'content' => 'Updated content',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('content_assets', [
             'id' => $asset->id,
@@ -105,9 +106,9 @@ class ContentLibraryTest extends TestCase
     public function test_it_deletes_an_asset(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('content.destroy', $asset));
-        
+
         $response->assertRedirect(route('content.index'));
         $this->assertSoftDeleted('content_assets', ['id' => $asset->id]);
     }
@@ -115,7 +116,7 @@ class ContentLibraryTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('content.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

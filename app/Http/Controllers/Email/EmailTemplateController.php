@@ -42,7 +42,7 @@ class EmailTemplateController extends Controller
         $agency = $request->user()->agency;
         $template = EmailTemplate::create([
             'agency_id' => $agency->id,
-            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            'slug' => Str::slug($data['name']).'-'.uniqid(),
             ...$data,
         ]);
 
@@ -124,8 +124,8 @@ class EmailTemplateController extends Controller
         }
 
         $newTemplate = $template->replicate();
-        $newTemplate->name = $template->name . ' (Copy)';
-        $newTemplate->slug = \Illuminate\Support\Str::slug($newTemplate->name) . '-' . uniqid();
+        $newTemplate->name = $template->name.' (Copy)';
+        $newTemplate->slug = Str::slug($newTemplate->name).'-'.uniqid();
         $newTemplate->save();
 
         return redirect()->route('email.templates.edit', $newTemplate)

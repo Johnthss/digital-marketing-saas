@@ -25,7 +25,7 @@ class OpenAiProvider implements AiProviderInterface
 
     public function __construct()
     {
-        $this->apiKey = config('platform.ai.api_key');
+        $this->apiKey = config('platform.ai.api_key', '');
         $this->apiBaseUrl = config('platform.ai.api_base_url', 'https://api.openai.com/v1');
         $this->defaultModel = config('platform.ai.providers.openai.model', 'gpt-4o');
     }

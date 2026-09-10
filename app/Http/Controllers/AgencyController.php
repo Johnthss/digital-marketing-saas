@@ -2,159 +2,237 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agency;
 use App\Models\Invoice;
 use App\Models\User;
-use App\Notifications\TeamInvitationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AgencyController extends Controller
 {
-    public function settings(Request $request)
+    public function __construct()
+    {
+        $this->middleware(['auth', 'agency']);
+    }
+
+    public function show(Request $request)
     {
         $user = $request->user();
-        $agency = $user->agency;
+        $agencyId = $user->agency_id;
+        $agency = Agency::findOrFail($agencyId);
 
-        return view('agency.settings', compact('user', 'agency'));
+        $team = User::where('agency_id', $agencyId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $stats = [
+            'total_members' => User::where('agency_id', $agencyId)->count(),
+            'active_members' => User::where('agency_id', $agencyId)->where('is_active', true)->count(),
+        ];
+
+        return view('agency.show', compact('agency', 'team', 'stats'));
+    }
+
+    public function edit(Request $request)
+    {
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+
+        return view('agency.edit', compact('agency'));
+    }
+
+    public function update(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:agencies,slug,'.$request->user()->agency_id,
+            'email' => 'required|email|max:255',
+            'timezone' => 'required|string|max:100',
+            'currency' => 'required|string|size:3',
+        ]);
+
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+
+        $agency->update($request->only(['name', 'slug', 'email', 'timezone', 'currency']));
+
+        return redirect()->route('agency.settings')->with('success', 'Agency updated.');
+    }
+
+    public function settings(Request $request)
+    {
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+
+        return view('agency.settings', compact('agency'));
     }
 
     public function updateSettings(Request $request)
     {
-        $user = $request->user();
-        $agency = $user->agency;
-
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:agencies,email,'.$agency->id,
-            'timezone' => 'nullable|string|max:50',
-            'currency' => 'nullable|string|max:3',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'website' => 'nullable|url',
-            'description' => 'nullable|string',
+            'email' => 'required|email|max:255',
+            'timezone' => 'required|string|max:100',
+            'currency' => 'required|string|size:3',
         ]);
 
-        $agency->update($validated);
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
 
-        return redirect()->route('agency.settings')->with('success', 'Agency settings updated.');
+        $agency->update($request->only(['name', 'email', 'timezone', 'currency']));
+
+        return redirect()->route('agency.settings')->with('success', 'Settings updated.');
+    }
+
+    public function billing(Request $request)
+    {
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+        $plans = [
+            'starter' => ['name' => 'Starter', 'price' => 29, 'features' => ['posts_per_month' => 100, 'ai_generations_per_month' => 50, 'social_accounts' => 5, 'team_members' => 3]],
+            'pro' => ['name' => 'Pro', 'price' => 79, 'features' => ['posts_per_month' => 500, 'ai_generations_per_month' => 200, 'social_accounts' => 15, 'team_members' => 10]],
+            'enterprise' => ['name' => 'Enterprise', 'price' => 199, 'features' => ['posts_per_month' => -1, 'ai_generations_per_month' => -1, 'social_accounts' => -1, 'team_members' => -1]],
+        ];
+        $currentPlan = $agency->subscription_plan ?? 'free';
+        $invoices = Invoice::where('agency_id', $agencyId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('agency.billing', compact('agency', 'plans', 'currentPlan', 'invoices'));
+    }
+
+    public function upgrade(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|in:starter,pro,enterprise',
+        ]);
+
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+        $agency->update([
+            'subscription_plan' => $request->plan,
+            'subscription_start' => now(),
+            'subscription_end' => now()->addMonth(),
+            'subscription_status' => 'active',
+        ]);
+
+        return redirect()->route('agency.billing')->with('success', 'Subscription upgraded.');
+    }
+
+    public function subscribe(Request $request)
+    {
+        $request->validate([
+            'plan' => 'required|in:starter,pro,enterprise',
+        ]);
+
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+        $agency->update([
+            'subscription_plan' => $request->plan,
+            'subscription_start' => now(),
+            'subscription_end' => now()->addMonth(),
+        ]);
+
+        return redirect()->route('agency.billing')->with('success', 'Subscription updated.');
+    }
+
+    public function cancelSubscription(Request $request)
+    {
+        $agencyId = $request->user()->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+        $agency->update([
+            'subscription_plan' => 'free',
+            'subscription_status' => 'cancelled',
+        ]);
+
+        return redirect()->route('agency.billing')->with('success', 'Subscription cancelled.');
     }
 
     public function team(Request $request)
     {
         $user = $request->user();
-        $agency = $user->agency;
+        $agencyId = $user->agency_id;
+        $agency = Agency::findOrFail($agencyId);
+        $members = User::where('agency_id', $agencyId)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $members = User::where('agency_id', $agency->id)
-            ->orderBy('role')
-            ->orderBy('name')
-            ->paginate(20);
-
-        return view('agency.team', compact('user', 'agency', 'members'));
+        return view('agency.team', compact('agency', 'members', 'user'));
     }
 
     public function inviteMember(Request $request)
     {
-        $user = $request->user();
-        $agency = $user->agency;
-
         $validated = $request->validate([
+            'email' => 'required|email|max:255|unique:users,email',
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:admin,manager,member',
+            'role' => 'required|in:owner,admin,member,manager,editor',
         ]);
 
-        $member = User::create([
+        $agencyId = $request->user()->agency_id;
+
+        User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($password = str()->random(16)),
-            'agency_id' => $agency->id,
+            'password' => Hash::make(Str::random(16)),
+            'agency_id' => $agencyId,
             'role' => $validated['role'],
-            'is_active' => true,
-            'is_approved' => true,
         ]);
 
-        $agency->increment('users_count');
-
-        $member->notify(new TeamInvitationNotification($agency, $password));
-
-        return back()->with('success', 'Team member invited successfully.');
+        return redirect()->route('agency.team')->with('success', 'Member invited.');
     }
 
-    public function updateMemberRole(Request $request, User $member)
+    public function updateMemberRole(Request $request, $userId)
     {
-        $user = $request->user();
-        $agency = $user->agency;
+        $validated = $request->validate([
+            'role' => 'required|in:owner,admin,member,manager,editor',
+        ]);
 
-        if ($member->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+
+        $member = User::findOrFail($userId);
+
+        if ((int) $member->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
-        $validated = $request->validate([
-            'role' => 'required|in:admin,manager,member',
-        ]);
+        // Only owner or admin can change roles
+        if (! $request->user()->isOwner() && ! $request->user()->isAdmin()) {
+            return redirect()->route('agency.team')->with('error', 'Only the owner or admin can change roles.');
+        }
 
         $member->update(['role' => $validated['role']]);
 
-        return back()->with('success', 'Member role updated.');
+        return redirect()->route('agency.team')->with('success', 'Member role updated.');
     }
 
-    public function removeMember(Request $request, User $member)
+    public function removeMember(Request $request, $userId)
     {
-        $user = $request->user();
-        $agency = $user->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($member->agency_id !== $agency->id) {
+        $member = User::findOrFail($userId);
+
+        if ((int) $member->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
-        if ($member->id === $user->id) {
-            return back()->with('error', 'You cannot remove yourself.');
+        // Only owner or admin can remove members
+        if (! $request->user()->isOwner() && ! $request->user()->isAdmin()) {
+            return redirect()->route('agency.team')->with('error', 'Only the owner or admin can remove members.');
         }
 
+        // Cannot remove yourself
+        if ((int) $member->id === (int) $request->user()->id) {
+            return redirect()->route('agency.team')->with('error', 'You cannot remove yourself.');
+        }
+
+        // Cannot remove agency owner
         if ($member->isOwner()) {
-            return back()->with('error', 'Cannot remove the agency owner.');
+            return redirect()->route('agency.team')->with('error', 'Cannot remove the agency owner.');
         }
 
         $member->delete();
-        $agency->decrement('users_count');
 
-        return back()->with('success', 'Member removed.');
-    }
-
-    public function billing(Request $request)
-    {
-        $user = $request->user();
-        $agency = $user->agency;
-
-        $invoices = Invoice::where('agency_id', $agency->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
-        $plans = config('stripe.plans');
-        $currentPlan = $agency->subscription_plan ?? 'free';
-
-        return view('agency.billing', compact('agency', 'invoices', 'plans', 'currentPlan', 'user'));
-    }
-
-    public function upgrade(Request $request)
-    {
-        $user = $request->user();
-        $agency = $user->agency;
-
-        $validated = $request->validate([
-            'plan' => 'required|in:starter,pro,enterprise',
-        ]);
-
-        $plan = $validated['plan'];
-
-        // In production: redirect to Stripe Checkout
-        $agency->update([
-            'subscription_plan' => $plan,
-            'subscription_start' => now(),
-            'subscription_status' => 'active',
-        ]);
-
-        return redirect()->route('agency.billing')
-            ->with('success', "Successfully upgraded to {$plan} plan!");
+        return redirect()->route('agency.team')->with('success', 'Member removed.');
     }
 }

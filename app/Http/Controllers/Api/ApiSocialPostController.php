@@ -18,8 +18,8 @@ class ApiSocialPostController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $query = SocialPost::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = SocialPost::where('agency_id', $agencyId);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -37,12 +37,12 @@ class ApiSocialPostController extends Controller
 
     public function store(SocialPostRequest $request): JsonResponse
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $validated = $request->validated();
         $validated['platform'] ??= 'twitter';
         $validated['social_account_id'] ??= null;
         $post = SocialPost::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $agencyId,
             ...$validated,
         ]);
 
@@ -76,8 +76,8 @@ class ApiSocialPostController extends Controller
 
     private function authorizeAccess(Request $request, SocialPost $post): void
     {
-        $agency = $request->user()->agency;
-        if ($post->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($post->agency_id !== $agencyId) {
             abort(404);
         }
     }

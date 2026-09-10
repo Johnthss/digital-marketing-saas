@@ -12,6 +12,7 @@ class ApiAiTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class ApiAiTest extends TestCase
     public function test_it_validates_generate_request(): void
     {
         $response = $this->actingAs($this->user)->postJson('/api/v1/ai/generate', []);
-        
+
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['action', 'prompt']);
     }
@@ -35,7 +36,7 @@ class ApiAiTest extends TestCase
             'action' => 'generate',
             'prompt' => 'Test prompt',
         ]);
-        
+
         $response->assertUnauthorized();
     }
 }

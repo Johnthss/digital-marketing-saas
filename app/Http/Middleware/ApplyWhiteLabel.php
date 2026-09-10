@@ -3,19 +3,25 @@
 namespace App\Http\Middleware;
 
 use App\Models\WhiteLabelSetting;
+use App\Services\WhiteLabel\WhiteLabelService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ApplyWhiteLabel
 {
+    public function __construct(private WhiteLabelService $whiteLabelService)
+    {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
 
         // Check if white-label is enabled for this agency
         if (auth()->check() && auth()->user()->agency_id) {
-            $settings = WhiteLabelSetting::where('agency_id', auth()->user()->agency_id)
+            $agencyId = auth()->user()->agency_id;
+            $settings = WhiteLabelSetting::where('agency_id', $agencyId)
                 ->where('enabled', true)
                 ->first();
 

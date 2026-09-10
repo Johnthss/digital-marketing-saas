@@ -13,6 +13,7 @@ class ClientTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class ClientTest extends TestCase
     public function test_it_lists_clients(): void
     {
         Client::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('clients.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('clients.index');
         $response->assertViewHas('clients');
@@ -43,7 +44,7 @@ class ClientTest extends TestCase
             'industry' => 'Technology',
             'notes' => 'Some notes',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('clients', [
             'name' => 'Test Client',
@@ -55,16 +56,16 @@ class ClientTest extends TestCase
     public function test_it_validates_client_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('clients.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'email']);
     }
 
     public function test_it_shows_a_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('clients.show', $client));
-        
+
         $response->assertOk();
         $response->assertViewIs('clients.show');
         $response->assertViewHas('client');
@@ -74,18 +75,18 @@ class ClientTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $client = Client::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('clients.show', $client));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_a_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('clients.edit', $client));
-        
+
         $response->assertOk();
         $response->assertViewIs('clients.edit');
     }
@@ -93,13 +94,13 @@ class ClientTest extends TestCase
     public function test_it_updates_a_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('clients.update', $client), [
             'name' => 'Updated Client',
             'email' => 'updated@example.com',
             'status' => 'active',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('clients', [
             'id' => $client->id,
@@ -111,9 +112,9 @@ class ClientTest extends TestCase
     public function test_it_deletes_a_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('clients.destroy', $client));
-        
+
         $response->assertRedirect(route('clients.index'));
         $this->assertSoftDeleted('clients', ['id' => $client->id]);
     }
@@ -121,7 +122,7 @@ class ClientTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('clients.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

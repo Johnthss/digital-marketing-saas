@@ -3,7 +3,6 @@
 namespace App\Services\Social;
 
 use App\Enums\PostStatus;
-use App\Models\Agency;
 use App\Models\SocialPost;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,11 +12,11 @@ class SocialPostService
     /**
      * Create a new social post (draft or scheduled).
      */
-    public function createPost(Agency $agency, array $data): SocialPost
+    public function createPost(int $agencyId, array $data): SocialPost
     {
-        return DB::transaction(function () use ($agency, $data) {
+        return DB::transaction(function () use ($agencyId, $data) {
             $post = SocialPost::create([
-                'agency_id' => $agency->id,
+                'agency_id' => $agencyId,
                 'social_account_id' => $data['social_account_id'],
                 'platform' => $data['platform'],
                 'content' => $data['content'] ?? null,
@@ -39,11 +38,11 @@ class SocialPostService
     /**
      * Schedule a post for future publishing.
      */
-    public function schedulePost(Agency $agency, array $data): SocialPost
+    public function schedulePost(int $agencyId, array $data): SocialPost
     {
         $data['status'] = PostStatus::SCHEDULED->value;
 
-        return $this->createPost($agency, $data);
+        return $this->createPost($agencyId, $data);
     }
 
     /**

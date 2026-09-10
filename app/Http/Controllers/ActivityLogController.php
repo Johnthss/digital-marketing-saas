@@ -14,9 +14,8 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
-
-        $query = ActivityLog::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = ActivityLog::where('agency_id', $agencyId);
 
         if ($request->filled('action')) {
             $query->where('action', $request->action);
@@ -33,22 +32,23 @@ class ActivityLogController extends Controller
 
         $logs = $query->orderBy('created_at', 'desc')->paginate(25);
 
-        $actions = ActivityLog::where('agency_id', $agency->id)
+        $actions = ActivityLog::where('agency_id', $agencyId)
             ->select('action')
             ->distinct()
             ->pluck('action');
 
-        return view('activity.index', compact('agency', 'logs', 'actions'));
+        return view('activity.index', compact('logs', 'actions'));
     }
 
-    public function show(Request $request, ActivityLog $log)
+    public function show(Request $request, $id)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+        $log = ActivityLog::findOrFail($id);
 
-        if ($log->agency_id !== $agency->id) {
+        if ((int) $log->agency_id !== (int) $agencyId) {
             abort(403);
         }
 
-        return view('activity.show', compact('agency', 'log'));
+        return view('activity.show', compact('log'));
     }
 }

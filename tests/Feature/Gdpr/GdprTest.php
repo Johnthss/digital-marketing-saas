@@ -4,8 +4,6 @@ namespace Tests\Feature\Gdpr;
 
 use App\Models\Agency;
 use App\Models\ConsentRecord;
-use App\Models\DataDeletionRequest;
-use App\Models\DataExportRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,9 +24,9 @@ class GdprTest extends TestCase
     public function test_it_shows_gdpr_page(): void
     {
         ConsentRecord::factory()->count(2)->create(['user_id' => $this->user->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('gdpr.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('gdpr.index');
         $response->assertViewHas('consents');
@@ -39,7 +37,7 @@ class GdprTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('gdpr.export'), [
             'export_types' => ['posts', 'campaigns'],
         ]);
-        
+
         $response->assertRedirect(route('gdpr.index'));
         $this->assertDatabaseHas('data_export_requests', [
             'user_id' => $this->user->id,
@@ -50,7 +48,7 @@ class GdprTest extends TestCase
     public function test_it_validates_export_types(): void
     {
         $response = $this->actingAs($this->user)->post(route('gdpr.export'), []);
-        
+
         $response->assertSessionHasErrors(['export_types']);
     }
 
@@ -59,7 +57,7 @@ class GdprTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('gdpr.delete'), [
             'reason' => 'No longer needed',
         ]);
-        
+
         $response->assertRedirect(route('gdpr.index'));
         $this->assertDatabaseHas('data_deletion_requests', [
             'user_id' => $this->user->id,
@@ -73,7 +71,7 @@ class GdprTest extends TestCase
             'consent_type' => 'marketing',
             'granted' => true,
         ]);
-        
+
         $response->assertOk();
         $this->assertDatabaseHas('consent_records', [
             'user_id' => $this->user->id,
@@ -85,14 +83,14 @@ class GdprTest extends TestCase
     public function test_it_validates_consent(): void
     {
         $response = $this->actingAs($this->user)->post(route('gdpr.consent'), []);
-        
+
         $response->assertSessionHasErrors(['consent_type', 'granted']);
     }
 
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('gdpr.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

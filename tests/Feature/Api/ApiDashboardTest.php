@@ -12,6 +12,7 @@ class ApiDashboardTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class ApiDashboardTest extends TestCase
     public function test_it_returns_dashboard_stats(): void
     {
         $response = $this->actingAs($this->user)->getJson('/api/v1/dashboard');
-        
+
         $response->assertOk();
         $response->assertJsonStructure(['overview', 'social', 'ai']);
     }
@@ -32,7 +33,7 @@ class ApiDashboardTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/dashboard');
-        
+
         $response->assertUnauthorized();
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Resources\CampaignResource;
 use App\Models\Campaign;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ApiCampaignController extends Controller
 {
@@ -17,8 +18,8 @@ class ApiCampaignController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $query = Campaign::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = Campaign::where('agency_id', $agencyId);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -40,10 +41,10 @@ class ApiCampaignController extends Controller
             'end_date' => 'nullable|date',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $campaign = Campaign::create([
-            'agency_id' => $agency->id,
-            'slug' => \Illuminate\Support\Str::slug($data['name']) . '-' . uniqid(),
+            'agency_id' => $agencyId,
+            'slug' => Str::slug($data['name']).'-'.uniqid(),
             ...$data,
         ]);
 
@@ -86,8 +87,8 @@ class ApiCampaignController extends Controller
 
     private function authorizeAccess(Request $request, Campaign $campaign): void
     {
-        $agency = $request->user()->agency;
-        if ($campaign->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($campaign->agency_id !== $agencyId) {
             abort(404);
         }
     }

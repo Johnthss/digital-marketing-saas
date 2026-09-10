@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContentAsset;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ContentLibraryController extends Controller
@@ -15,9 +16,11 @@ class ContentLibraryController extends Controller
 
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        $query = ContentAsset::where('agency_id', $agency->id);
+        $agency = DB::table('agencies')->where('id', $agencyId)->first();
+
+        $query = ContentAsset::where('agency_id', $agencyId);
 
         if ($request->filled('type')) {
             $query->where('type', $request->type);
@@ -35,7 +38,9 @@ class ContentLibraryController extends Controller
 
     public function create(Request $request)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
+
+        $agency = DB::table('agencies')->where('id', $agencyId)->first();
         $types = ContentAsset::ASSET_TYPES;
 
         return view('content.create', compact('agency', 'types'));
@@ -43,7 +48,7 @@ class ContentLibraryController extends Controller
 
     public function store(Request $request)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -55,7 +60,7 @@ class ContentLibraryController extends Controller
         ]);
 
         $asset = ContentAsset::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $agencyId,
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'type' => $validated['type'],
@@ -70,38 +75,45 @@ class ContentLibraryController extends Controller
             ->with('success', 'Content asset created successfully.');
     }
 
-    public function show(Request $request, ContentAsset $content)
+    public function show(Request $request, $assetId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($content->agency_id !== $agency->id) {
+        $agency = DB::table('agencies')->where('id', $agencyId)->first();
+
+        $asset = ContentAsset::findOrFail($assetId);
+
+        if ($asset->agency_id !== $agencyId) {
             abort(403);
         }
-
-        $asset = $content;
 
         return view('content.show', compact('agency', 'asset'));
     }
 
-    public function edit(Request $request, ContentAsset $content)
+    public function edit(Request $request, $assetId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($content->agency_id !== $agency->id) {
+        $agency = DB::table('agencies')->where('id', $agencyId)->first();
+
+        $asset = ContentAsset::findOrFail($assetId);
+
+        if ($asset->agency_id !== $agencyId) {
             abort(403);
         }
 
         $types = ContentAsset::ASSET_TYPES;
-        $asset = $content;
 
         return view('content.edit', compact('agency', 'asset', 'types'));
     }
 
-    public function update(Request $request, ContentAsset $content)
+    public function update(Request $request, $assetId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($content->agency_id !== $agency->id) {
+        $asset = ContentAsset::findOrFail($assetId);
+
+        if ($asset->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -113,21 +125,23 @@ class ContentLibraryController extends Controller
             'is_public' => 'boolean',
         ]);
 
-        $content->update($validated);
+        $asset->update($validated);
 
-        return redirect()->route('content.show', $content)
+        return redirect()->route('content.show', $asset)
             ->with('success', 'Content asset updated successfully.');
     }
 
-    public function destroy(Request $request, ContentAsset $content)
+    public function destroy(Request $request, $assetId)
     {
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
 
-        if ($content->agency_id !== $agency->id) {
+        $asset = ContentAsset::findOrFail($assetId);
+
+        if ($asset->agency_id !== $agencyId) {
             abort(403);
         }
 
-        $content->delete();
+        $asset->delete();
 
         return redirect()->route('content.index')
             ->with('success', 'Content asset deleted.');

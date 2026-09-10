@@ -8,7 +8,7 @@ app('router')->post('/telegram/webhook', [TelegramWebhookController::class, 'han
     ->name('telegram.webhook');
 
 // Webhook management (admin only)
-app('router')->prefix('telegram')->name('telegram.')->group(function () {
+app('router')->middleware(['auth', 'agency'])->prefix('telegram')->name('telegram.')->group(function () {
     app('router')->get('/setup', [TelegramWebhookController::class, 'setupWebhook'])->name('setup');
     app('router')->get('/info', [TelegramWebhookController::class, 'webhookInfo'])->name('info');
 });

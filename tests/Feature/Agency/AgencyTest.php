@@ -12,6 +12,7 @@ class AgencyTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $owner;
 
     protected function setUp(): void
@@ -27,7 +28,7 @@ class AgencyTest extends TestCase
     public function test_it_shows_settings(): void
     {
         $response = $this->actingAs($this->owner)->get(route('agency.settings'));
-        
+
         $response->assertOk();
         $response->assertViewIs('agency.settings');
     }
@@ -40,7 +41,7 @@ class AgencyTest extends TestCase
             'timezone' => 'America/New_York',
             'currency' => 'EUR',
         ]);
-        
+
         $response->assertRedirect(route('agency.settings'));
         $this->assertDatabaseHas('agencies', [
             'id' => $this->agency->id,
@@ -51,9 +52,9 @@ class AgencyTest extends TestCase
     public function test_it_shows_team(): void
     {
         User::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->owner)->get(route('agency.team'));
-        
+
         $response->assertOk();
         $response->assertViewIs('agency.team');
         $response->assertViewHas('members');
@@ -66,7 +67,7 @@ class AgencyTest extends TestCase
             'email' => 'member@example.com',
             'role' => 'member',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('users', [
             'email' => 'member@example.com',
@@ -80,11 +81,11 @@ class AgencyTest extends TestCase
             'agency_id' => $this->agency->id,
             'role' => 'member',
         ]);
-        
+
         $response = $this->actingAs($this->owner)->put(route('agency.team.role', $member), [
             'role' => 'manager',
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('users', [
             'id' => $member->id,
@@ -98,9 +99,9 @@ class AgencyTest extends TestCase
             'agency_id' => $this->agency->id,
             'role' => 'member',
         ]);
-        
+
         $response = $this->actingAs($this->owner)->delete(route('agency.team.remove', $member));
-        
+
         $response->assertRedirect();
         $this->assertSoftDeleted('users', ['id' => $member->id]);
     }
@@ -108,7 +109,7 @@ class AgencyTest extends TestCase
     public function test_it_prevents_self_removal(): void
     {
         $response = $this->actingAs($this->owner)->delete(route('agency.team.remove', $this->owner));
-        
+
         $response->assertRedirect();
         $response->assertSessionHas('error');
         $this->assertDatabaseHas('users', ['id' => $this->owner->id]);
@@ -117,7 +118,7 @@ class AgencyTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('agency.settings'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

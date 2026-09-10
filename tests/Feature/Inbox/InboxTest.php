@@ -13,6 +13,7 @@ class InboxTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class InboxTest extends TestCase
     public function test_it_lists_messages(): void
     {
         InboxMessage::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('inbox.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('inbox.index');
         $response->assertViewHas('messages');
@@ -36,7 +37,7 @@ class InboxTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('inbox.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

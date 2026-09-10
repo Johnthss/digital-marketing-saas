@@ -18,7 +18,7 @@ class EmailTemplateFactory extends Factory
             'slug' => fake()->slug(),
             'subject' => fake()->sentence(),
             'category' => fake()->randomElement(['welcome', 'notification', 'marketing', 'general']),
-            'html_content' => '<h1>' . fake()->sentence() . '</h1>',
+            'html_content' => '<h1>'.fake()->sentence().'</h1>',
             'plain_text_content' => fake()->paragraph(),
             'is_active' => true,
         ];

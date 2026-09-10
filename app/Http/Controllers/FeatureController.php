@@ -15,6 +15,7 @@ class FeatureController extends Controller
     public function index(Request $request)
     {
         $features = Feature::orderBy('name')->paginate(20);
+
         return view('features.index', compact('features'));
     }
 
@@ -25,13 +26,13 @@ class FeatureController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'code' => 'required|string|max:255|unique:features',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
-        Feature::create($request->validated());
+        Feature::create($validated);
 
         return redirect()->route('features.index')->with('success', 'Feature created.');
     }
@@ -48,12 +49,12 @@ class FeatureController extends Controller
 
     public function update(Request $request, Feature $feature)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
-        $feature->update($request->validated());
+        $feature->update($validated);
 
         return redirect()->route('features.index')->with('success', 'Feature updated.');
     }

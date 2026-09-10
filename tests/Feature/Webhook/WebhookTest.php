@@ -13,6 +13,7 @@ class WebhookTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class WebhookTest extends TestCase
     public function test_it_lists_webhooks(): void
     {
         Webhook::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('webhooks.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('webhooks.index');
         $response->assertViewHas('webhooks');
@@ -41,7 +42,7 @@ class WebhookTest extends TestCase
             'events' => ['post.published'],
             'is_active' => true,
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('webhooks', [
             'name' => 'Test Webhook',
@@ -52,16 +53,16 @@ class WebhookTest extends TestCase
     public function test_it_validates_webhook_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('webhooks.store'), []);
-        
+
         $response->assertSessionHasErrors(['name', 'url', 'events']);
     }
 
     public function test_it_shows_a_webhook(): void
     {
         $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('webhooks.show', $webhook));
-        
+
         $response->assertOk();
         $response->assertViewIs('webhooks.show');
         $response->assertViewHas('webhook');
@@ -71,18 +72,18 @@ class WebhookTest extends TestCase
     {
         $otherAgency = Agency::factory()->create();
         $webhook = Webhook::factory()->create(['agency_id' => $otherAgency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('webhooks.show', $webhook));
-        
+
         $response->assertForbidden();
     }
 
     public function test_it_edits_a_webhook(): void
     {
         $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('webhooks.edit', $webhook));
-        
+
         $response->assertOk();
         $response->assertViewIs('webhooks.edit');
     }
@@ -90,13 +91,13 @@ class WebhookTest extends TestCase
     public function test_it_updates_a_webhook(): void
     {
         $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->put(route('webhooks.update', $webhook), [
             'name' => 'Updated Webhook',
             'url' => 'https://example.com/updated',
             'events' => ['post.published'],
         ]);
-        
+
         $response->assertRedirect();
         $this->assertDatabaseHas('webhooks', [
             'id' => $webhook->id,
@@ -107,9 +108,9 @@ class WebhookTest extends TestCase
     public function test_it_deletes_a_webhook(): void
     {
         $webhook = Webhook::factory()->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->delete(route('webhooks.destroy', $webhook));
-        
+
         $response->assertRedirect(route('webhooks.index'));
         $this->assertSoftDeleted('webhooks', ['id' => $webhook->id]);
     }
@@ -117,7 +118,7 @@ class WebhookTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('webhooks.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

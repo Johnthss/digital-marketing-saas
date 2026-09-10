@@ -65,7 +65,6 @@ class AiGateway
             try {
                 $response = $provider->send($request);
 
-                // Calculate cost
                 $cost = $provider->calculateCost($response);
 
                 return new AiResponse(

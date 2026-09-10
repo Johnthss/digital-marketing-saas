@@ -13,6 +13,7 @@ class ActivityLogTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class ActivityLogTest extends TestCase
     public function test_it_lists_logs(): void
     {
         ActivityLog::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('activity.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('activity.index');
         $response->assertViewHas('logs');
@@ -36,7 +37,7 @@ class ActivityLogTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('activity.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

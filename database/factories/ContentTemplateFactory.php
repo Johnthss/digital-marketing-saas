@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Agency;
 use App\Models\ContentTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class ContentTemplateFactory extends Factory
 {
@@ -11,12 +13,19 @@ class ContentTemplateFactory extends Factory
 
     public function definition(): array
     {
+        $name = fake()->words(3, true);
+
         return [
-            'name' => fake()->words(3, true),
-            'slug' => fake()->slug(),
+            'agency_id' => Agency::factory(),
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.uniqid(),
+            'platform' => fake()->randomElement(['twitter', 'facebook', 'instagram', 'linkedin', 'tiktok', 'pinterest']),
+            'type' => fake()->randomElement(['post', 'story', 'reel', 'pin', 'article']),
             'template_content' => fake()->paragraph(),
-            'category' => fake()->randomElement(['email', 'social', 'blog', 'ad']),
-            'is_active' => true,
+            'variables' => null,
+            'hashtags' => null,
+            'usage_count' => 0,
+            'status' => 'active',
         ];
     }
 }

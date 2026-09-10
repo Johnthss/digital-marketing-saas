@@ -14,7 +14,7 @@ class LandingPageFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(3, true);
-        
+
         return [
             'agency_id' => Agency::factory(),
             'name' => $name,

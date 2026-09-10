@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AgencyController;
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\AiContentController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\LoginController;
@@ -13,16 +14,24 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContentLibraryController;
+use App\Http\Controllers\ContentTemplateController;
+use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Email\EmailCampaignController;
 use App\Http\Controllers\Email\EmailTemplateController;
+use App\Http\Controllers\FeatureController;
+use App\Http\Controllers\FeatureFlagController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\GdprController;
+use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\MediaLibraryController;
+use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
@@ -31,11 +40,12 @@ use App\Http\Controllers\WhiteLabelController;
 use App\Http\Controllers\WorkflowController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
-});
+Route::get('/', [PublicController::class, 'landing'])->name('public.landing');
+Route::get('/pricing', [PublicController::class, 'pricing'])->name('public.pricing');
+Route::get('/features', [PublicController::class, 'features'])->name('public.features');
+Route::get('/docs', [PublicController::class, 'docs'])->name('public.docs');
+Route::get('/blog', [PublicController::class, 'blog'])->name('public.blog');
+Route::get('/contact', [PublicController::class, 'contact'])->name('public.contact');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -65,10 +75,16 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::post('posts/{post}/publish', [SocialPostController::class, 'publish'])->name('posts.publish');
         Route::post('posts/{post}/retry', [SocialPostController::class, 'retry'])->name('posts.retry');
         Route::post('posts/{post}/score', [SocialPostController::class, 'score'])->name('posts.score');
+        Route::post('posts/{post}/agent-schedule', [SocialPostController::class, 'scheduleWithAgent'])->name('posts.agent-schedule');
+        Route::get('posts/{post}/agent-analyze', [SocialPostController::class, 'analyzeWithAgent'])->name('posts.agent-analyze');
+        Route::post('posts/{post}/agent-reply-suggestions', [SocialPostController::class, 'replySuggestionsWithAgent'])->name('posts.agent-reply-suggestions');
     });
 
     Route::resource('campaigns', CampaignController::class);
     Route::post('campaigns/{campaign}/status', [CampaignController::class, 'changeStatus'])->name('campaigns.status');
+    Route::post('campaigns/{campaign}/agent-optimize', [CampaignController::class, 'optimizeWithAgent'])->name('campaigns.agent-optimize');
+    Route::post('campaigns/{campaign}/agent-ab-test', [CampaignController::class, 'abTestWithAgent'])->name('campaigns.agent-ab-test');
+    Route::get('campaigns/{campaign}/agent-insights', [CampaignController::class, 'getAgentInsights'])->name('campaigns.agent-insights');
 
     Route::resource('clients', ClientController::class);
 
@@ -78,6 +94,17 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::post('/rewrite', [AiContentController::class, 'rewrite'])->name('rewrite');
         Route::post('/hashtags', [AiContentController::class, 'hashtags'])->name('hashtags');
         Route::post('/ideas', [AiContentController::class, 'ideas'])->name('ideas');
+    });
+
+    // Agent Management
+    Route::prefix('agents')->name('agents.')->group(function () {
+        Route::get('/', [AgentController::class, 'index'])->name('index');
+        Route::get('/stats', [AgentController::class, 'stats'])->name('stats');
+        Route::post('/dispatch', [AgentController::class, 'dispatch'])->name('dispatch');
+        Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/workflows', [AgentController::class, 'workflows'])->name('workflows');
+        Route::post('/run-workflow', [AgentController::class, 'runWorkflow'])->name('run-workflow');
+        Route::get('/{agentName}', [AgentController::class, 'agentDetail'])->name('show');
     });
 
     Route::get('workflows/builder', [WorkflowController::class, 'builder'])->name('workflows.builder');
@@ -139,6 +166,9 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::resource('reports', ReportController::class);
     Route::get('reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
     Route::post('reports/{report}/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    Route::post('reports/agent-generate', [ReportController::class, 'generateWithAgent'])->name('reports.agent-generate');
+    Route::get('reports/{report}/agent-recommendations', [ReportController::class, 'getAgentRecommendations'])->name('reports.agent-recommendations');
+    Route::post('reports/agent-schedule', [ReportController::class, 'scheduleAgentReport'])->name('reports.agent-schedule');
 
     // Email Campaigns
     Route::prefix('email')->name('email.')->group(function () {
@@ -169,6 +199,8 @@ Route::middleware(['auth', 'agency'])->group(function () {
     // White-Label
     Route::get('white-label', [WhiteLabelController::class, 'index'])->name('white-label.index');
     Route::post('white-label', [WhiteLabelController::class, 'update'])->name('white-label.update');
+    Route::post('white-label/domain', [WhiteLabelController::class, 'setupDomain'])->name('white-label.domain');
+    Route::post('white-label/validate-domain', [WhiteLabelController::class, 'validateDomain'])->name('white-label.validate-domain');
 
     // GDPR
     Route::get('privacy', [GdprController::class, 'index'])->name('gdpr.index');
@@ -178,6 +210,7 @@ Route::middleware(['auth', 'agency'])->group(function () {
 
     // Billing & Subscription
     Route::get('agency/billing', [BillingController::class, 'index'])->name('agency.billing');
+    Route::get('agency/billing/upgrade', [BillingController::class, 'upgrade'])->name('billing.upgrade');
     Route::get('agency/billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
     Route::get('agency/billing/success', [BillingController::class, 'success'])->name('billing.success');
     Route::get('agency/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
@@ -201,6 +234,19 @@ Route::middleware(['auth', 'agency'])->group(function () {
         return view('onboarding');
     })->name('onboarding');
 
+    // Onboarding Step Routes
+    Route::get('/onboarding/step1', [OnboardingController::class, 'step1_createAgency'])->name('onboarding.step1');
+    Route::post('/onboarding/step1', [OnboardingController::class, 'step1_createAgency']);
+    Route::get('/onboarding/step2', [OnboardingController::class, 'step2_connectSocial'])->name('onboarding.step2');
+    Route::post('/onboarding/step2', [OnboardingController::class, 'step2_connectSocial']);
+    Route::get('/onboarding/step3', [OnboardingController::class, 'step3_inviteTeam'])->name('onboarding.step3');
+    Route::post('/onboarding/step3', [OnboardingController::class, 'step3_inviteTeam']);
+    Route::get('/onboarding/step4', [OnboardingController::class, 'step4_createCampaign'])->name('onboarding.step4');
+    Route::post('/onboarding/step4', [OnboardingController::class, 'step4_createCampaign']);
+    Route::get('/onboarding/step5', [OnboardingController::class, 'step5_activateAI'])->name('onboarding.step5');
+    Route::post('/onboarding/step5', [OnboardingController::class, 'step5_activateAI']);
+    Route::post('/onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
+
     Route::prefix('agency')->name('agency.')->group(function () {
         Route::get('settings', [AgencyController::class, 'settings'])->name('settings');
         Route::put('settings', [AgencyController::class, 'updateSettings'])->name('settings.update');
@@ -208,9 +254,14 @@ Route::middleware(['auth', 'agency'])->group(function () {
         Route::post('team/invite', [AgencyController::class, 'inviteMember'])->name('team.invite');
         Route::put('team/{member}/role', [AgencyController::class, 'updateMemberRole'])->name('team.role');
         Route::delete('team/{member}', [AgencyController::class, 'removeMember'])->name('team.remove');
-        Route::get('billing', [AgencyController::class, 'billing'])->name('billing');
         Route::post('billing/upgrade', [AgencyController::class, 'upgrade'])->name('billing.upgrade');
     });
+
+    // Enterprise RBAC
+    Route::resource('roles', RoleController::class);
+    Route::post('roles/assign', [RoleController::class, 'assign'])->name('roles.assign');
+    Route::post('roles/remove', [RoleController::class, 'remove'])->name('roles.remove');
+    Route::get('roles/audit', [RoleController::class, 'auditTrail'])->name('roles.audit');
 
 });
 
@@ -226,3 +277,9 @@ require __DIR__.'/telegram.php';
 
 // API Documentation (public)
 require __DIR__.'/docs.php';
+
+// Health Checks (public)
+Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
+Route::get('/ready', [HealthCheckController::class, 'readiness'])->name('ready');
+Route::get('/live', [HealthCheckController::class, 'liveness'])->name('live');
+Route::get('/status', [HealthCheckController::class, 'status'])->name('status');

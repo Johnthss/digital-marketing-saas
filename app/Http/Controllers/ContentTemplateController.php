@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ContentTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ContentTemplateController extends Controller
@@ -13,10 +15,17 @@ class ContentTemplateController extends Controller
         $this->middleware(['auth', 'agency']);
     }
 
+    public function getAgencyId(Request $request): int
+    {
+        $userId = Auth::id() ?? $request->user()?->id ?? 0;
+
+        return (int) (DB::table('users')->where('id', $userId)->value('agency_id') ?? 0);
+    }
+
     public function index(Request $request)
     {
-        $agency = $request->user()->agency;
-        $query = ContentTemplate::where('agency_id', $agency->id);
+        $agencyId = $this->getAgencyId($request);
+        $query = ContentTemplate::where('agency_id', $agencyId);
 
         if ($request->filled('platform')) {
             $query->where('platform', $request->platform);
@@ -52,9 +61,8 @@ class ContentTemplateController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
-        $agency = $request->user()->agency;
         $template = ContentTemplate::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $this->getAgencyId($request),
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             ...$validated,
         ]);
@@ -63,33 +71,42 @@ class ContentTemplateController extends Controller
             ->with('success', 'Template created.');
     }
 
-    public function show(Request $request, ContentTemplate $template)
+    public function show(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($template->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbTemplate = DB::table('content_templates')->where('id', $id)->first();
+
+        if (! $dbTemplate || (int) $dbTemplate->agency_id !== $agencyId) {
             abort(403);
         }
+
+        $template = ContentTemplate::find($id);
 
         return view('content-templates.show', compact('template'));
     }
 
-    public function edit(Request $request, ContentTemplate $template)
+    public function edit(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($template->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbTemplate = DB::table('content_templates')->where('id', $id)->first();
+
+        if (! $dbTemplate || (int) $dbTemplate->agency_id !== $agencyId) {
             abort(403);
         }
 
+        $template = ContentTemplate::find($id);
         $platforms = ContentTemplate::PLATFORMS ?? ['twitter', 'facebook', 'instagram', 'linkedin', 'tiktok', 'pinterest'];
         $types = ContentTemplate::TYPES ?? ['post', 'story', 'reel', 'pin', 'article'];
 
         return view('content-templates.edit', compact('template', 'platforms', 'types'));
     }
 
-    public function update(Request $request, ContentTemplate $template)
+    public function update(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($template->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbTemplate = DB::table('content_templates')->where('id', $id)->first();
+
+        if (! $dbTemplate || (int) $dbTemplate->agency_id !== $agencyId) {
             abort(403);
         }
 
@@ -103,20 +120,23 @@ class ContentTemplateController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
-        $template->update($validated);
+        ContentTemplate::where('id', $id)->update($validated);
 
-        return redirect()->route('content-templates.show', $template)
+        return redirect()->route('content-templates.show', $id)
             ->with('success', 'Template updated.');
     }
 
-    public function destroy(Request $request, ContentTemplate $template)
+    public function destroy(Request $request, $id)
     {
-        $agency = $request->user()->agency;
-        if ($template->agency_id !== $agency->id) {
+        $agencyId = $this->getAgencyId($request);
+        $dbTemplate = DB::table('content_templates')->where('id', $id)->first();
+
+        if (! $dbTemplate || (int) $dbTemplate->agency_id !== $agencyId) {
             abort(403);
         }
 
-        $template->delete();
+        $template = ContentTemplate::findOrFail($id);
+        $template->forceDelete();
 
         return redirect()->route('content-templates.index')
             ->with('success', 'Template deleted.');

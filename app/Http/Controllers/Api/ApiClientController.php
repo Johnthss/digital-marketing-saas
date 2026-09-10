@@ -17,8 +17,8 @@ class ApiClientController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $query = Client::where('agency_id', $agency->id);
+        $agencyId = $request->user()->agency_id;
+        $query = Client::where('agency_id', $agencyId);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -41,9 +41,9 @@ class ApiClientController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $agency = $request->user()->agency;
+        $agencyId = $request->user()->agency_id;
         $client = Client::create([
-            'agency_id' => $agency->id,
+            'agency_id' => $agencyId,
             ...$data,
         ]);
 
@@ -87,8 +87,8 @@ class ApiClientController extends Controller
 
     private function authorizeAccess(Request $request, Client $client): void
     {
-        $agency = $request->user()->agency;
-        if ($client->agency_id !== $agency->id) {
+        $agencyId = $request->user()->agency_id;
+        if ($client->agency_id !== $agencyId) {
             abort(404);
         }
     }

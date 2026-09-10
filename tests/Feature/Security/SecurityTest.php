@@ -3,6 +3,7 @@
 namespace Tests\Feature\Security;
 
 use App\Models\Agency;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -30,7 +31,7 @@ class SecurityTest extends TestCase
         $agency1 = Agency::factory()->create();
         $agency2 = Agency::factory()->create();
         $user1 = User::factory()->create(['agency_id' => $agency1->id]);
-        $client = \App\Models\Client::factory()->create(['agency_id' => $agency2->id]);
+        $client = Client::factory()->create(['agency_id' => $agency2->id]);
         $response = $this->actingAs($user1)->get(route('clients.show', $client));
         $response->assertForbidden();
     }

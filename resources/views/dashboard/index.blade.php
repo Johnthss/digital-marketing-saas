@@ -154,6 +154,42 @@
 
     <!-- Quick Actions & Upcoming -->
     <div class="col-md-4">
+        <!-- Agent Health Widget -->
+        @if(isset($agentHealthSummary) && $agentHealthSummary['total_agents'] > 0)
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-robot mr-2"></i>AI Agents</h3>
+                <div class="card-tools">
+                    <a href="{{ route('agents.dashboard') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>System Health:</span>
+                    <span class="badge badge-{{ $agentHealthSummary['overall_status'] === 'healthy' ? 'success' : ($agentHealthSummary['overall_status'] === 'degraded' ? 'warning' : 'danger') }}">
+                        {{ $agentHealthSummary['system_score'] }}%
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>Healthy Agents:</span>
+                    <span class="text-success font-weight-bold">{{ $agentHealthSummary['healthy_agents'] }}/{{ $agentHealthSummary['total_agents'] }}</span>
+                </div>
+                @if(!empty($recentAgentActivity) && $recentAgentActivity->count() > 0)
+                <hr>
+                <h6 class="text-muted">Recent Agent Activity</h6>
+                <ul class="list-unstyled mb-0">
+                    @foreach($recentAgentActivity as $activity)
+                    <li class="d-flex justify-content-between align-items-center mb-1">
+                        <small>{{ ucwords(str_replace('_', ' ', $activity->agent_name ?? 'Agent')) }}</small>
+                        <small class="text-muted">{{ $activity->executed_at ? \Carbon\Carbon::parse($activity->executed_at)->diffForHumans() : '' }}</small>
+                    </li>
+                    @endforeach
+                </ul>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Quick Actions</h3>

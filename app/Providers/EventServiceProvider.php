@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Events\AgentWorkflowCompleted;
 use App\Events\CampaignStatusChanged;
 use App\Events\ClientCreated;
 use App\Events\InvoicePaid;
@@ -9,8 +10,13 @@ use App\Events\PostFailed;
 use App\Events\PostPublished;
 use App\Events\PostScheduled;
 use App\Events\SubscriptionUpgraded;
+use App\Listeners\Agent\CampaignStatusChangedAgentListener;
+use App\Listeners\Agent\ClientCreatedAgentListener;
+use App\Listeners\Agent\PostPublishedAgentListener;
+use App\Listeners\Agent\SubscriptionUpgradedAgentListener;
 use App\Listeners\Billing\LogInvoiceActivity;
 use App\Listeners\Billing\LogSubscriptionUpgrade;
+use App\Listeners\SendWorkflowNotificationListener;
 use App\Listeners\Social\ClearPostCache;
 use App\Listeners\Social\LogPostActivity;
 use App\Listeners\Social\SendPostNotification;
@@ -23,6 +29,7 @@ class EventServiceProvider extends ServiceProvider
             ClearPostCache::class.'@handlePostPublished',
             LogPostActivity::class.'@handlePostPublished',
             SendPostNotification::class.'@handlePostPublished',
+            PostPublishedAgentListener::class,
         ],
         PostScheduled::class => [
             ClearPostCache::class.'@handlePostScheduled',
@@ -34,16 +41,20 @@ class EventServiceProvider extends ServiceProvider
             SendPostNotification::class.'@handlePostFailed',
         ],
         CampaignStatusChanged::class => [
-            // LogCampaignActivity
+            CampaignStatusChangedAgentListener::class,
         ],
         ClientCreated::class => [
-            // LogClientActivity
+            ClientCreatedAgentListener::class,
         ],
         InvoicePaid::class => [
             LogInvoiceActivity::class.'@handle',
         ],
         SubscriptionUpgraded::class => [
             LogSubscriptionUpgrade::class.'@handle',
+            SubscriptionUpgradedAgentListener::class,
+        ],
+        AgentWorkflowCompleted::class => [
+            SendWorkflowNotificationListener::class,
         ],
     ];
 

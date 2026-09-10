@@ -13,6 +13,7 @@ class MediaLibraryTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -25,9 +26,9 @@ class MediaLibraryTest extends TestCase
     public function test_it_lists_assets(): void
     {
         MediaAsset::factory()->count(3)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->get(route('media.index'));
-        
+
         $response->assertOk();
         $response->assertViewIs('media.index');
         $response->assertViewHas('assets');
@@ -36,7 +37,7 @@ class MediaLibraryTest extends TestCase
     public function test_it_shows_create_form(): void
     {
         $response = $this->actingAs($this->user)->get(route('media.create'));
-        
+
         $response->assertOk();
         $response->assertViewIs('media.create');
     }
@@ -44,7 +45,7 @@ class MediaLibraryTest extends TestCase
     public function test_it_requires_auth(): void
     {
         $response = $this->get(route('media.index'));
-        
+
         $response->assertRedirect(route('login'));
     }
 }

@@ -83,7 +83,7 @@ class User extends Authenticatable
             return true;
         }
 
-        return parent::hasPermissionTo($permission);
+        return $this->checkPermissionAccess($permission);
     }
 
     public function hasAnyPermission(array $permissions): bool
@@ -92,7 +92,39 @@ class User extends Authenticatable
             return true;
         }
 
-        return parent::hasAnyPermission($permissions);
+        return $this->checkAnyPermissionAccess($permissions);
+    }
+
+    /**
+     * Check permission using Spatie's trait logic.
+     */
+    private function checkPermissionAccess($permission): bool
+    {
+        // Use the Spatie trait's getAllPermissions to check
+        $permissions = $this->getAllPermissions();
+        $permissionClass = $this->getPermissionClass();
+
+        if (is_string($permission)) {
+            $permission = $permissions->firstWhere('name', $permission);
+        } elseif (is_int($permission)) {
+            $permission = $permissions->firstWhere('id', $permission);
+        }
+
+        return (bool) $permission;
+    }
+
+    /**
+     * Check if any permission matches.
+     */
+    private function checkAnyPermissionAccess(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->checkPermissionAccess($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function canAccessAgency(Agency $agency): bool
@@ -107,16 +139,5 @@ class User extends Authenticatable
         }
 
         return false;
-    }
-
-    public static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function ($user) {
-            if (! $user->agency_id && ! $user->role) {
-                $user->role = 'owner';
-            }
-        });
     }
 }

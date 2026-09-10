@@ -12,6 +12,7 @@ class ApiAgencyTest extends TestCase
     use RefreshDatabase;
 
     private Agency $agency;
+
     private User $user;
 
     protected function setUp(): void
@@ -24,7 +25,7 @@ class ApiAgencyTest extends TestCase
     public function test_it_shows_settings(): void
     {
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/settings');
-        
+
         $response->assertOk();
     }
 
@@ -34,7 +35,7 @@ class ApiAgencyTest extends TestCase
             'name' => 'Updated Agency',
             'website' => 'https://example.com',
         ]);
-        
+
         $response->assertOk();
         $this->assertDatabaseHas('agencies', ['id' => $this->agency->id, 'name' => 'Updated Agency']);
     }
@@ -42,23 +43,23 @@ class ApiAgencyTest extends TestCase
     public function test_it_shows_team(): void
     {
         User::factory()->count(2)->create(['agency_id' => $this->agency->id]);
-        
+
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/team');
-        
+
         $response->assertOk();
     }
 
     public function test_it_shows_billing(): void
     {
         $response = $this->actingAs($this->user)->getJson('/api/v1/agency/billing');
-        
+
         $response->assertOk();
     }
 
     public function test_it_requires_auth(): void
     {
         $response = $this->getJson('/api/v1/agency/settings');
-        
+
         $response->assertUnauthorized();
     }
 }

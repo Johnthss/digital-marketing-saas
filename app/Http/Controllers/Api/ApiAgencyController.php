@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AgencyResource;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\UserResource;
+use App\Models\Agency;
 use App\Models\Invoice;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,7 +21,7 @@ class ApiAgencyController extends Controller
 
     public function settings(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
+        $agency = Agency::find($request->user()->agency_id);
 
         return (new AgencyResource($agency))->response();
     }
@@ -33,7 +35,7 @@ class ApiAgencyController extends Controller
             'currency' => 'nullable|string|size:3',
         ]);
 
-        $agency = $request->user()->agency;
+        $agency = Agency::find($request->user()->agency_id);
         $agency->update($data);
 
         return (new AgencyResource($agency))->response();
@@ -41,16 +43,16 @@ class ApiAgencyController extends Controller
 
     public function team(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $users = $agency->users()->orderBy('created_at', 'desc')->get();
+        $agencyId = $request->user()->agency_id;
+        $users = User::where('agency_id', $agencyId)->orderBy('created_at', 'desc')->get();
 
         return UserResource::collection($users)->response();
     }
 
     public function billing(Request $request): JsonResponse
     {
-        $agency = $request->user()->agency;
-        $invoices = Invoice::where('agency_id', $agency->id)
+        $agencyId = $request->user()->agency_id;
+        $invoices = Invoice::where('agency_id', $agencyId)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
