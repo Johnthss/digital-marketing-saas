@@ -14,33 +14,55 @@ class GroqProviderTest extends TestCase
         config(['platform.ai.providers.groq.api_key' => 'gsk-test-key']);
     }
 
-    public function test_groq_provider_is_available_with_key(): void
+    public function test_groq_provider_returns_correct_name(): void
     {
         $provider = new GroqProvider();
 
-        $this->assertTrue($provider->isAvailable());
         $this->assertEquals('groq', $provider->getName());
         $this->assertEquals('Groq', $provider->getDisplayName());
     }
 
-    public function test_groq_provider_returns_supported_models(): void
+    public function test_groq_provider_is_available_with_key(): void
     {
-        $provider = new GroqProvider();
-        $models = $provider->getSupportedModels();
+        config(['platform.ai.providers.groq.api_key' => 'gsk-test-key']);
 
-        $this->assertContains('llama-3.1-70b', $models);
-        $this->assertContains('llama-3.1-8b', $models);
-        $this->assertContains('mixtral-8x7b', $models);
-        $this->assertContains('gemma2-9b', $models);
+        $provider = new GroqProvider();
+
+        $this->assertTrue($provider->isAvailable());
     }
 
-    public function test_groq_provider_calculates_cost_correctly(): void
+    public function test_groq_provider_is_not_available_without_key(): void
     {
+        config(['platform.ai.providers.groq.api_key' => '']);
+
         $provider = new GroqProvider();
 
+        $this->assertFalse($provider->isAvailable());
+    }
+
+    public function test_groq_provider_returns_supported_models(): void
+    {
+        config(['platform.ai.providers.groq.api_key' => 'gsk-test-key']);
+        $provider = new GroqProvider();
+
+        $models = $provider->getSupportedModels();
+
+        $this->assertContains('openai/gpt-oss-20b', $models);
+        $this->assertContains('openai/gpt-oss-120b', $models);
+        $this->assertContains('qwen/qwen3.8-27b', $models);
+        $this->assertContains('groq/compound-mini', $models);
+        $this->assertCount(7, $models);
+    }
+
+    public function test_groq_provider_calculates_zero_cost(): void
+    {
+        config(['platform.ai.providers.groq.api_key' => 'gsk-test-key']);
+        $provider = new GroqProvider();
+
+        // Groq models on free tier have $0 cost
         $response = new AiResponse(
-            content: 'Fast LLM inference',
-            model: 'llama-3.1-70b',
+            content: 'Test content',
+            model: 'openai/gpt-oss-20b',
             provider: 'groq',
             promptTokens: 1000,
             completionTokens: 500,
@@ -50,8 +72,7 @@ class GroqProviderTest extends TestCase
 
         $cost = $provider->calculateCost($response);
 
-        // llama-3.1-70b: $0.59/1M input, $0.79/1M output
-        // (1000/1000000 * 0.59) + (500/1000000 * 0.79) = 0.00059 + 0.000395 = 0.000985
-        $this->assertEquals(0.000985, $cost);
+        // Groq free tier is $0
+        $this->assertEquals(0.0, $cost);
     }
 }

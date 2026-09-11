@@ -123,8 +123,8 @@ return [
             'groq' => [
                 'api_key' => env('AI_GROQ_API_KEY'),
                 'api_base_url' => env('AI_GROQ_API_BASE_URL', 'https://api.groq.com/openai/v1'),
-                'model' => env('AI_GROQ_MODEL', 'llama-3.1-70b'),
-                'fallback_model' => 'llama-3.1-8b',
+                'model' => env('AI_GROQ_MODEL', 'openai/gpt-oss-20b'),
+                'fallback_model' => 'qwen/qwen3.8-27b',
                 'temperature' => 0.7,
                 'max_tokens' => 2048,
             ],

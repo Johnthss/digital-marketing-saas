@@ -18,17 +18,20 @@ class GroqProvider implements AiProviderInterface
     protected string $defaultModel;
 
     protected array $pricing = [
-        'llama-3.1-70b' => ['input' => 0.59, 'output' => 0.79],
-        'llama-3.1-8b' => ['input' => 0.05, 'output' => 0.08],
-        'mixtral-8x7b' => ['input' => 0.24, 'output' => 0.24],
-        'gemma2-9b' => ['input' => 0.20, 'output' => 0.20],
+        'openai/gpt-oss-120b' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'openai/gpt-oss-20b' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'qwen/qwen3.8-27b' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'qwen/qwen3.6-27b' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'groq/compound-mini' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'groq/compound' => ['input' => 0.000000075, 'output' => 0.0000003],
+        'allam-2-7b' => ['input' => 0.000000075, 'output' => 0.0000003],
     ];
 
     public function __construct()
     {
         $this->apiKey = config('platform.ai.providers.groq.api_key');
         $this->apiBaseUrl = config('platform.ai.providers.groq.api_base_url', 'https://api.groq.com/openai/v1');
-        $this->defaultModel = config('platform.ai.providers.groq.model', 'llama-3.1-70b');
+        $this->defaultModel = config('platform.ai.providers.groq.model', 'openai/gpt-oss-20b');
     }
 
     public function send(AiRequest $request): AiResponse
@@ -38,6 +41,7 @@ class GroqProvider implements AiProviderInterface
         try {
             $response = Http::withToken($this->apiKey)
                 ->timeout(30)
+                ->withoutVerifying()
                 ->post("{$this->apiBaseUrl}/chat/completions", [
                     'model' => $model,
                     'messages' => [
@@ -61,6 +65,7 @@ class GroqProvider implements AiProviderInterface
                 promptTokens: $data['usage']['prompt_tokens'] ?? 0,
                 completionTokens: $data['usage']['completion_tokens'] ?? 0,
                 totalTokens: $data['usage']['total_tokens'] ?? 0,
+                costUsd: 0.0,
                 finishReason: match ($data['choices'][0]['finish_reason'] ?? '') {
                     'stop' => FinishReason::STOP->value,
                     'length' => FinishReason::LENGTH->value,
@@ -86,12 +91,20 @@ class GroqProvider implements AiProviderInterface
 
     public function isAvailable(): bool
     {
-        return ! empty($this->apiKey);
+        return !empty($this->apiKey);
     }
 
     public function getSupportedModels(): array
     {
-        return ['llama-3.1-70b', 'llama-3.1-8b', 'mixtral-8x7b', 'gemma2-9b'];
+        return [
+            'openai/gpt-oss-20b',
+            'openai/gpt-oss-120b',
+            'qwen/qwen3.8-27b',
+            'qwen/qwen3.6-27b',
+            'groq/compound-mini',
+            'groq/compound',
+            'allam-2-7b',
+        ];
     }
 
     public function getDefaultModel(): string
@@ -102,7 +115,7 @@ class GroqProvider implements AiProviderInterface
     public function calculateCost(AiResponse $response): float
     {
         $model = $response->model;
-        $pricing = $this->pricing[$model] ?? $this->pricing['llama-3.1-70b'];
+        $pricing = $this->pricing[$model] ?? $this->pricing['openai/gpt-oss-20b'];
         $inputCost = ($response->promptTokens / 1_000_000) * $pricing['input'];
         $outputCost = ($response->completionTokens / 1_000_000) * $pricing['output'];
 
