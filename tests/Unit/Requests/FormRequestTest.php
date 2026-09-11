@@ -10,14 +10,14 @@ class FormRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function store_social_post_request_has_rules(): void
     {
         $request = new StoreSocialPostRequest;
         $this->assertArrayHasKey('content', $request->rules());
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function store_social_post_request_has_messages(): void
     {
         $request = new StoreSocialPostRequest;

@@ -12,7 +12,7 @@ class NotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function quota_warning_notification_can_be_created(): void
     {
         $agency = Agency::factory()->create();
@@ -20,7 +20,7 @@ class NotificationTest extends TestCase
         $this->assertNotNull($notification);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function notification_has_correct_via_channels(): void
     {
         $agency = Agency::factory()->create();

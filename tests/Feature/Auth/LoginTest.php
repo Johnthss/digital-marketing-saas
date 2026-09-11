@@ -11,14 +11,14 @@ class LoginTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_shows_login_form(): void
     {
         $response = $this->get(route('login'));
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_logs_in_user(): void
     {
         $agency = Agency::factory()->create();
@@ -34,14 +34,14 @@ class LoginTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_validates_login(): void
     {
         $response = $this->post(route('login'), []);
         $response->assertSessionHasErrors(['email', 'password']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_logs_out_user(): void
     {
         $user = User::factory()->create();

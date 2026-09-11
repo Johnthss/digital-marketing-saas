@@ -23,7 +23,7 @@ class InvoiceFeatureTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_lists_invoices(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,7 +31,7 @@ class InvoiceFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_creates_invoice(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), [
@@ -43,7 +43,7 @@ class InvoiceFeatureTest extends TestCase
         $this->assertDatabaseHas('invoices', ['client_name' => 'Test Client']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_shows_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
@@ -51,7 +51,7 @@ class InvoiceFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_updates_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
@@ -61,7 +61,7 @@ class InvoiceFeatureTest extends TestCase
         $response->assertRedirect();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_deletes_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
@@ -70,7 +70,7 @@ class InvoiceFeatureTest extends TestCase
         $this->assertSoftDeleted('invoices', ['id' => $invoice->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_marks_invoice_paid(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);
@@ -79,7 +79,7 @@ class InvoiceFeatureTest extends TestCase
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'status' => 'paid']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_unauthorized_access(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -88,7 +88,7 @@ class InvoiceFeatureTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_filters_by_status(): void
     {
         Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);

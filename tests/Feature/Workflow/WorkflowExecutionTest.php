@@ -25,7 +25,7 @@ class WorkflowExecutionTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_executes_a_simple_notification_workflow(): void
     {
         $workflow = Workflow::factory()->create([
@@ -51,7 +51,7 @@ class WorkflowExecutionTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_executes_ai_generate_workflow(): void
     {
         $workflow = Workflow::factory()->create([
@@ -72,7 +72,7 @@ class WorkflowExecutionTest extends TestCase
             ->assertJson(['success' => true]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_executes_webhook_call_workflow(): void
     {
         $workflow = Workflow::factory()->create([
@@ -93,7 +93,7 @@ class WorkflowExecutionTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_skips_when_conditions_not_met(): void
     {
         $workflow = Workflow::factory()->create([
@@ -119,7 +119,7 @@ class WorkflowExecutionTest extends TestCase
         $this->assertArrayHasKey('skipped', $execution->action_results);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_records_failed_execution(): void
     {
         $workflow = Workflow::factory()->create([
@@ -144,7 +144,7 @@ class WorkflowExecutionTest extends TestCase
         $this->assertEquals('failed', $execution->action_results[0]['status']); // Action failed
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_unauthorized_execution(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -163,7 +163,7 @@ class WorkflowExecutionTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_stores_workflow_from_builder_and_executes(): void
     {
         $response = $this->actingAs($this->user)
@@ -219,7 +219,7 @@ class WorkflowExecutionTest extends TestCase
             ->assertJson(['success' => true]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_updates_existing_workflow_from_builder(): void
     {
         $workflow = Workflow::factory()->create([
@@ -271,7 +271,7 @@ class WorkflowExecutionTest extends TestCase
         $this->assertEquals('auto_reply', $workflow->actions[0]['type']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_loads_existing_workflow_into_builder(): void
     {
         $workflow = Workflow::factory()->create([
@@ -291,7 +291,7 @@ class WorkflowExecutionTest extends TestCase
         $response->assertOk();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_executes_loop_action(): void
     {
         $workflow = Workflow::factory()->create([

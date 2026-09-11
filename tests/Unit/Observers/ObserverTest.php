@@ -11,7 +11,7 @@ class ObserverTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function social_post_observer_clears_cache_on_create(): void
     {
         $agency = Agency::factory()->create();
@@ -19,7 +19,7 @@ class ObserverTest extends TestCase
         $this->assertNotNull($post);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function social_post_observer_clears_cache_on_update(): void
     {
         $post = SocialPost::factory()->create();
@@ -27,7 +27,7 @@ class ObserverTest extends TestCase
         $this->assertEquals('published', $post->fresh()->status);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function social_post_observer_clears_cache_on_delete(): void
     {
         $post = SocialPost::factory()->create();

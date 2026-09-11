@@ -11,14 +11,14 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_shows_login_page(): void
     {
         $response = $this->get(route('login'));
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_authenticates_user(): void
     {
         $agency = Agency::factory()->create();
@@ -30,7 +30,7 @@ class AuthTest extends TestCase
         $response->assertRedirect(route('dashboard'));
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_rejects_invalid_credentials(): void
     {
         $response = $this->post(route('login'), [
@@ -40,7 +40,7 @@ class AuthTest extends TestCase
         $response->assertSessionHasErrors();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_logs_out_user(): void
     {
         $agency = Agency::factory()->create();
@@ -49,14 +49,14 @@ class AuthTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_shows_registration_page(): void
     {
         $response = $this->get(route('register'));
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_registers_new_user(): void
     {
         $response = $this->post(route('register'), [
@@ -71,7 +71,7 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('agencies', ['name' => 'Test Agency']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_validates_registration(): void
     {
         $response = $this->post(route('register'), []);

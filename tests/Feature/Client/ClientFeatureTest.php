@@ -23,7 +23,7 @@ class ClientFeatureTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_lists_clients(): void
     {
         Client::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,7 +31,7 @@ class ClientFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_creates_client(): void
     {
         $response = $this->actingAs($this->user)->post(route('clients.store'), [
@@ -43,14 +43,14 @@ class ClientFeatureTest extends TestCase
         $this->assertDatabaseHas('clients', ['name' => 'Test Client']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_validates_client_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('clients.store'), []);
         $response->assertSessionHasErrors();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_shows_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
@@ -58,7 +58,7 @@ class ClientFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_updates_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
@@ -68,7 +68,7 @@ class ClientFeatureTest extends TestCase
         $response->assertRedirect();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_deletes_client(): void
     {
         $client = Client::factory()->create(['agency_id' => $this->agency->id]);
@@ -77,7 +77,7 @@ class ClientFeatureTest extends TestCase
         $this->assertSoftDeleted('clients', ['id' => $client->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_unauthorized_access(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -86,7 +86,7 @@ class ClientFeatureTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_searches_clients(): void
     {
         Client::factory()->create(['agency_id' => $this->agency->id, 'name' => 'ABC Company']);

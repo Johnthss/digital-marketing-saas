@@ -12,7 +12,7 @@ class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_xss_in_forms(): void
     {
         $agency = Agency::factory()->create();
@@ -25,7 +25,7 @@ class SecurityTest extends TestCase
         $this->assertDatabaseMissing('clients', ['name' => '<script>alert("xss")</script>']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_cross_tenant_access(): void
     {
         $agency1 = Agency::factory()->create();
@@ -36,7 +36,7 @@ class SecurityTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_requires_csrf_for_forms(): void
     {
         $agency = Agency::factory()->create();
@@ -49,7 +49,7 @@ class SecurityTest extends TestCase
         $response->assertStatus(419);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_hashes_passwords(): void
     {
         $user = User::factory()->create(['password' => 'secret123']);

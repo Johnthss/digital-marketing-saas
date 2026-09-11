@@ -10,7 +10,7 @@ class QueueTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_dispatch_jobs(): void
     {
         Queue::fake();
@@ -18,7 +18,7 @@ class QueueTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_dispatch_jobs_sync(): void
     {
         $this->assertTrue(true);

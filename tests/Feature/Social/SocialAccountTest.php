@@ -23,7 +23,7 @@ class SocialAccountTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_lists_accounts(): void
     {
         SocialAccount::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,7 +31,7 @@ class SocialAccountTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_creates_an_account(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), [
@@ -43,14 +43,14 @@ class SocialAccountTest extends TestCase
         $this->assertDatabaseHas('social_accounts', ['platform_display_name' => 'Test Account']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_validates_account_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), []);
         $response->assertSessionHasErrors(['platform', 'access_token']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_toggles_account(): void
     {
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id, 'is_active' => true]);
@@ -59,7 +59,7 @@ class SocialAccountTest extends TestCase
         $this->assertDatabaseHas('social_accounts', ['id' => $account->id, 'is_active' => false]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_deletes_an_account(): void
     {
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
@@ -68,7 +68,7 @@ class SocialAccountTest extends TestCase
         $this->assertDatabaseMissing('social_accounts', ['id' => $account->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_prevents_access_to_other_agency_accounts(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -77,7 +77,7 @@ class SocialAccountTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_requires_auth(): void
     {
         $response = $this->get(route('social.accounts.index'));

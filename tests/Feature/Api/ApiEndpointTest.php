@@ -22,7 +22,7 @@ class ApiEndpointTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_health_status(): void
     {
         $response = $this->getJson('/api/health');
@@ -30,7 +30,7 @@ class ApiEndpointTest extends TestCase
         $response->assertJson(['status' => 'ok']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_version_info(): void
     {
         $response = $this->getJson('/api/version');
@@ -38,35 +38,35 @@ class ApiEndpointTest extends TestCase
         $response->assertJsonStructure(['version', 'name']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_requires_auth_for_protected_endpoints(): void
     {
         $response = $this->getJson('/api/v1/social-posts');
         $response->assertUnauthorized();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_404_for_unknown_endpoints(): void
     {
         $response = $this->getJson('/api/unknown');
         $response->assertNotFound();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_openapi_docs(): void
     {
         $response = $this->get('/api/docs');
         $response->assertOk();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_openapi_yaml(): void
     {
         $response = $this->get('/api/docs/openapi.yaml');
         $response->assertOk();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_returns_openapi_json(): void
     {
         $response = $this->get('/api/docs/openapi.json');

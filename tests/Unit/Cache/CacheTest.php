@@ -12,7 +12,7 @@ class CacheTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_caches_dashboard_stats(): void
     {
         $agency = Agency::factory()->create();
@@ -22,7 +22,7 @@ class CacheTest extends TestCase
         $this->assertEquals($stats1, $stats2);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_clears_cache_on_model_update(): void
     {
         $agency = Agency::factory()->create();
@@ -32,7 +32,7 @@ class CacheTest extends TestCase
         $this->assertNull(Cache::get("test:{$agency->id}"));
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_stores_and_retrieves_cache(): void
     {
         Cache::put('test_key', 'test_value', 60);
