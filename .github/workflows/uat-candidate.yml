@@ -1,0 +1,124 @@
+name: Candidate UAT
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: candidate-uat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, xml, ctype, bcmath, curl, intl, pdo_sqlite, sqlite3, zip
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Prepare isolated test environment
+        run: |
+          mkdir -p uat-results
+          cp .env.example .env
+          php -v | tee uat-results/php.txt
+          composer --version | tee uat-results/composer.txt
+      - name: PHP syntax
+        id: syntax
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          git ls-files -z '*.php' ':!:resources/views/*' | xargs -0 -n1 php -l 2>&1 | tee uat-results/syntax.txt
+      - name: Locked Composer dependencies
+        id: deps
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          composer install --no-interaction --prefer-dist --no-scripts 2>&1 | tee uat-results/dependencies.txt
+      - name: Application bootstrap
+        id: boot
+        if: steps.deps.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          php artisan key:generate --no-interaction
+          php artisan package:discover --ansi 2>&1 | tee uat-results/bootstrap.txt
+          php artisan route:list --json > uat-results/routes.json
+      - name: Frontend build
+        id: frontend
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm ci --ignore-scripts 2>&1 | tee uat-results/npm-install.txt
+          npm run build 2>&1 | tee uat-results/frontend.txt
+      - name: Automated unit and feature acceptance checks
+        id: tests
+        if: steps.boot.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          vendor/bin/phpunit --log-junit uat-results/junit.xml 2>&1 | tee uat-results/tests.txt
+      - name: Composer vulnerability audit
+        id: audit
+        if: steps.deps.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          composer audit --locked --no-interaction 2>&1 | tee uat-results/composer-audit.txt
+      - name: Repository-required Boost setup (disposable runner only)
+        id: boost
+        if: steps.deps.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          composer require laravel/boost --dev --no-interaction 2>&1 | tee uat-results/boost-dependencies.txt
+          php artisan boost:install --no-interaction 2>&1 | tee uat-results/boost-install.txt
+          cp AGENTS.md uat-results/AGENTS.generated.md
+      - name: Preserve evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-uat-${{ github.sha }}
+          path: uat-results/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Fail closed on incomplete or failed checks
+        if: always()
+        env:
+          SYNTAX: ${{ steps.syntax.outcome }}
+          DEPS: ${{ steps.deps.outcome }}
+          BOOT: ${{ steps.boot.outcome }}
+          FRONTEND: ${{ steps.frontend.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          BOOST: ${{ steps.boost.outcome }}
+        run: |
+          printf '| Check | Outcome |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
+          failed=0
+          for check in SYNTAX DEPS BOOT FRONTEND TESTS AUDIT BOOST; do
+            printf '| %s | %s |\n' "$check" "${!check}" >> "$GITHUB_STEP_SUMMARY"
+            if [ "${!check}" != success ]; then failed=1; fi
+          done
+          printf '\nLive social publishing, paid AI, email delivery, payments, and human acceptance are NOT tested by this workflow.\n' >> "$GITHUB_STEP_SUMMARY"
+          exit "$failed"
