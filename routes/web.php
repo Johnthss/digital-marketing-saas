@@ -35,6 +35,8 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
+use App\Http\Controllers\TelegramLinkController;
+use App\Http\Controllers\TwitterController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WhiteLabelController;
 use App\Http\Controllers\WorkflowController;
@@ -140,7 +142,18 @@ Route::middleware(['auth', 'agency'])->group(function () {
     Route::resource('media', MediaLibraryController::class);
     Route::get('media/{asset}/download', [MediaLibraryController::class, 'download'])->name('media.download');
     Route::post('media/{asset}/duplicate', [MediaLibraryController::class, 'duplicate'])->name('media.duplicate');
-    Route::post('media/bulk-delete', [MediaLibraryController::class, 'bulkDelete'])->name('media.bulk-delete');
+    Route::delete('media/bulk-delete', [MediaLibraryController::class, 'bulkDelete'])->name('media.bulk-delete');
+
+    // Twitter/X Integration
+    Route::prefix('twitter')->name('twitter.')->group(function () {
+        Route::get('/', [TwitterController::class, 'index'])->name('index');
+        Route::get('/connect', [TwitterController::class, 'connect'])->name('connect');
+        Route::get('/callback', [TwitterController::class, 'callback'])->name('callback');
+        Route::post('/disconnect/{accountId}', [TwitterController::class, 'disconnect'])->name('disconnect');
+        Route::get('/{accountId}/metrics', [TwitterController::class, 'metrics'])->name('metrics');
+        Route::post('/post', [TwitterController::class, 'postTweet'])->name('post');
+        Route::get('/{accountId}/timeline', [TwitterController::class, 'timeline'])->name('timeline');
+    });
     Route::post('forms/{form}/toggle', [FormController::class, 'togglePublish'])->name('forms.toggle');
     Route::resource('webhooks', WebhookController::class);
 

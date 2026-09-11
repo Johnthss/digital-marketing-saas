@@ -8,11 +8,11 @@ use Illuminate\Support\Str;
 
 class TwitterApiService
 {
-    protected string $apiKey;
-    protected string $apiSecret;
-    protected string $accessToken;
-    protected string $accessSecret;
-    protected string $bearerToken;
+    protected ?string $apiKey;
+    protected ?string $apiSecret;
+    protected ?string $accessToken;
+    protected ?string $accessSecret;
+    protected ?string $bearerToken;
     protected string $baseUrl = 'https://api.twitter.com';
 
     public function __construct()

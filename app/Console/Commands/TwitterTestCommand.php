@@ -7,94 +7,114 @@ use Illuminate\Console\Command;
 
 class TwitterTestCommand extends Command
 {
-    protected $signature = 'twitter:test 
-                            {--username= : Twitter username to fetch metrics for}
-                            {--tweet-id= : Tweet ID to fetch metrics for}
-                            {--auth : Test authentication only}';
+    protected $signature = 'twitter:test {--action=authenticate : Action to test (authenticate, metrics, tweet)} {--username= : Twitter username for metrics} {--text= : Text for tweet}';
+    protected $description = 'Test Twitter API connection and functionality';
 
-    protected $description = 'Test Twitter/X API connection and fetch metrics';
-
-    public function handle(TwitterApiService $twitter): int
+    public function handle(): int
     {
-        $this->info('=== Twitter/X API Test ===');
+        $action = $this->option('action');
+        
+        $this->info('═══════════════════════════════════════════════════');
+        $this->info('  DigitalMarketingSaaS — Twitter API Test');
+        $this->info('═══════════════════════════════════════════════════');
         $this->newLine();
 
-        // Check configuration
-        if (! $twitter->isConfigured()) {
-            $this->error('Twitter OAuth 1.0a credentials are not fully configured.');
-            $this->warn('Please set TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, and TWITTER_ACCESS_SECRET in your .env file.');
+        $twitter = new TwitterApiService();
 
+        switch ($action) {
+            case 'authenticate':
+                return $this->testAuthentication($twitter);
+            case 'metrics':
+                return $this->testMetrics($twitter);
+            case 'tweet':
+                return $this->testTweet($twitter);
+            default:
+                $this->error("Unknown action: {$action}");
+                $this->line('Available actions: authenticate, metrics, tweet');
+                return self::FAILURE;
+        }
+    }
+
+    private function testAuthentication(TwitterApiService $twitter): int
+    {
+        $this->info('Testing Twitter Authentication...');
+        $this->newLine();
+
+        if (!$twitter->hasBearerToken()) {
+            $this->error('Twitter Bearer Token is not configured!');
+            $this->line('Add TWITTER_BEARER_TOKEN to your .env file.');
             return self::FAILURE;
         }
 
-        if (! $twitter->hasBearerToken()) {
-            $this->warn('TWITTER_BEARER_TOKEN is not set. Some features may not work.');
+        $result = $twitter->authenticate();
+
+        if ($result['success']) {
+            $this->info('✅ Authentication Successful!');
+            $data = $result['data']['data'] ?? [];
+            $this->line("  User: @{$data['username']} ({$data['name']})");
+            $this->line("  ID: {$data['id']}");
+            return self::SUCCESS;
         }
 
-        // Test authentication
-        $this->info('Testing authentication...');
-        $auth = $twitter->authenticate();
+        $this->error('❌ Authentication Failed!');
+        $this->line("  Error: {$result['error']}");
+        return self::FAILURE;
+    }
 
-        if ($auth['success']) {
-            $data = $auth['data']['data'] ?? [];
-            $this->info('✓ Authentication successful!');
-            $this->line("  User ID: {$data['id']}");
-            $this->line("  Username: {$data['username']}");
-            $this->line("  Name: {$data['name']}");
-            $metrics = $data['public_metrics'] ?? [];
-            $this->line("  Followers: " . ($metrics['followers_count'] ?? 0));
-            $this->line("  Following: " . ($metrics['following_count'] ?? 0));
-            $this->line("  Tweets: " . ($metrics['tweet_count'] ?? 0));
-        } else {
-            $this->error('✗ Authentication failed: ' . ($auth['error'] ?? 'Unknown error'));
-        }
-
+    private function testMetrics(TwitterApiService $twitter): int
+    {
+        $username = $this->option('username') ?? $this->ask('Enter Twitter username (without @):');
+        
+        $this->info("Fetching metrics for @{$username}...");
         $this->newLine();
 
-        // Get user metrics if username provided
-        $username = $this->option('username');
-        if ($username) {
-            $this->info("Fetching metrics for @{$username}...");
-            $metrics = $twitter->getUserMetrics($username);
+        $result = $twitter->getUserMetrics($username);
 
-            if ($metrics['success']) {
-                $data = $metrics['data'];
-                $this->info('✓ User metrics fetched successfully!');
-                $this->line("  Followers: {$data['followers_count']}");
-                $this->line("  Following: {$data['following_count']}");
-                $this->line("  Tweets: {$data['tweet_count']}");
-                $this->line("  Listed: {$data['listed_count']}");
-            } else {
-                $this->error('✗ Failed to fetch user metrics: ' . ($metrics['error'] ?? 'Unknown error'));
-            }
-
-            $this->newLine();
+        if ($result['success']) {
+            $data = $result['data'];
+            $this->info('✅ Metrics Retrieved!');
+            $this->line("  Username: @{$data['username']}");
+            $this->line("  Name: {$data['name']}");
+            $this->line("  Followers: " . number_format($data['followers_count']));
+            $this->line("  Following: " . number_format($data['following_count']));
+            $this->line("  Tweets: " . number_format($data['tweet_count']));
+            $this->line("  Listed: " . number_format($data['listed_count']));
+            return self::SUCCESS;
         }
 
-        // Get tweet metrics if tweet-id provided
-        $tweetId = $this->option('tweet-id');
-        if ($tweetId) {
-            $this->info("Fetching metrics for tweet {$tweetId}...");
-            $metrics = $twitter->getTweetMetrics($tweetId);
+        $this->error('❌ Failed to fetch metrics!');
+        $this->line("  Error: {$result['error']}");
+        return self::FAILURE;
+    }
 
-            if ($metrics['success']) {
-                $data = $metrics['data'];
-                $this->info('✓ Tweet metrics fetched successfully!');
-                $this->line("  Text: {$data['text']}");
-                $this->line("  Retweets: {$data['retweet_count']}");
-                $this->line("  Replies: {$data['reply_count']}");
-                $this->line("  Likes: {$data['like_count']}");
-                $this->line("  Quotes: {$data['quote_count']}");
-                $this->line("  Impressions: {$data['impression_count']}");
-            } else {
-                $this->error('✗ Failed to fetch tweet metrics: ' . ($metrics['error'] ?? 'Unknown error'));
-            }
-
-            $this->newLine();
+    private function testTweet(TwitterApiService $twitter): int
+    {
+        $text = $this->option('text') ?? $this->ask('Enter tweet text (max 280 chars):');
+        
+        if (strlen($text) > 280) {
+            $this->error('Tweet text exceeds 280 characters!');
+            return self::FAILURE;
         }
 
-        $this->info('Twitter/X API test complete.');
+        $this->info('Posting tweet...');
+        $this->newLine();
 
-        return self::SUCCESS;
+        if (!$twitter->isConfigured()) {
+            $this->error('Twitter OAuth 1.0a credentials are not fully configured!');
+            $this->line('Required: TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET');
+            return self::FAILURE;
+        }
+
+        $result = $twitter->postTweet($text);
+
+        if ($result['success']) {
+            $this->info('✅ Tweet Posted!');
+            $this->line("  Tweet ID: {$result['tweet_id']}");
+            return self::SUCCESS;
+        }
+
+        $this->error('❌ Failed to post tweet!');
+        $this->line("  Error: {$result['error']}");
+        return self::FAILURE;
     }
 }
