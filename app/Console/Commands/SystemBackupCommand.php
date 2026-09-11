@@ -122,7 +122,7 @@ class SystemBackupCommand extends Command
         $port = config('database.connections.mysql.port', 3306);
         $database = config('database.connections.mysql.database');
         $username = config('database.connections.mysql.username');
-        $password = <REDACTED>
+        $password = config('database.connections.mysql.password');
         $charset = config('database.connections.mysql.charset', 'utf8mb4');
 
         $dir = dirname($outputPath);
@@ -141,7 +141,7 @@ class SystemBackupCommand extends Command
         );
 
         if ($password) {
-            $command = 'MYSQLPWD=' . escapeshellarg($password) . ' ' . $command;
+            $command = 'MYSQL_PWD=' . escapeshellarg($password) . ' ' . $command;
         }
 
         exec($command, $output, $returnCode);

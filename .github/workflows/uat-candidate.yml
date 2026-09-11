@@ -49,7 +49,12 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          git ls-files -z '*.php' ':!:resources/views/*' | xargs -0 -n1 php -l 2>&1 | tee uat-results/syntax.txt
+          git ls-files -z '*.php' ':!:resources/views/*' | xargs -0 -n1 sh -c 'php -l "$1" || exit 1' sh 2>&1 | tee uat-results/syntax.txt
+      - name: Repair missing Stripe lock entry (bootstrap candidate only)
+        run: |
+          set -o pipefail
+          composer update stripe/stripe-php --with-dependencies --minimal-changes --no-scripts --no-interaction 2>&1 | tee uat-results/lock-repair.txt
+          cp composer.lock uat-results/composer.lock
       - name: Locked Composer dependencies
         id: deps
         continue-on-error: true

@@ -249,7 +249,7 @@ class TwitterController extends Controller
         $agencyId = $request->user()->agency_id;
         
         $account = SocialAccount::where('id', $accountId)
-            ->where('agency_id' => $agencyId)
+            ->where('agency_id', $agencyId)
             ->where('platform', 'twitter')
             ->firstOrFail();
         
