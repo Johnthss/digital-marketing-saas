@@ -220,7 +220,7 @@
 @endsection
 
 @push('scripts')
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
 $(function() {
     $('#dispatchForm').on('submit', function(e) {
         e.preventDefault();

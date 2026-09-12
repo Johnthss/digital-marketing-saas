@@ -281,7 +281,7 @@
 @endsection
 
 @push('scripts')
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('aiGenerateForm');
     const loading = document.getElementById('loadingIndicator');

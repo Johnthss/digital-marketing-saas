@@ -31,7 +31,7 @@
 @endsection
 
 @push('scripts')
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
 $('#enable2fa').click(function() {
     $.post('{{ route("two-factor.enable") }}', {_token: '{{ csrf_token() }}'}, function(res) {
         $('#qrCode').attr('src', 'https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=' + encodeURIComponent(res.qr_code));

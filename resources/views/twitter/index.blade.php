@@ -155,7 +155,7 @@
 </div>
 
 @push('scripts')
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
     document.getElementById('text').addEventListener('input', function() {
         document.getElementById('char-count').textContent = this.value.length;
     });

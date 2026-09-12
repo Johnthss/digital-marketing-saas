@@ -17,7 +17,7 @@
     <!-- Toastr -->
     <link rel="stylesheet" href="/vendor/css/toastr.min.css">
 
-    <style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+    <style nonce="{{ $cspNonce ?? '' }}">
         .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active,
         .sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active {
             background-color: #007bff;
@@ -456,17 +456,17 @@
 <!-- ./wrapper -->
 
 <!-- jQuery -->
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" src="/vendor/js/jquery.min.js"></script>
+<script nonce="{{ $cspNonce ?? '' }}" src="/vendor/js/jquery.min.js"></script>
 <!-- Bootstrap 4 -->
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" src="/vendor/js/bootstrap.bundle.min.js"></script>
+<script nonce="{{ $cspNonce ?? '' }}" src="/vendor/js/bootstrap.bundle.min.js"></script>
 <!-- overlayScrollBars -->
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" src="/vendor/js/OverlayScrollbars.min.js"></script>
+<script nonce="{{ $cspNonce ?? '' }}" src="/vendor/js/OverlayScrollbars.min.js"></script>
 <!-- AdminLTE App -->
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" src="/vendor/js/adminlte.min.js"></script>
+<script nonce="{{ $cspNonce ?? '' }}" src="/vendor/js/adminlte.min.js"></script>
 <!-- Toastr -->
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" src="/vendor/js/toastr.min.js"></script>
+<script nonce="{{ $cspNonce ?? '' }}" src="/vendor/js/toastr.min.js"></script>
 
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
     $(function() {
         // Toastr options
         toastr.options = {

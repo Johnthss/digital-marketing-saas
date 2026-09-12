@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $page->title ?? $page->name }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" nonce="{{ $cspNonce ?? '' }}">
+    <style nonce="{{ $cspNonce ?? '' }}">
         body { background: {{ $page->background_color }}; color: {{ $page->text_color }}; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .container { max-width: 800px; text-align: center; padding: 2rem; }
         .btn-cta { background: {{ $page->button_color }}; color: {{ $page->button_text_color }}; padding: 1rem 2rem; font-size: 1.25rem; border-radius: 50px; text-decoration: none; display: inline-block; margin-top: 1rem; }

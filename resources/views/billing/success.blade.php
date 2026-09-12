@@ -36,7 +36,7 @@
 @endsection
 
 @push('styles')
-<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<style nonce="{{ $cspNonce ?? '' }}">
     .success-icon {
         animation: scaleIn 0.5s ease-out;
     }

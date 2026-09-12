@@ -7,6 +7,7 @@ use App\Models\SocialAccount;
 use App\Models\SocialPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class SocialPostTest extends TestCase
@@ -83,7 +84,21 @@ class SocialPostTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function it_publishes_a_post(): void
     {
-        $post = SocialPost::factory()->create(['agency_id' => $this->agency->id, 'status' => 'draft']);
+        Http::fake([
+            'api.twitter.com/*' => Http::response(['data' => ['id' => 'tweet-1']], 201),
+        ]);
+        $account = SocialAccount::factory()->create([
+            'agency_id' => $this->agency->id,
+            'platform' => 'twitter',
+            'access_token' => 'test-token',
+            'is_active' => true,
+        ]);
+        $post = SocialPost::factory()->create([
+            'agency_id' => $this->agency->id,
+            'social_account_id' => $account->id,
+            'platform' => 'twitter',
+            'status' => 'draft',
+        ]);
         $response = $this->actingAs($this->user)->post(route('social.posts.publish', $post));
         $response->assertRedirect();
         $this->assertDatabaseHas('social_posts', ['id' => $post->id, 'status' => 'published']);

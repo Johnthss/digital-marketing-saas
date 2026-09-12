@@ -197,7 +197,7 @@
 @endsection
 
 @push('scripts')
-<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<script nonce="{{ $cspNonce ?? '' }}">
 function runWorkflow(workflowName) {
     if (!confirm('Run the "' + workflowName.replace(/_/g, ' ') + '" workflow?')) {
         return;

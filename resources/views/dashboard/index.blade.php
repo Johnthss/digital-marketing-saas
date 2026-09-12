@@ -231,7 +231,7 @@
 @endsection
 
 @push('css')
-<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
+<style nonce="{{ $cspNonce ?? '' }}">
 .gap-2 { gap: 0.5rem; }
 .progress-group { margin-bottom: 1rem; }
 </style>
