@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use App\Models\Agency;
 use App\Models\Workflow;
 use App\Services\AI\AiContentService;
+use App\Services\AI\Gateway\AiResponse;
 use App\Services\Workflow\WorkflowEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -21,9 +22,13 @@ class WorkflowEngineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine = new WorkflowEngine(
-            \Mockery::mock(AiContentService::class)
-        );
+        $aiContent = \Mockery::mock(AiContentService::class);
+        $aiContent->shouldReceive('generate')->byDefault()->andReturn(new AiResponse(
+            content: 'Generated content',
+            model: 'test-model',
+            provider: 'test',
+        ));
+        $this->engine = new WorkflowEngine($aiContent);
         $this->agency = Agency::factory()->create();
     }
 

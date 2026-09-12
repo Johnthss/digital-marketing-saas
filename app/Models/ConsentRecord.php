@@ -20,4 +20,9 @@ class ConsentRecord extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopeGranted($query)
+    {
+        return $query->where('granted', true);
+    }
 }

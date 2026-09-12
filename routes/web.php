@@ -35,7 +35,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
-use App\Http\Controllers\TelegramLinkController;
 use App\Http\Controllers\TwitterController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WhiteLabelController;
@@ -48,6 +47,9 @@ Route::get('/features', [PublicController::class, 'features'])->name('public.fea
 Route::get('/docs', [PublicController::class, 'docs'])->name('public.docs');
 Route::get('/blog', [PublicController::class, 'blog'])->name('public.blog');
 Route::get('/contact', [PublicController::class, 'contact'])->name('public.contact');
+Route::get('/p/{slug}', [LandingPageController::class, 'render'])->name('public.landing-page');
+Route::get('/f/{slug}', [FormController::class, 'render'])->name('public.form');
+Route::post('/f/{slug}', [FormController::class, 'submit'])->middleware('throttle:20,1')->name('public.form.submit');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -278,10 +280,6 @@ Route::middleware(['auth', 'agency'])->group(function () {
 
 });
 
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]);
-});
-
 // Version/Changelog (PUBLIC - no auth required)
 require __DIR__.'/version.php';
 
@@ -298,16 +296,18 @@ Route::get('/.well-known/security.txt', function () {
     $content .= "Expires: {$expiry}\n";
     $content .= "Preferred-Languages: en\n";
     $content .= "Canonical: https://digitalmarketingsaas.com/.well-known/security.txt\n";
-    
+
     return response($content, 200, [
         'Content-Type' => 'text/plain; charset=utf-8',
     ]);
 })->name('security.txt');
 
-// Health Checks (public)
+// Minimal health checks may be public; detailed operational data requires authentication.
 Route::get('/health', [HealthCheckController::class, 'index'])->name('health');
-Route::get('/ready', [HealthCheckController::class, 'readiness'])->name('ready');
 Route::get('/live', [HealthCheckController::class, 'liveness'])->name('live');
-Route::get('/status', [HealthCheckController::class, 'status'])->name('status');
-Route::get('/disk-space', [HealthCheckController::class, 'diskSpace'])->name('disk-space');
-Route::get('/queue-status', [HealthCheckController::class, 'queueStatus'])->name('queue-status');
+Route::middleware(['auth', 'agency'])->group(function () {
+    Route::get('/ready', [HealthCheckController::class, 'readiness'])->name('ready');
+    Route::get('/status', [HealthCheckController::class, 'status'])->name('status');
+    Route::get('/disk-space', [HealthCheckController::class, 'diskSpace'])->name('disk-space');
+    Route::get('/queue-status', [HealthCheckController::class, 'queueStatus'])->name('queue-status');
+});

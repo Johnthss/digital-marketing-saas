@@ -131,8 +131,8 @@ class CampaignController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
             'description' => 'nullable|string',
             'objective' => 'nullable|string|max:255',
             'target_audience' => 'nullable|string|max:255',
@@ -206,7 +206,7 @@ class CampaignController extends Controller
         $context = AgentContext::fromUser($user);
 
         $task = new AgentTask(
-            id: 'campaign_opt_' . uniqid(),
+            id: 'campaign_opt_'.uniqid(),
             type: 'campaign_optimize',
             prompt: 'Optimize campaign performance',
             data: [
@@ -256,7 +256,7 @@ class CampaignController extends Controller
         $context = AgentContext::fromUser($user);
 
         $task = new AgentTask(
-            id: 'ab_test_' . uniqid(),
+            id: 'ab_test_'.uniqid(),
             type: 'ab_test_design',
             prompt: 'Design an A/B test for campaign',
             data: [
@@ -303,7 +303,7 @@ class CampaignController extends Controller
 
         // Use analytics agent for performance insights
         $task = new AgentTask(
-            id: 'campaign_insights_' . uniqid(),
+            id: 'campaign_insights_'.uniqid(),
             type: 'performance_analysis',
             prompt: 'Analyze campaign performance and provide insights',
             data: [

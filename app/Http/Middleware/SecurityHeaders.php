@@ -13,6 +13,10 @@ class SecurityHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $nonce = base64_encode(random_bytes(18));
+        $request->attributes->set('csp-nonce', $nonce);
+        view()->share('cspNonce', $nonce);
+
         $response = $next($request);
 
         // Prevent MIME type sniffing
@@ -35,7 +39,6 @@ class SecurityHeaders
 
         // Content Security Policy for HTML responses
         if ($response->headers->get('Content-Type') && str_contains($response->headers->get('Content-Type'), 'text/html')) {
-            $nonce = $request->attributes->get('csp-nonce', 'static');
             $csp = "default-src 'self'; ";
             $csp .= "script-src 'self' 'nonce-{$nonce}' https://cdn.adminlte.io https://cdn.jsdelivr.net https://code.jquery.com; ";
             $csp .= "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.adminlte.io; ";
@@ -46,7 +49,7 @@ class SecurityHeaders
             $csp .= "base-uri 'self'; ";
             $csp .= "form-action 'self'; ";
             $csp .= "object-src 'none'; ";
-            $csp .= "upgrade-insecure-requests'";
+            $csp .= 'upgrade-insecure-requests';
             $response->headers->set('Content-Security-Policy', $csp);
         }
 

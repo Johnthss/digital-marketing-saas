@@ -6,6 +6,7 @@ use App\Models\Agency;
 use App\Models\ContentAsset;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ContentLibraryTest extends TestCase
@@ -23,7 +24,7 @@ class ContentLibraryTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[Test]
     public function it_lists_content_assets(): void
     {
         ContentAsset::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,26 +32,26 @@ class ContentLibraryTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_content(): void
     {
         $response = $this->actingAs($this->user)->post(route('content.store'), [
             'name' => 'Test Content',
-            'type' => 'post',
+            'type' => 'text',
             'content' => 'Test content body',
         ]);
         $response->assertRedirect();
         $this->assertDatabaseHas('content_assets', ['name' => 'Test Content']);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_content_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('content.store'), []);
         $response->assertSessionHasErrors(['name', 'type', 'content']);
     }
 
-    /** @test */
+    #[Test]
     public function it_shows_content(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
@@ -58,7 +59,7 @@ class ContentLibraryTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function it_deletes_content(): void
     {
         $asset = ContentAsset::factory()->create(['agency_id' => $this->agency->id]);
@@ -67,7 +68,7 @@ class ContentLibraryTest extends TestCase
         $this->assertSoftDeleted('content_assets', ['id' => $asset->id]);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_access_to_other_agency_content(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -76,7 +77,7 @@ class ContentLibraryTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_auth(): void
     {
         $response = $this->get(route('content.index'));

@@ -79,6 +79,7 @@ class WorkflowController extends Controller
         $workflow = Workflow::create([
             'agency_id' => $request->user()->agency_id,
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $validated['trigger_type'],
             'trigger_config' => $validated['trigger_config'] ?? [],
@@ -135,6 +136,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
             'trigger_type' => 'required|in:'.implode(',', array_keys(Workflow::TRIGGER_TYPES)),
             'trigger_config' => 'nullable|array',
             'actions' => 'required|array|min:1',
@@ -144,6 +146,7 @@ class WorkflowController extends Controller
 
         $workflow->update([
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'trigger_type' => $validated['trigger_type'],
             'trigger_config' => $validated['trigger_config'] ?? [],
             'actions' => $validated['actions'],
@@ -204,6 +207,7 @@ class WorkflowController extends Controller
         $workflow = Workflow::create([
             'agency_id' => $request->user()->agency_id,
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'slug' => Str::slug($validated['name']).'-'.uniqid(),
             'trigger_type' => $triggerNode['subtype'] ?? 'manual',
             'trigger_config' => $triggerNode['config'] ?? [],
@@ -245,6 +249,7 @@ class WorkflowController extends Controller
 
         $workflow->update([
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'trigger_type' => $triggerNode['subtype'] ?? 'manual',
             'trigger_config' => $triggerNode['config'] ?? [],
             'actions' => array_map(fn ($node) => [

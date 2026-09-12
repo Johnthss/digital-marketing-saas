@@ -117,7 +117,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
 $(function() {
     $('.btn-next').click(function() {
         var next = $(this).data('next');

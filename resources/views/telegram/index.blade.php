@@ -96,7 +96,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
 function copyCode() {
     const code = document.querySelector('input[readonly]').value;
     navigator.clipboard.writeText(code);

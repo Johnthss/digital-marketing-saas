@@ -21,4 +21,11 @@ class DataDeletionRequest extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopeOverdue($query)
+    {
+        return $query->where('status', 'pending')
+            ->whereNotNull('scheduled_at')
+            ->where('scheduled_at', '<', now());
+    }
 }

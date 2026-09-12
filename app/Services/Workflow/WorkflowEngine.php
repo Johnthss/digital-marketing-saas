@@ -2,6 +2,7 @@
 
 namespace App\Services\Workflow;
 
+use App\Models\Agency;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
 use App\Models\Workflow;
@@ -39,7 +40,7 @@ class WorkflowEngine
             }
 
             foreach ($workflow->actions ?? [] as $action) {
-                $result = $this->executeAction($action, $triggerData);
+                $result = $this->executeAction($action, $triggerData, (int) $workflow->agency_id);
                 $actionResults[] = $result;
             }
 
@@ -83,19 +84,19 @@ class WorkflowEngine
         return true;
     }
 
-    protected function executeAction(array $action, array $triggerData): array
+    protected function executeAction(array $action, array $triggerData, int $agencyId, int $depth = 0): array
     {
         $type = $action['type'] ?? 'unknown';
         $config = $action['config'] ?? [];
 
         return match ($type) {
             'send_notification' => $this->actionSendNotification($config, $triggerData),
-            'create_post' => $this->actionCreatePost($config, $triggerData),
-            'schedule_post' => $this->actionSchedulePost($config, $triggerData),
-            'ai_generate' => $this->actionAiGenerate($config, $triggerData),
+            'create_post' => $this->actionCreatePost($config, $triggerData, $agencyId),
+            'schedule_post' => $this->actionSchedulePost($config, $triggerData, $agencyId),
+            'ai_generate' => $this->actionAiGenerate($config, $triggerData, $agencyId),
             'webhook' => $this->actionWebhook($config, $triggerData),
             'sleep' => $this->actionSleep($config),
-            'loop' => $this->actionLoop($config, $triggerData),
+            'loop' => $this->actionLoop($config, $triggerData, $agencyId, $depth),
             default => ['status' => 'skipped', 'reason' => "Unknown action type: {$type}"],
         };
     }
@@ -123,7 +124,7 @@ class WorkflowEngine
         }
     }
 
-    protected function actionCreatePost(array $config, array $triggerData): array
+    protected function actionCreatePost(array $config, array $triggerData, int $agencyId): array
     {
         $accountId = $config['social_account_id'] ?? null;
         $content = $config['content'] ?? $triggerData['content'] ?? null;
@@ -132,7 +133,7 @@ class WorkflowEngine
             return ['status' => 'failed', 'reason' => 'Missing account ID or content'];
         }
 
-        $account = SocialAccount::find($accountId);
+        $account = SocialAccount::where('agency_id', $agencyId)->find($accountId);
         if (! $account) {
             return ['status' => 'failed', 'reason' => 'Social account not found'];
         }
@@ -149,7 +150,7 @@ class WorkflowEngine
         return ['status' => 'success', 'action' => 'create_post', 'post_id' => $post->id];
     }
 
-    protected function actionSchedulePost(array $config, array $triggerData): array
+    protected function actionSchedulePost(array $config, array $triggerData, int $agencyId): array
     {
         $accountId = $config['social_account_id'] ?? null;
         $content = $config['content'] ?? $triggerData['content'] ?? null;
@@ -159,7 +160,7 @@ class WorkflowEngine
             return ['status' => 'failed', 'reason' => 'Missing required fields'];
         }
 
-        $account = SocialAccount::find($accountId);
+        $account = SocialAccount::where('agency_id', $agencyId)->find($accountId);
         if (! $account) {
             return ['status' => 'failed', 'reason' => 'Social account not found'];
         }
@@ -176,7 +177,7 @@ class WorkflowEngine
         return ['status' => 'success', 'action' => 'schedule_post', 'post_id' => $post->id, 'scheduled_at' => $scheduledAt];
     }
 
-    protected function actionAiGenerate(array $config, array $triggerData): array
+    protected function actionAiGenerate(array $config, array $triggerData, int $agencyId): array
     {
         $prompt = $config['prompt'] ?? $triggerData['prompt'] ?? null;
         $type = $config['generation_type'] ?? 'social_post';
@@ -185,7 +186,19 @@ class WorkflowEngine
             return ['status' => 'failed', 'reason' => 'Missing prompt'];
         }
 
-        return ['status' => 'success', 'action' => 'ai_generate', 'type' => $type, 'prompt' => $prompt];
+        $agency = Agency::find($agencyId);
+        if (! $agency || ! $agency->canGenerateAiContent()) {
+            return ['status' => 'failed', 'reason' => 'AI generation quota exceeded'];
+        }
+
+        $response = $this->aiContent->generate(
+            agency: $agency,
+            prompt: $prompt,
+            contentType: $type,
+            maxTokens: min(2048, max(64, (int) ($config['max_tokens'] ?? 1024))),
+        );
+
+        return ['status' => 'success', 'action' => 'ai_generate', 'type' => $type, 'content' => $response->content];
     }
 
     protected function actionWebhook(array $config, array $triggerData): array
@@ -198,8 +211,14 @@ class WorkflowEngine
             return ['status' => 'failed', 'reason' => 'Missing webhook URL'];
         }
 
+        $this->assertSafeWebhookUrl($url);
+        $method = strtolower($method);
+        if (! in_array($method, ['post', 'put', 'patch'], true)) {
+            return ['status' => 'failed', 'reason' => 'Unsupported webhook method'];
+        }
+
         try {
-            $response = Http::timeout(30)->{$method}($url, $payload);
+            $response = Http::connectTimeout(3)->timeout(10)->retry(2, 250)->{$method}($url, $payload);
 
             return [
                 'status' => $response->successful() ? 'success' : 'failed',
@@ -221,20 +240,42 @@ class WorkflowEngine
     /**
      * Execute a loop action - repeats nested actions N times.
      */
-    protected function actionLoop(array $config, array $triggerData): array
+    protected function actionLoop(array $config, array $triggerData, int $agencyId, int $depth): array
     {
-        $iterations = $config['iterations'] ?? 1;
+        if ($depth >= 3) {
+            return ['status' => 'failed', 'reason' => 'Maximum loop depth exceeded'];
+        }
+        $iterations = min(25, max(0, (int) ($config['iterations'] ?? 1)));
         $actions = $config['actions'] ?? [];
         $results = [];
 
         for ($i = 0; $i < $iterations; $i++) {
             foreach ($actions as $action) {
-                $result = $this->executeAction($action, $triggerData);
+                $result = $this->executeAction($action, $triggerData, $agencyId, $depth + 1);
                 $results[] = $result;
             }
         }
 
         return ['status' => 'success', 'action' => 'loop', 'iterations' => $iterations, 'results' => $results];
+    }
+
+    private function assertSafeWebhookUrl(string $url): void
+    {
+        $parts = parse_url($url);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if (($parts['scheme'] ?? '') !== 'https' || $host === '' || $host === 'localhost' || str_ends_with($host, '.local')) {
+            throw new \InvalidArgumentException('Webhook URL must use HTTPS and a public host.');
+        }
+
+        $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : gethostbynamel($host);
+        if ($addresses === false || $addresses === []) {
+            throw new \InvalidArgumentException('Webhook host could not be resolved.');
+        }
+        foreach ($addresses as $address) {
+            if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                throw new \InvalidArgumentException('Webhook URL resolves to a private or reserved address.');
+            }
+        }
     }
 
     protected function calcDuration(float $startTime): int

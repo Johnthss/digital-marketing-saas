@@ -40,4 +40,19 @@ class EmailTemplate extends Model
     {
         return $query->where('category', $category);
     }
+
+    public function render(array $variables = []): array
+    {
+        $replace = [];
+        foreach ($variables as $key => $value) {
+            $replace['{{ '.$key.' }}'] = (string) $value;
+            $replace['{{'.$key.'}}'] = (string) $value;
+        }
+
+        return [
+            'subject' => strtr($this->subject, $replace),
+            'html' => strtr($this->html_content, $replace),
+            'text' => strtr((string) $this->plain_text_content, $replace),
+        ];
+    }
 }

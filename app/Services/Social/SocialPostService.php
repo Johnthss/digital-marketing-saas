@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 class SocialPostService
 {
+    public function __construct(private readonly SocialApiService $socialApi) {}
+
     /**
      * Create a new social post (draft or scheduled).
      */
@@ -73,6 +75,8 @@ class SocialPostService
         } catch (\Exception $e) {
             $post->update([
                 'status' => PostStatus::FAILED->value,
+                'published_at' => null,
+                'external_post_id' => null,
                 'failed_at' => now(),
                 'error_message' => $e->getMessage(),
                 'retry_count' => $post->retry_count + 1,
@@ -94,18 +98,17 @@ class SocialPostService
      */
     protected function publishToPlatform(SocialPost $post): array
     {
-        $platform = $post->platform;
+        $account = $post->socialAccount;
+        if (! $account || ! $account->is_active || (int) $account->agency_id !== (int) $post->agency_id) {
+            throw new \RuntimeException('A valid active social account is required.');
+        }
 
-        // In production, this would call the platform's API
-        return match ($platform) {
-            'facebook' => $this->publishToFacebook($post),
-            'instagram' => $this->publishToInstagram($post),
-            'twitter' => $this->publishToTwitter($post),
-            'linkedin' => $this->publishToLinkedIn($post),
-            'tiktok' => $this->publishToTikTok($post),
-            'pinterest' => $this->publishToPinterest($post),
-            default => throw new \RuntimeException("Unsupported platform: {$platform}"),
-        };
+        $result = $this->socialApi->publish($account, $post);
+        if (! ($result['success'] ?? false) || empty($result['platform_post_id'])) {
+            throw new \RuntimeException($result['error'] ?? 'The platform did not confirm publication.');
+        }
+
+        return ['id' => $result['platform_post_id'], ...$result];
     }
 
     protected function publishToFacebook(SocialPost $post): array

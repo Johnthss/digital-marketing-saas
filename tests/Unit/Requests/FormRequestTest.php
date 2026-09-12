@@ -4,20 +4,21 @@ namespace Tests\Unit\Requests;
 
 use App\Http\Requests\StoreSocialPostRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class FormRequestTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function store_social_post_request_has_rules(): void
     {
         $request = new StoreSocialPostRequest;
         $this->assertArrayHasKey('content', $request->rules());
     }
 
-    /** @test */
+    #[Test]
     public function store_social_post_request_has_messages(): void
     {
         $request = new StoreSocialPostRequest;

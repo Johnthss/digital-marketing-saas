@@ -69,7 +69,7 @@
 @endsection
 
 @push("scripts")
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
     async function previewTemplate() {
         const response = await fetch('{{ route("email.templates.preview", $template) }}', {
             method: 'POST',

@@ -6,6 +6,7 @@ use App\Models\Agency;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class InvoiceFeatureTest extends TestCase
@@ -23,7 +24,7 @@ class InvoiceFeatureTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    /** @test */
+    #[Test]
     public function it_lists_invoices(): void
     {
         Invoice::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,19 +32,19 @@ class InvoiceFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_invoice(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), [
-            'client_name' => 'Test Client',
-            'total' => 100.00,
-            'items' => [['description' => 'Service', 'amount' => 100]],
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
+            'items' => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100]],
         ]);
         $response->assertRedirect();
-        $this->assertDatabaseHas('invoices', ['client_name' => 'Test Client']);
+        $this->assertDatabaseHas('invoices', ['agency_id' => $this->agency->id, 'total' => 100]);
     }
 
-    /** @test */
+    #[Test]
     public function it_shows_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
@@ -51,35 +52,40 @@ class InvoiceFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function it_updates_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->put(route('invoices.update', $invoice), [
-            'client_name' => 'Updated Client',
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
+            'notes' => 'Updated invoice',
         ]);
         $response->assertRedirect();
+        $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'notes' => 'Updated invoice']);
     }
 
-    /** @test */
+    #[Test]
     public function it_deletes_invoice(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('invoices.destroy', $invoice));
         $response->assertRedirect();
-        $this->assertSoftDeleted('invoices', ['id' => $invoice->id]);
+        $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
     }
 
-    /** @test */
+    #[Test]
     public function it_marks_invoice_paid(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);
-        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice));
+        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice), [
+            'payment_method' => 'manual',
+        ]);
         $response->assertRedirect();
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'status' => 'paid']);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_unauthorized_access(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -88,7 +94,7 @@ class InvoiceFeatureTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_by_status(): void
     {
         Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);

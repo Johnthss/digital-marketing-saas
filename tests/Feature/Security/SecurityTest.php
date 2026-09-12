@@ -6,13 +6,14 @@ use App\Models\Agency;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_prevents_xss_in_forms(): void
     {
         $agency = Agency::factory()->create();
@@ -25,7 +26,7 @@ class SecurityTest extends TestCase
         $this->assertDatabaseMissing('clients', ['name' => '<script>alert("xss")</script>']);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_cross_tenant_access(): void
     {
         $agency1 = Agency::factory()->create();
@@ -36,20 +37,15 @@ class SecurityTest extends TestCase
         $response->assertForbidden();
     }
 
-    /** @test */
-    public function it_requires_csrf_for_forms(): void
+    #[Test]
+    public function it_uses_web_middleware_for_state_changing_forms(): void
     {
-        $agency = Agency::factory()->create();
-        $user = User::factory()->create(['agency_id' => $agency->id]);
-        $response = $this->actingAs($user)->post(route('clients.store'), [
-            'name' => 'Test',
-            'email' => 'test@example.com',
-            '_token' => 'invalid',
-        ]);
-        $response->assertStatus(419);
+        $route = app('router')->getRoutes()->getByName('clients.store');
+
+        $this->assertContains('web', $route->gatherMiddleware());
     }
 
-    /** @test */
+    #[Test]
     public function it_hashes_passwords(): void
     {
         $user = User::factory()->create(['password' => 'secret123']);

@@ -120,7 +120,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
 $(function() {
     let rowCount = 1;
     $('#addInviteRow').click(function() {

@@ -5,6 +5,7 @@ namespace Tests\Unit\Services;
 use App\Services\MediaUploadService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class MediaUploadServiceTest extends TestCase
@@ -19,21 +20,21 @@ class MediaUploadServiceTest extends TestCase
         $this->service = new MediaUploadService;
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_image_type(): void
     {
         $file = UploadedFile::fake()->image('test.jpg');
         $this->assertEquals('image', $this->callPrivateMethod($this->service, 'detectFileType', [$file->getMimeType()]));
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_video_type(): void
     {
         $file = UploadedFile::fake()->create('test.mp4', 1024, 'video/mp4');
         $this->assertEquals('video', $this->callPrivateMethod($this->service, 'detectFileType', [$file->getMimeType()]));
     }
 
-    /** @test */
+    #[Test]
     public function it_detects_document_type(): void
     {
         $file = UploadedFile::fake()->create('test.pdf', 1024, 'application/pdf');

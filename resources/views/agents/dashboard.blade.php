@@ -212,7 +212,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce ?? '' }}">
 function runAudit() {
     if (confirm('Run a comprehensive security audit?')) {
         fetch('{{ route("agents.dispatch") }}', {

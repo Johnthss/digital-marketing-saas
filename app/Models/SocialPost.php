@@ -66,7 +66,7 @@ class SocialPost extends Model
 
     public function getStatusEnum()
     {
-        return new PostStatus($this->status);
+        return PostStatus::from($this->status);
     }
 
     public function agency(): BelongsTo

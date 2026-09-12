@@ -154,7 +154,13 @@ class TelegramBotService
      */
     public function setWebhook(string $url): array
     {
-        return $this->api('setWebhook', ['url' => $url]);
+        $params = ['url' => $url];
+        $secret = (string) config('telegram.webhook.secret_token');
+        if ($secret !== '') {
+            $params['secret_token'] = $secret;
+        }
+
+        return $this->api('setWebhook', $params);
     }
 
     /**

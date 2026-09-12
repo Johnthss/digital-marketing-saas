@@ -39,7 +39,7 @@ class AIContentWorkflowTest extends TestCase
         $this->actingAs($user);
 
         // Mock the AI gateway to avoid real API calls
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'AI generated content for social media post about digital marketing trends.',
             model: 'gpt-4o',
@@ -161,7 +161,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Generated content here',
             model: 'gpt-4o',
@@ -224,7 +224,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Rewritten content with improvements',
             model: 'gpt-4o',
@@ -271,7 +271,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: '#digitalmarketing, #seo, #contentmarketing, #socialmedia',
             model: 'gpt-4o',
@@ -319,7 +319,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: '[{"title":"5 SEO Tips","format":"carousel","description":"Share actionable SEO tips","cta":"Save this post"}]',
             model: 'gpt-4o',
@@ -366,7 +366,7 @@ class AIContentWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create();
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Service integration test content',
             model: 'gpt-4o',
@@ -405,7 +405,7 @@ class AIContentWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create();
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Rewritten version of the content',
             model: 'gpt-4o',
@@ -434,7 +434,7 @@ class AIContentWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create();
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: '#marketing, #digital, #seo, #content',
             model: 'gpt-4o',
@@ -464,7 +464,7 @@ class AIContentWorkflowTest extends TestCase
     {
         $agency = Agency::factory()->create();
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: '[{"title":"Idea 1","format":"post","description":"Description 1","cta":"CTA 1"}]',
             model: 'gpt-4o',
@@ -494,7 +494,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Tracked content',
             model: 'gpt-4o',
@@ -537,7 +537,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willThrowException(new \Exception('API rate limit exceeded'));
         $this->app->instance(AiGateway::class, $mockGateway);
 
@@ -763,7 +763,7 @@ class AIContentWorkflowTest extends TestCase
         [$agency, $user] = $this->createAgencyWithUser();
         $this->actingAs($user);
 
-        $mockGateway = $this->createMock(AiGateway::class);
+        $mockGateway = $this->createStub(AiGateway::class);
         $mockGateway->method('send')->willReturn(new AiResponse(
             content: 'Rate limit test content',
             model: 'gpt-4o',

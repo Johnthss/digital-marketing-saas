@@ -50,8 +50,8 @@ class SocialAccountController extends Controller
         $account = SocialAccount::create([
             'agency_id' => $agencyId,
             'platform' => $validated['platform'],
-            'access_token' => encrypt($validated['access_token']),
-            'refresh_token' => isset($validated['refresh_token']) ? encrypt($validated['refresh_token']) : null,
+            'access_token' => $validated['access_token'],
+            'refresh_token' => $validated['refresh_token'] ?? null,
             'platform_account_id' => $validated['platform_account_id'] ?? null,
             'platform_username' => $validated['platform_username'] ?? null,
             'platform_display_name' => $validated['platform_display_name'] ?? null,
@@ -79,6 +79,40 @@ class SocialAccountController extends Controller
 
         return redirect()->route('social.accounts.index')
             ->with('success', 'Social account removed.');
+    }
+
+    public function edit(Request $request, $accountId)
+    {
+        $account = SocialAccount::findOrFail($accountId);
+        if ((int) $account->agency_id !== (int) $request->user()->agency_id) {
+            abort(403);
+        }
+
+        return view('social.accounts.edit', compact('account'));
+    }
+
+    public function update(Request $request, $accountId)
+    {
+        $account = SocialAccount::findOrFail($accountId);
+        if ((int) $account->agency_id !== (int) $request->user()->agency_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'access_token' => 'nullable|string',
+            'refresh_token' => 'nullable|string',
+            'platform_display_name' => 'nullable|string|max:255',
+        ]);
+        if (! $request->filled('access_token')) {
+            unset($validated['access_token']);
+        }
+        if (! $request->filled('refresh_token')) {
+            unset($validated['refresh_token']);
+        }
+        $account->update($validated);
+
+        return redirect()->route('social.accounts.index')
+            ->with('success', 'Social account updated successfully.');
     }
 
     public function toggle(Request $request, $accountId)

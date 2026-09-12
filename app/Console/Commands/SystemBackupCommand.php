@@ -2,11 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 
 class SystemBackupCommand extends Command
 {
@@ -50,13 +48,14 @@ class SystemBackupCommand extends Command
                 $this->backupPostgres($tempPath);
             } else {
                 $this->error("Unsupported database driver: {$driver}");
+
                 return self::FAILURE;
             }
 
             // Compress if requested
             if ($compress && file_exists($tempPath)) {
                 $this->info('Compressing backup...');
-                $gzPath = $tempPath . '.gz';
+                $gzPath = $tempPath.'.gz';
                 $gz = gzopen($gzPath, 'wb9');
                 gzwrite($gz, file_get_contents($tempPath));
                 gzclose($gz);
@@ -72,7 +71,7 @@ class SystemBackupCommand extends Command
 
             $fileSize = Storage::disk($storageDisk)->size($filename);
             $this->info("✅ Backup saved: {$filename}");
-            $this->info("   Size: " . $this->formatBytes($fileSize));
+            $this->info('   Size: '.$this->formatBytes($fileSize));
 
             // Clean old backups
             if ($retention > 0) {
@@ -80,10 +79,11 @@ class SystemBackupCommand extends Command
             }
 
         } catch (\Exception $e) {
-            $this->error("Backup failed: " . $e->getMessage());
+            $this->error('Backup failed: '.$e->getMessage());
             if (file_exists($tempPath)) {
                 unlink($tempPath);
             }
+
             return self::FAILURE;
         }
 
@@ -98,7 +98,7 @@ class SystemBackupCommand extends Command
     private function backupSqlite(string $database, string $outputPath): void
     {
         $dir = dirname($outputPath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -122,11 +122,11 @@ class SystemBackupCommand extends Command
         $port = config('database.connections.mysql.port', 3306);
         $database = config('database.connections.mysql.database');
         $username = config('database.connections.mysql.username');
-        $password = <REDACTED>
+        $password = config('database.connections.mysql.password');
         $charset = config('database.connections.mysql.charset', 'utf8mb4');
 
         $dir = dirname($outputPath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -141,7 +141,7 @@ class SystemBackupCommand extends Command
         );
 
         if ($password) {
-            $command = 'MYSQLPWD=' . escapeshellarg($password) . ' ' . $command;
+            $command = 'MYSQL_PWD='.escapeshellarg($password).' '.$command;
         }
 
         exec($command, $output, $returnCode);
@@ -159,7 +159,7 @@ class SystemBackupCommand extends Command
         $username = config('database.connections.pgsql.username');
 
         $dir = dirname($outputPath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -211,6 +211,6 @@ class SystemBackupCommand extends Command
             $unitIndex++;
         }
 
-        return round($size, 2) . ' ' . $units[$unitIndex];
+        return round($size, 2).' '.$units[$unitIndex];
     }
 }

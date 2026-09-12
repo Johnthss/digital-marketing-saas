@@ -19,7 +19,7 @@ class SocialApiService
     public function publishToFacebook(SocialAccount $account, SocialPost $post): array
     {
         try {
-            $url = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}/feed";
+            $url = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->platform_account_id}/feed";
 
             $response = Http::timeout(30)->post($url, [
                 'message' => $post->content,
@@ -52,7 +52,7 @@ class SocialApiService
     {
         try {
             // Instagram requires media - create container first
-            $containerUrl = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}/media";
+            $containerUrl = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->platform_account_id}/media";
 
             $containerResponse = Http::timeout(30)->post($containerUrl, [
                 'access_token' => $account->access_token,
@@ -69,7 +69,7 @@ class SocialApiService
             $creationId = $containerResponse->json()['id'];
 
             // Publish container
-            $publishUrl = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}/media_publish";
+            $publishUrl = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->platform_account_id}/media_publish";
             $publishResponse = Http::timeout(30)->post($publishUrl, [
                 'creation_id' => $creationId,
                 'access_token' => $account->access_token,
@@ -137,7 +137,7 @@ class SocialApiService
                 ->timeout(30)
                 ->withHeaders(['X-Restli-Protocol-Version' => '2.0.0'])
                 ->post($url, [
-                    'author' => "urn:li:person:{$account->account_id}",
+                    'author' => "urn:li:person:{$account->platform_account_id}",
                     'lifecycleState' => 'PUBLISHED',
                     'specificContent' => [
                         'com.linkedin.ugc.ShareContent' => [
@@ -229,7 +229,7 @@ class SocialApiService
     protected function getFacebookAccountInfo(SocialAccount $account): array
     {
         try {
-            $url = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->account_id}";
+            $url = "https://graph.facebook.com/{$this->facebookApiVersion}/{$account->platform_account_id}";
             $response = Http::timeout(30)->get($url, [
                 'access_token' => $account->access_token,
                 'fields' => 'name,followers_count,engagement',
