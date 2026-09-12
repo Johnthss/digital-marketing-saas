@@ -87,7 +87,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          vendor/bin/phpunit --display-notices --display-phpunit-notices --log-junit uat-results/junit.xml 2>&1 | tee uat-results/tests.txt
+          vendor/bin/phpunit --display-notices --display-phpunit-notices --fail-on-phpunit-notice --log-junit uat-results/junit.xml 2>&1 | tee uat-results/tests.txt
       - name: Composer vulnerability audit
         id: audit
         if: steps.deps.outcome == 'success'
