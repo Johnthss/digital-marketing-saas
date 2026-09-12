@@ -12,41 +12,42 @@ use App\Models\Report;
 use App\Models\SocialPost;
 use App\Models\WhiteLabelSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ModelTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function media_asset_has_human_size_accessor(): void
     {
         $asset = MediaAsset::factory()->create(['file_size' => 1048576]);
         $this->assertEquals('1.00 MB', $asset->human_size);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function media_asset_has_thumbnail_url_accessor(): void
     {
         $asset = MediaAsset::factory()->create(['file_path' => 'media/1/test.jpg']);
         $this->assertStringContainsString('storage/media/1/test.jpg', $asset->thumbnail_url);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function white_label_has_display_name_accessor(): void
     {
         $setting = WhiteLabelSetting::factory()->create(['brand_name' => 'Test Brand']);
         $this->assertEquals('Test Brand', $setting->display_name);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function white_label_falls_back_to_app_name(): void
     {
         $setting = WhiteLabelSetting::factory()->create(['brand_name' => null]);
         $this->assertEquals(config('app.name'), $setting->display_name);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function email_template_renders_variables(): void
     {
         $template = EmailTemplate::factory()->create([
@@ -58,28 +59,28 @@ class ModelTest extends TestCase
         $this->assertEquals('<h1>Welcome John</h1>', $rendered['html']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function report_has_download_url_accessor(): void
     {
         $report = Report::factory()->create(['file_path' => 'reports/test.pdf']);
         $this->assertStringContainsString('storage/reports/test.pdf', $report->download_url);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function activity_feed_has_icon_accessor(): void
     {
         $activity = ActivityFeed::factory()->create(['action' => 'post_created']);
         $this->assertEquals('fa-pen-fancy', $activity->icon);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function activity_feed_has_description_accessor(): void
     {
         $activity = ActivityFeed::factory()->create(['action' => 'post_created']);
         $this->assertStringContainsString('created a new post', $activity->description);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function consent_record_has_granted_scope(): void
     {
         ConsentRecord::factory()->create(['consent_type' => 'marketing', 'granted' => true]);
@@ -87,7 +88,7 @@ class ModelTest extends TestCase
         $this->assertEquals(1, ConsentRecord::granted()->count());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function data_deletion_request_has_overdue_scope(): void
     {
         DataDeletionRequest::factory()->create(['status' => 'pending', 'scheduled_at' => now()->subDay()]);
@@ -95,7 +96,7 @@ class ModelTest extends TestCase
         $this->assertEquals(1, DataDeletionRequest::overdue()->count());
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function comment_has_for_commentable_scope(): void
     {
         $post = SocialPost::factory()->create();

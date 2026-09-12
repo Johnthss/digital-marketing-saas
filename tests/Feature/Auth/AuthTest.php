@@ -5,20 +5,21 @@ namespace Tests\Feature\Auth;
 use App\Models\Agency;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_shows_login_page(): void
     {
         $response = $this->get(route('login'));
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_authenticates_user(): void
     {
         $agency = Agency::factory()->create();
@@ -30,7 +31,7 @@ class AuthTest extends TestCase
         $response->assertRedirect(route('dashboard'));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_rejects_invalid_credentials(): void
     {
         $response = $this->post(route('login'), [
@@ -40,7 +41,7 @@ class AuthTest extends TestCase
         $response->assertSessionHasErrors();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_logs_out_user(): void
     {
         $agency = Agency::factory()->create();
@@ -49,14 +50,14 @@ class AuthTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_shows_registration_page(): void
     {
         $response = $this->get(route('register'));
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_registers_new_user(): void
     {
         $response = $this->post(route('register'), [
@@ -71,7 +72,7 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('agencies', ['name' => 'Test Agency']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_validates_registration(): void
     {
         $response = $this->post(route('register'), []);

@@ -35,7 +35,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAccountController;
 use App\Http\Controllers\SocialPostController;
-use App\Http\Controllers\TelegramLinkController;
 use App\Http\Controllers\TwitterController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WhiteLabelController;
@@ -297,7 +296,7 @@ Route::get('/.well-known/security.txt', function () {
     $content .= "Expires: {$expiry}\n";
     $content .= "Preferred-Languages: en\n";
     $content .= "Canonical: https://digitalmarketingsaas.com/.well-known/security.txt\n";
-    
+
     return response($content, 200, [
         'Content-Type' => 'text/plain; charset=utf-8',
     ]);

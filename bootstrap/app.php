@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Middleware\AgentRateLimit;
 use App\Http\Middleware\EnforceQuota;
 use App\Http\Middleware\EnsureAgencyAccess;
 use App\Http\Middleware\FeatureGate;
 use App\Http\Middleware\HstsMiddleware;
 use App\Http\Middleware\RequestId;
 use App\Http\Middleware\SecurityHeaders;
+use App\Services\AI\Agent\AgentBudgetMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,8 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'agency' => EnsureAgencyAccess::class,
             'feature' => FeatureGate::class,
             'quota' => EnforceQuota::class,
-            'agent.rate_limit' => \App\Http\Middleware\AgentRateLimit::class,
-            'agent.budget' => \App\Services\AI\Agent\AgentBudgetMiddleware::class,
+            'agent.rate_limit' => AgentRateLimit::class,
+            'agent.budget' => AgentBudgetMiddleware::class,
         ]);
 
         $middleware->web(append: [
@@ -57,7 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // ModelNotFoundException -> 404 JSON for API
-        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, Request $request) {
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,

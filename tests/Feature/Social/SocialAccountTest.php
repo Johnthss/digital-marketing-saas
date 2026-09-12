@@ -6,6 +6,7 @@ use App\Models\Agency;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SocialAccountTest extends TestCase
@@ -23,7 +24,7 @@ class SocialAccountTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_lists_accounts(): void
     {
         SocialAccount::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,7 +32,7 @@ class SocialAccountTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_creates_an_account(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), [
@@ -43,14 +44,14 @@ class SocialAccountTest extends TestCase
         $this->assertDatabaseHas('social_accounts', ['platform_display_name' => 'Test Account']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_validates_account_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.accounts.store'), []);
         $response->assertSessionHasErrors(['platform', 'access_token']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_toggles_account(): void
     {
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id, 'is_active' => true]);
@@ -59,7 +60,7 @@ class SocialAccountTest extends TestCase
         $this->assertDatabaseHas('social_accounts', ['id' => $account->id, 'is_active' => false]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_deletes_an_account(): void
     {
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
@@ -68,7 +69,7 @@ class SocialAccountTest extends TestCase
         $this->assertSoftDeleted('social_accounts', ['id' => $account->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_prevents_access_to_other_agency_accounts(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -77,7 +78,7 @@ class SocialAccountTest extends TestCase
         $response->assertForbidden();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_requires_auth(): void
     {
         $response = $this->get(route('social.accounts.index'));

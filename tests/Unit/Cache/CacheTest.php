@@ -6,13 +6,14 @@ use App\Models\Agency;
 use App\Services\Analytics\AnalyticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CacheTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_caches_dashboard_stats(): void
     {
         $agency = Agency::factory()->create();
@@ -22,7 +23,7 @@ class CacheTest extends TestCase
         $this->assertEquals($stats1, $stats2);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_clears_cache_on_model_update(): void
     {
         $agency = Agency::factory()->create();
@@ -32,7 +33,7 @@ class CacheTest extends TestCase
         $this->assertNull(Cache::get("test:{$agency->id}"));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_stores_and_retrieves_cache(): void
     {
         Cache::put('test_key', 'test_value', 60);

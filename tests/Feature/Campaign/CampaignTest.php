@@ -6,6 +6,7 @@ use App\Models\Agency;
 use App\Models\Campaign;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CampaignTest extends TestCase
@@ -23,7 +24,7 @@ class CampaignTest extends TestCase
         $this->user = User::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_lists_campaigns(): void
     {
         Campaign::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -31,7 +32,7 @@ class CampaignTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_creates_a_campaign(): void
     {
         $response = $this->actingAs($this->user)->post(route('campaigns.store'), [
@@ -42,14 +43,14 @@ class CampaignTest extends TestCase
         $this->assertDatabaseHas('campaigns', ['name' => 'Test Campaign']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_validates_campaign_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('campaigns.store'), []);
         $response->assertSessionHasErrors(['name']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_shows_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
@@ -57,7 +58,7 @@ class CampaignTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_updates_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
@@ -68,7 +69,7 @@ class CampaignTest extends TestCase
         $this->assertDatabaseHas('campaigns', ['id' => $campaign->id, 'name' => 'Updated Campaign']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_deletes_a_campaign(): void
     {
         $campaign = Campaign::factory()->create(['agency_id' => $this->agency->id]);
@@ -77,7 +78,7 @@ class CampaignTest extends TestCase
         $this->assertSoftDeleted('campaigns', ['id' => $campaign->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_prevents_access_to_other_agency_campaigns(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -86,7 +87,7 @@ class CampaignTest extends TestCase
         $response->assertForbidden();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_requires_auth(): void
     {
         $response = $this->get(route('campaigns.index'));

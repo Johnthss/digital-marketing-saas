@@ -3,9 +3,9 @@
 namespace App\Events;
 
 use App\Models\SocialPost;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 class PostPublished implements ShouldBroadcast

@@ -7,6 +7,7 @@ use App\Models\SocialAccount;
 use App\Models\SocialPost;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SocialPostFeatureTest extends TestCase
@@ -27,7 +28,7 @@ class SocialPostFeatureTest extends TestCase
         $this->account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_lists_social_posts(): void
     {
         SocialPost::factory()->count(3)->create(['agency_id' => $this->agency->id]);
@@ -35,7 +36,7 @@ class SocialPostFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_creates_social_post(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.posts.store'), [
@@ -47,14 +48,14 @@ class SocialPostFeatureTest extends TestCase
         $this->assertDatabaseHas('social_posts', ['content' => 'Test post content']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_validates_post_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.posts.store'), []);
         $response->assertSessionHasErrors();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_shows_post(): void
     {
         $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
@@ -62,7 +63,7 @@ class SocialPostFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_updates_post(): void
     {
         $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
@@ -72,7 +73,7 @@ class SocialPostFeatureTest extends TestCase
         $response->assertRedirect();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_deletes_post(): void
     {
         $post = SocialPost::factory()->create(['agency_id' => $this->agency->id]);
@@ -81,7 +82,7 @@ class SocialPostFeatureTest extends TestCase
         $this->assertSoftDeleted('social_posts', ['id' => $post->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_prevents_unauthorized_access(): void
     {
         $otherAgency = Agency::factory()->create();
@@ -90,7 +91,7 @@ class SocialPostFeatureTest extends TestCase
         $response->assertForbidden();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_filters_by_status(): void
     {
         SocialPost::factory()->create(['agency_id' => $this->agency->id, 'status' => 'draft']);
@@ -99,7 +100,7 @@ class SocialPostFeatureTest extends TestCase
         $response->assertStatus(200);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_filters_by_platform(): void
     {
         SocialPost::factory()->create(['agency_id' => $this->agency->id, 'platform' => 'facebook']);

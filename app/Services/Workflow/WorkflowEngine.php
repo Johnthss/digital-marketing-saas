@@ -2,6 +2,7 @@
 
 namespace App\Services\Workflow;
 
+use App\Models\Agency;
 use App\Models\SocialAccount;
 use App\Models\SocialPost;
 use App\Models\Workflow;
@@ -185,7 +186,7 @@ class WorkflowEngine
             return ['status' => 'failed', 'reason' => 'Missing prompt'];
         }
 
-        $agency = \App\Models\Agency::find($agencyId);
+        $agency = Agency::find($agencyId);
         if (! $agency || ! $agency->canGenerateAiContent()) {
             return ['status' => 'failed', 'reason' => 'AI generation quota exceeded'];
         }

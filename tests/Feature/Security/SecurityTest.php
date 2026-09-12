@@ -5,15 +5,16 @@ namespace Tests\Feature\Security;
 use App\Models\Agency;
 use App\Models\Client;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_prevents_xss_in_forms(): void
     {
         $agency = Agency::factory()->create();
@@ -26,7 +27,7 @@ class SecurityTest extends TestCase
         $this->assertDatabaseMissing('clients', ['name' => '<script>alert("xss")</script>']);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_prevents_cross_tenant_access(): void
     {
         $agency1 = Agency::factory()->create();
@@ -37,15 +38,15 @@ class SecurityTest extends TestCase
         $response->assertForbidden();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_requires_csrf_for_forms(): void
     {
         $route = app('router')->getRoutes()->getByName('clients.store');
 
-        $this->assertContains(PreventRequestForgery::class, $route->gatherMiddleware());
+        $this->assertContains(PreventRequestForgery::class, app('router')->gatherRouteMiddleware($route));
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
+    #[Test]
     public function it_hashes_passwords(): void
     {
         $user = User::factory()->create(['password' => 'secret123']);
