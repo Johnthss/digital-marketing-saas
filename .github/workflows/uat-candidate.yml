@@ -65,6 +65,15 @@ jobs:
           php artisan key:generate --no-interaction
           php artisan package:discover --ansi 2>&1 | tee uat-results/bootstrap.txt
           php artisan route:list --json > uat-results/routes.json
+      - name: Laravel code style and reviewable patch
+        id: style
+        if: steps.deps.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          vendor/bin/pint 2>&1 | tee uat-results/pint.txt
+          git diff --binary -- '*.php' > uat-results/pint.patch
+          test ! -s uat-results/pint.patch
       - name: Frontend build
         id: frontend
         continue-on-error: true
@@ -109,6 +118,7 @@ jobs:
           SYNTAX: ${{ steps.syntax.outcome }}
           DEPS: ${{ steps.deps.outcome }}
           BOOT: ${{ steps.boot.outcome }}
+          STYLE: ${{ steps.style.outcome }}
           FRONTEND: ${{ steps.frontend.outcome }}
           TESTS: ${{ steps.tests.outcome }}
           AUDIT: ${{ steps.audit.outcome }}
@@ -116,7 +126,7 @@ jobs:
         run: |
           printf '| Check | Outcome |\n| --- | --- |\n' >> "$GITHUB_STEP_SUMMARY"
           failed=0
-          for check in SYNTAX DEPS BOOT FRONTEND TESTS AUDIT BOOST; do
+          for check in SYNTAX DEPS BOOT STYLE FRONTEND TESTS AUDIT BOOST; do
             printf '| %s | %s |\n' "$check" "${!check}" >> "$GITHUB_STEP_SUMMARY"
             if [ "${!check}" != success ]; then failed=1; fi
           done
