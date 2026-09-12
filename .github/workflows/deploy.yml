@@ -6,7 +6,7 @@ on:
 
 env:
   APP_ENV: staging
-  PHP_VERSION: '8.3'
+  PHP_VERSION: '8.5'
 
 jobs:
   deploy-staging:

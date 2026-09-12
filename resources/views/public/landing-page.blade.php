@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $page->title ?? $page->name }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <style>
+    <style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" nonce="{{ $cspNonce ?? '' }}">
         body { background: {{ $page->background_color }}; color: {{ $page->text_color }}; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .container { max-width: 800px; text-align: center; padding: 2rem; }
         .btn-cta { background: {{ $page->button_color }}; color: {{ $page->button_text_color }}; padding: 1rem 2rem; font-size: 1.25rem; border-radius: 50px; text-decoration: none; display: inline-block; margin-top: 1rem; }
@@ -15,7 +15,7 @@
 <body>
     <div class="container">
         <h1 class="display-4">{{ $page->headline }}</h1>
-        <div class="lead mt-4">{!! clean($page->content) !!}</div>
+        <div class="lead mt-4">{!! nl2br(e($page->content)) !!}</div>
         @if($page->cta_text && $page->cta_url)
             <a href="{{ route('public.landing-page', ['slug' => $page->slug, 'click' => 1]) }}" class="btn-cta" onclick="window.clickTracked = true;">{{ $page->cta_text }}</a>
         @endif

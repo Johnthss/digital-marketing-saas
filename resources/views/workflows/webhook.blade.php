@@ -84,7 +84,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
 function copyWebhookUrl() {
     const url = document.getElementById('webhookUrl');
     url.select();

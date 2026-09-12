@@ -53,7 +53,8 @@ class AiGateway
 
         $lastException = null;
 
-        foreach ($providerChain as $providerName) {
+        foreach ($providerChain as $route) {
+            [$providerName, $model] = array_pad(explode(':', $route, 2), 2, null);
             $provider = $this->providers->get($providerName);
 
             if (! $provider || ! $provider->isAvailable()) {
@@ -63,7 +64,8 @@ class AiGateway
             }
 
             try {
-                $response = $provider->send($request);
+                $providerRequest = $request->withModel($model ?: $provider->getDefaultModel());
+                $response = $provider->send($providerRequest);
 
                 $cost = $provider->calculateCost($response);
 
@@ -104,7 +106,7 @@ class AiGateway
 
         if (is_array($routing) && ! empty($routing)) {
             return collect($routing)
-                ->map(fn ($modelString) => explode(':', $modelString)[0])
+                ->filter(fn ($route) => is_string($route) && $route !== '')
                 ->unique()
                 ->values();
         }

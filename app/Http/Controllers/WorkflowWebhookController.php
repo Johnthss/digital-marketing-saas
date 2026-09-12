@@ -18,7 +18,7 @@ class WorkflowWebhookController extends Controller
         $workflow = Workflow::findOrFail($workflowId);
 
         // Validate secret
-        if ($workflow->webhook_secret !== $secret) {
+        if (! is_string($workflow->webhook_secret) || ! hash_equals($workflow->webhook_secret, $secret)) {
             return response()->json(['error' => 'Invalid webhook secret'], 401);
         }
 
@@ -53,7 +53,7 @@ class WorkflowWebhookController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Workflow execution failed: '.$e->getMessage(),
+                'message' => 'Workflow execution failed.',
             ], 500);
         }
     }

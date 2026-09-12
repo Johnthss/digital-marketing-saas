@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>White-Label Settings</title>
     @if(isset($whiteLabel) && $whiteLabel->custom_css)
-        <style>{{ $whiteLabel->custom_css }}</style>
+        <style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">{{ $whiteLabel->custom_css }}</style>
     @endif
 </head>
 <body>

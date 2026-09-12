@@ -21,6 +21,7 @@ class RoleController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorizeRoleManagement($request);
         $agencyId = $request->user()->agency_id;
 
         $roles = Role::where('agency_id', $agencyId)
@@ -33,6 +34,7 @@ class RoleController extends Controller
 
     public function create(Request $request): View
     {
+        $this->authorizeRoleManagement($request);
         $agencyId = $request->user()->agency_id;
         $permissions = \Spatie\Permission\Models\Permission::all();
 
@@ -41,6 +43,7 @@ class RoleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorizeRoleManagement($request);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'permissions' => 'nullable|array',
@@ -61,6 +64,7 @@ class RoleController extends Controller
 
     public function edit(Request $request, Role $role): View
     {
+        $this->authorizeRoleManagement($request);
         $agencyId = $request->user()->agency_id;
         $permissions = \Spatie\Permission\Models\Permission::all();
         $rolePermissions = $this->rbacService->getRolePermissions($role->id);
@@ -70,6 +74,7 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role): RedirectResponse
     {
+        $this->authorizeRoleManagement($request);
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'permissions' => 'nullable|array',
@@ -90,6 +95,7 @@ class RoleController extends Controller
 
     public function destroy(Request $request, Role $role): RedirectResponse
     {
+        $this->authorizeRoleManagement($request);
         $agencyId = $request->user()->agency_id;
 
         $success = $this->rbacService->deleteRole($agencyId, $role->id);
@@ -104,6 +110,7 @@ class RoleController extends Controller
 
     public function assign(Request $request): RedirectResponse
     {
+        $this->authorizeRoleManagement($request);
         $validated = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'role_id' => 'required|integer|exists:roles,id',
@@ -111,7 +118,8 @@ class RoleController extends Controller
 
         $success = $this->rbacService->assignRoleToUser(
             $validated['user_id'],
-            $validated['role_id']
+            $validated['role_id'],
+            (int) $request->user()->agency_id
         );
 
         if (! $success) {
@@ -123,6 +131,7 @@ class RoleController extends Controller
 
     public function remove(Request $request): RedirectResponse
     {
+        $this->authorizeRoleManagement($request);
         $validated = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
             'role_id' => 'required|integer|exists:roles,id',
@@ -130,7 +139,8 @@ class RoleController extends Controller
 
         $success = $this->rbacService->removeRoleFromUser(
             $validated['user_id'],
-            $validated['role_id']
+            $validated['role_id'],
+            (int) $request->user()->agency_id
         );
 
         if (! $success) {
@@ -142,11 +152,17 @@ class RoleController extends Controller
 
     public function auditTrail(Request $request): View
     {
+        $this->authorizeRoleManagement($request);
         $agencyId = $request->user()->agency_id;
         $filters = $request->only(['action', 'user_id', 'date_from', 'date_to']);
 
         $auditLogs = $this->rbacService->getAuditTrail($agencyId, $filters);
 
         return view('roles.audit', compact('auditLogs'));
+    }
+
+    private function authorizeRoleManagement(Request $request): void
+    {
+        abort_unless($request->user()->isOwner() || $request->user()->isAdmin(), 403);
     }
 }

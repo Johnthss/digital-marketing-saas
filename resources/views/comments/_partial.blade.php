@@ -31,7 +31,7 @@
 </div>
 
 @push("scripts")
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     const commentableType = @json($commentableType ?? null);
     const commentableId = @json($commentableId ?? null);
 

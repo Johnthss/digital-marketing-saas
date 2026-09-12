@@ -96,7 +96,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
 function copyCode() {
     const code = document.querySelector('input[readonly]').value;
     navigator.clipboard.writeText(code);

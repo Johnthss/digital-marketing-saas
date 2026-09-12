@@ -46,7 +46,7 @@ class Workflow extends Model
 
     public function getStatusEnum(): WorkflowStatus
     {
-        return new WorkflowStatus($this->status);
+        return WorkflowStatus::from($this->status);
     }
 
     public function agency(): BelongsTo

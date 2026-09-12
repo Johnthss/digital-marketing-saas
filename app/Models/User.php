@@ -39,6 +39,7 @@ class User extends Authenticatable
         'last_active_at' => 'datetime',
         'is_active' => 'boolean',
         'is_approved' => 'boolean',
+        'password' => 'hashed',
     ];
 
     public function agency(): BelongsTo

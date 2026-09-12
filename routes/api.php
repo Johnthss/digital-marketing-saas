@@ -59,7 +59,8 @@ Route::prefix('v1')->middleware(['auth', 'agency', 'throttle:60,1'])->as('api.')
     });
 
     // AI
-    Route::post('/ai/generate', [ApiAiController::class, 'generate'])->middleware('throttle:10,1');
+    Route::post('/ai/generate', [ApiAiController::class, 'generate'])
+        ->middleware(['throttle:ai_generate', 'quota:ai_generations', 'agent.budget']);
 
     // Agent Management
     Route::prefix('agents')->name('agents.')->group(function () {
@@ -97,4 +98,6 @@ Route::prefix('v1')->middleware(['auth', 'agency', 'throttle:60,1'])->as('api.')
 });
 
 // Public webhook endpoint (no auth)
-Route::post('workflows/{workflow}/webhook/{secret}', [WorkflowWebhookController::class, 'handle'])->name('api.workflows.webhook');
+Route::post('workflows/{workflow}/webhook/{secret}', [WorkflowWebhookController::class, 'handle'])
+    ->middleware('throttle:20,1')
+    ->name('api.workflows.webhook');

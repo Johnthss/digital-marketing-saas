@@ -50,8 +50,8 @@ class SocialAccountController extends Controller
         $account = SocialAccount::create([
             'agency_id' => $agencyId,
             'platform' => $validated['platform'],
-            'access_token' => encrypt($validated['access_token']),
-            'refresh_token' => isset($validated['refresh_token']) ? encrypt($validated['refresh_token']) : null,
+            'access_token' => $validated['access_token'],
+            'refresh_token' => $validated['refresh_token'] ?? null,
             'platform_account_id' => $validated['platform_account_id'] ?? null,
             'platform_username' => $validated['platform_username'] ?? null,
             'platform_display_name' => $validated['platform_display_name'] ?? null,

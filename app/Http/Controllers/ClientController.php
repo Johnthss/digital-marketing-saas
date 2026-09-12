@@ -46,7 +46,7 @@ class ClientController extends Controller
         $agency = $request->user()->agency;
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', 'not_regex:/<[^>]*>/'],
             'email' => 'required|email|unique:clients,email',
             'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',

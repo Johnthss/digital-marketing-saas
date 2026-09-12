@@ -84,12 +84,16 @@ class EnterpriseRBACService
     /**
      * Assign a role to a user.
      */
-    public function assignRoleToUser(int $userId, int $roleId): bool
+    public function assignRoleToUser(int $userId, int $roleId, ?int $actorAgencyId = null): bool
     {
         $user = User::find($userId);
         $role = Role::find($roleId);
 
         if (! $user || ! $role) {
+            return false;
+        }
+
+        if ($actorAgencyId !== null && (int) $user->agency_id !== $actorAgencyId) {
             return false;
         }
 
@@ -108,12 +112,16 @@ class EnterpriseRBACService
     /**
      * Remove a role from a user.
      */
-    public function removeRoleFromUser(int $userId, int $roleId): bool
+    public function removeRoleFromUser(int $userId, int $roleId, ?int $actorAgencyId = null): bool
     {
         $user = User::find($userId);
         $role = Role::find($roleId);
 
         if (! $user || ! $role) {
+            return false;
+        }
+
+        if ($actorAgencyId !== null && (int) $user->agency_id !== $actorAgencyId) {
             return false;
         }
 
@@ -132,11 +140,14 @@ class EnterpriseRBACService
     /**
      * Get all permissions for a user.
      */
-    public function getUserPermissions(int $user): array
+    public function getUserPermissions(int $user, ?int $agencyId = null): array
     {
         $user = is_int($user) ? User::find($user) : $user;
 
         if (! $user) {
+            return [];
+        }
+        if ($agencyId !== null && (int) $user->agency_id !== $agencyId) {
             return [];
         }
 
@@ -146,11 +157,14 @@ class EnterpriseRBACService
     /**
      * Get all permissions for a role.
      */
-    public function getRolePermissions(int $roleId): array
+    public function getRolePermissions(int $roleId, ?int $agencyId = null): array
     {
         $role = Role::find($roleId);
 
         if (! $role) {
+            return [];
+        }
+        if ($agencyId !== null && $role->agency_id !== null && (int) $role->agency_id !== $agencyId) {
             return [];
         }
 

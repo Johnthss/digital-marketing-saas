@@ -2,7 +2,7 @@
 @section('title', 'Workflow Builder')
 
 @section('styles')
-<style>
+<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     * { box-sizing: border-box; }
     body { margin: 0; overflow: hidden; font-family: 'Inter', 'Source Sans Pro', sans-serif; }
     
@@ -1181,7 +1181,7 @@
 
 <!-- Existing Workflow Data (for loading into builder) -->
 @if(isset($existingWorkflow) && $existingWorkflow)
-<script type="application/json" id="existingWorkflowData">@json($existingWorkflow)</script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}" type="application/json" id="existingWorkflowData">@json($existingWorkflow)</script>
 @endif
 
 <!-- Toast Container -->
@@ -1200,7 +1200,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
 class WorkflowBuilder {
     constructor() {
         this.nodes = [];

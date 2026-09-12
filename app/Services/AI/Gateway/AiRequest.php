@@ -70,4 +70,19 @@ class AiRequest
             'messages' => $this->messages,
         ];
     }
+
+    public function withModel(string $model): self
+    {
+        return new self(
+            prompt: $this->prompt,
+            systemPrompt: $this->systemPrompt,
+            model: $model,
+            temperature: $this->temperature,
+            maxTokens: $this->maxTokens,
+            task: $this->task,
+            contentType: $this->contentType,
+            action: $this->action,
+            messages: $this->messages,
+        );
+    }
 }

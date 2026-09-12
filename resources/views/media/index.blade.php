@@ -2,7 +2,7 @@
 @section('title', 'Media Library')
 
 @section('styles')
-<style>
+<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     .media-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

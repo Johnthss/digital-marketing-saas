@@ -197,7 +197,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
 function runWorkflow(workflowName) {
     if (!confirm('Run the "' + workflowName.replace(/_/g, ' ') + '" workflow?')) {
         return;

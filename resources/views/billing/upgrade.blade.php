@@ -152,7 +152,7 @@
 @endsection
 
 @push('styles')
-<style>
+<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     .plan-card {
         transition: all 0.3s ease;
         border: 2px solid #dee2e6;

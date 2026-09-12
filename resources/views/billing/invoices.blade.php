@@ -187,7 +187,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     $(function() {
         $('#invoiceSearch').on('keyup', function() {
             var value = $(this).val().toLowerCase();

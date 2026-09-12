@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => FeatureGate::class,
             'quota' => EnforceQuota::class,
             'agent.rate_limit' => \App\Http\Middleware\AgentRateLimit::class,
+            'agent.budget' => \App\Services\AI\Agent\AgentBudgetMiddleware::class,
         ]);
 
         $middleware->web(append: [

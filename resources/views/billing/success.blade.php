@@ -36,7 +36,7 @@
 @endsection
 
 @push('styles')
-<style>
+<style nonce="{{ \ ?? ' }}" nonce="{{ \ ?? ' }}">
     .success-icon {
         animation: scaleIn 0.5s ease-out;
     }

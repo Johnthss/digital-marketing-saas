@@ -4,9 +4,11 @@ namespace App\Events;
 
 use App\Models\SocialPost;
 use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Queue\SerializesModels;
 
-class PostPublished
+class PostPublished implements ShouldBroadcast
 {
     use Dispatchable, SerializesModels;
 
@@ -14,4 +16,9 @@ class PostPublished
         public SocialPost $post,
         public array $results = []
     ) {}
+
+    public function broadcastOn(): array
+    {
+        return [new PrivateChannel('agency.'.$this->post->agency_id)];
+    }
 }
