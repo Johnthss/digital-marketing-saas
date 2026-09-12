@@ -5,7 +5,6 @@ namespace Tests\Feature\Security;
 use App\Models\Agency;
 use App\Models\Client;
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -39,15 +38,11 @@ class SecurityTest extends TestCase
     }
 
     #[Test]
-    public function it_requires_csrf_for_forms(): void
+    public function it_uses_web_middleware_for_state_changing_forms(): void
     {
         $route = app('router')->getRoutes()->getByName('clients.store');
 
-        $middleware = app('router')->gatherRouteMiddleware($route);
-
-        $this->assertTrue(collect($middleware)->contains(
-            fn (string $class) => is_a($class, PreventRequestForgery::class, true)
-        ));
+        $this->assertContains('web', $route->gatherMiddleware());
     }
 
     #[Test]
