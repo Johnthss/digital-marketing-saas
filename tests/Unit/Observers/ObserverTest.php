@@ -33,6 +33,6 @@ class ObserverTest extends TestCase
         $post = SocialPost::factory()->create();
         $id = $post->id;
         $post->delete();
-        $this->assertDatabaseMissing('social_posts', ['id' => $id]);
+        $this->assertSoftDeleted('social_posts', ['id' => $id]);
     }
 }

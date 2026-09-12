@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\ApiWorkflowController;
 use App\Http\Controllers\WorkflowWebhookController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 Route::prefix('v1')->middleware(['auth', 'agency', 'throttle:60,1'])->as('api.')->group(function () {
     Route::get('/status', fn () => ['status' => 'ok']);
 
@@ -24,6 +26,7 @@ Route::prefix('v1')->middleware(['auth', 'agency', 'throttle:60,1'])->as('api.')
 
     // Resources with dedicated controllers
     Route::apiResource('posts', ApiSocialPostController::class);
+    Route::get('social-posts', [ApiSocialPostController::class, 'index']);
     Route::apiResource('accounts', ApiSocialAccountController::class);
     Route::apiResource('campaigns', ApiCampaignController::class);
     Route::apiResource('clients', ApiClientController::class);

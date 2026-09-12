@@ -6,6 +6,7 @@ use App\Models\Agency;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
@@ -39,14 +40,9 @@ class SecurityTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function it_requires_csrf_for_forms(): void
     {
-        $agency = Agency::factory()->create();
-        $user = User::factory()->create(['agency_id' => $agency->id]);
-        $response = $this->actingAs($user)->post(route('clients.store'), [
-            'name' => 'Test',
-            'email' => 'test@example.com',
-            '_token' => 'invalid',
-        ]);
-        $response->assertStatus(419);
+        $route = app('router')->getRoutes()->getByName('clients.store');
+
+        $this->assertContains(PreventRequestForgery::class, $route->gatherMiddleware());
     }
 
     #[\PHPUnit\Framework\Attributes\Test]

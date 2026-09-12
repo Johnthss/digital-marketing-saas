@@ -64,7 +64,7 @@ class AiGateway
             }
 
             try {
-                $providerRequest = $request->withModel($model ?: $provider->getDefaultModel());
+                $providerRequest = $request->withModel($model ?: ($request->model ?: $provider->getDefaultModel()));
                 $response = $provider->send($providerRequest);
 
                 $cost = $provider->calculateCost($response);

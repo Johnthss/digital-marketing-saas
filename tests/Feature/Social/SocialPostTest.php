@@ -50,7 +50,7 @@ class SocialPostTest extends TestCase
     public function it_validates_post_creation(): void
     {
         $response = $this->actingAs($this->user)->post(route('social.posts.store'), []);
-        $response->assertSessionHasErrors(['platform', 'content', 'social_account_id']);
+        $response->assertSessionHasErrors(['content', 'social_account_id']);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]

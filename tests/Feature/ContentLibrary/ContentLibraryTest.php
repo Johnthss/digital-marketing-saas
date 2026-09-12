@@ -36,7 +36,7 @@ class ContentLibraryTest extends TestCase
     {
         $response = $this->actingAs($this->user)->post(route('content.store'), [
             'name' => 'Test Content',
-            'type' => 'post',
+            'type' => 'text',
             'content' => 'Test content body',
         ]);
         $response->assertRedirect();

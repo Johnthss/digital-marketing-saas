@@ -9,6 +9,7 @@ use App\Models\SocialPost;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class UserWorkflowTest extends TestCase
@@ -299,17 +300,25 @@ class UserWorkflowTest extends TestCase
     public function test_post_publish_workflow(): void
     {
         [$agency, $user] = $this->createAgencyWithUser();
-        $account = SocialAccount::factory()->create(['agency_id' => $agency->id]);
+        Http::fake(['api.twitter.com/*' => Http::response(['data' => ['id' => 'uat-tweet']], 201)]);
+        $account = SocialAccount::factory()->create([
+            'agency_id' => $agency->id,
+            'platform' => 'twitter',
+            'access_token' => 'uat-token',
+            'is_active' => true,
+        ]);
         $this->actingAs($user);
 
         $post = SocialPost::factory()->create([
             'agency_id' => $agency->id,
             'social_account_id' => $account->id,
+            'platform' => 'twitter',
             'status' => 'draft',
         ]);
 
         $response = $this->post("/social/posts/{$post->id}/publish");
         $response->assertRedirect('/social/posts');
+        $this->assertSame('published', $post->fresh()->status);
     }
 
     public function test_client_filter_by_status(): void

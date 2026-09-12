@@ -36,6 +36,7 @@ class CampaignFeatureTest extends TestCase
     {
         $response = $this->actingAs($this->user)->post(route('campaigns.store'), [
             'name' => 'Test Campaign',
+            'type' => 'general',
             'description' => 'Test description',
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),

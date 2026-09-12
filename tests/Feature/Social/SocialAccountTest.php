@@ -65,7 +65,7 @@ class SocialAccountTest extends TestCase
         $account = SocialAccount::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('social.accounts.destroy', $account));
         $response->assertRedirect();
-        $this->assertDatabaseMissing('social_accounts', ['id' => $account->id]);
+        $this->assertSoftDeleted('social_accounts', ['id' => $account->id]);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]

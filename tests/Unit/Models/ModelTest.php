@@ -98,8 +98,9 @@ class ModelTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function comment_has_for_commentable_scope(): void
     {
-        Comment::factory()->create(['commentable_type' => 'App\Models\SocialPost', 'commentable_id' => 1]);
-        Comment::factory()->create(['commentable_type' => 'App\Models\SocialPost', 'commentable_id' => 2]);
-        $this->assertEquals(1, Comment::forCommentable(new SocialPost(['id' => 1]))->count());
+        $post = SocialPost::factory()->create();
+        Comment::factory()->create(['commentable_type' => SocialPost::class, 'commentable_id' => $post->id]);
+        Comment::factory()->create(['commentable_type' => SocialPost::class, 'commentable_id' => $post->id + 1]);
+        $this->assertEquals(1, Comment::forCommentable($post)->count());
     }
 }

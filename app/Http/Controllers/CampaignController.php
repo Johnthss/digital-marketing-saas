@@ -131,8 +131,8 @@ class CampaignController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
+            'name' => 'sometimes|required|string|max:255',
+            'type' => 'sometimes|required|in:'.implode(',', array_keys(Campaign::CAMPAIGN_TYPES)),
             'description' => 'nullable|string',
             'objective' => 'nullable|string|max:255',
             'target_audience' => 'nullable|string|max:255',

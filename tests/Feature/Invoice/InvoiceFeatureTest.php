@@ -35,12 +35,12 @@ class InvoiceFeatureTest extends TestCase
     public function it_creates_invoice(): void
     {
         $response = $this->actingAs($this->user)->post(route('invoices.store'), [
-            'client_name' => 'Test Client',
-            'total' => 100.00,
-            'items' => [['description' => 'Service', 'amount' => 100]],
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
+            'items' => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100]],
         ]);
         $response->assertRedirect();
-        $this->assertDatabaseHas('invoices', ['client_name' => 'Test Client']);
+        $this->assertDatabaseHas('invoices', ['agency_id' => $this->agency->id, 'total' => 100]);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -56,9 +56,12 @@ class InvoiceFeatureTest extends TestCase
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->put(route('invoices.update', $invoice), [
-            'client_name' => 'Updated Client',
+            'issue_date' => now()->toDateString(),
+            'due_date' => now()->addMonth()->toDateString(),
+            'notes' => 'Updated invoice',
         ]);
         $response->assertRedirect();
+        $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'notes' => 'Updated invoice']);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -67,14 +70,16 @@ class InvoiceFeatureTest extends TestCase
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id]);
         $response = $this->actingAs($this->user)->delete(route('invoices.destroy', $invoice));
         $response->assertRedirect();
-        $this->assertSoftDeleted('invoices', ['id' => $invoice->id]);
+        $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
     public function it_marks_invoice_paid(): void
     {
         $invoice = Invoice::factory()->create(['agency_id' => $this->agency->id, 'status' => 'pending']);
-        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice));
+        $response = $this->actingAs($this->user)->post(route('invoices.paid', $invoice), [
+            'payment_method' => 'manual',
+        ]);
         $response->assertRedirect();
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id, 'status' => 'paid']);
     }

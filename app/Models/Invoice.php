@@ -43,7 +43,7 @@ class Invoice extends Model
 
     public function getStatusEnum()
     {
-        return new InvoiceStatus($this->status);
+        return InvoiceStatus::from($this->status);
     }
 
     public function agency(): BelongsTo
@@ -61,7 +61,7 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function markPaid(string $paymentMethod, string $transactionId): void
+    public function markPaid(string $paymentMethod, ?string $transactionId = null): void
     {
         $this->update([
             'status' => InvoiceStatus::PAID->value,

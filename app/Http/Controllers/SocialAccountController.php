@@ -81,6 +81,40 @@ class SocialAccountController extends Controller
             ->with('success', 'Social account removed.');
     }
 
+    public function edit(Request $request, $accountId)
+    {
+        $account = SocialAccount::findOrFail($accountId);
+        if ((int) $account->agency_id !== (int) $request->user()->agency_id) {
+            abort(403);
+        }
+
+        return view('social.accounts.edit', compact('account'));
+    }
+
+    public function update(Request $request, $accountId)
+    {
+        $account = SocialAccount::findOrFail($accountId);
+        if ((int) $account->agency_id !== (int) $request->user()->agency_id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'access_token' => 'nullable|string',
+            'refresh_token' => 'nullable|string',
+            'platform_display_name' => 'nullable|string|max:255',
+        ]);
+        if (! $request->filled('access_token')) {
+            unset($validated['access_token']);
+        }
+        if (! $request->filled('refresh_token')) {
+            unset($validated['refresh_token']);
+        }
+        $account->update($validated);
+
+        return redirect()->route('social.accounts.index')
+            ->with('success', 'Social account updated successfully.');
+    }
+
     public function toggle(Request $request, $accountId)
     {
         $agencyId = $request->user()->agency_id;
