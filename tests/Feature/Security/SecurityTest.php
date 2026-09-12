@@ -43,7 +43,11 @@ class SecurityTest extends TestCase
     {
         $route = app('router')->getRoutes()->getByName('clients.store');
 
-        $this->assertContains(PreventRequestForgery::class, app('router')->gatherRouteMiddleware($route));
+        $middleware = app('router')->gatherRouteMiddleware($route);
+
+        $this->assertTrue(collect($middleware)->contains(
+            fn (string $class) => is_a($class, PreventRequestForgery::class, true)
+        ));
     }
 
     #[Test]
