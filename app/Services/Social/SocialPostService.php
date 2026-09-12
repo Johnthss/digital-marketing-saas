@@ -75,6 +75,8 @@ class SocialPostService
         } catch (\Exception $e) {
             $post->update([
                 'status' => PostStatus::FAILED->value,
+                'published_at' => null,
+                'external_post_id' => null,
                 'failed_at' => now(),
                 'error_message' => $e->getMessage(),
                 'retry_count' => $post->retry_count + 1,
